@@ -1,26 +1,203 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ==========================================================================
+   OZMISHOP TASARIM SİSTEMİ
+   ==========================================================================
+   brand  — Gece moru: ana marka rengi, birincil aksiyonlar, başlık vurguları
+   accent — Fuşya: indirim/kampanya rozetleri ve tek bir öne çıkan CTA
+   slate  — Sıcak nötr gri: metin, kenarlık ve yüzeyler (Tailwind'inki ezilir)
+
+   Kural: accent seyrek kullanılır. Bir ekranda birden fazla fuşya buton varsa
+   ikisi de dikkat çekmez. Hata/başarı için palet dışı red-500 / emerald-500.
+   ========================================================================== */
+
+@theme {
+    /* GECE MORU */
+    --color-brand-50: #f6f1fb;
+    --color-brand-100: #ebdff7;
+    --color-brand-200: #d7c0ef;
+    --color-brand-300: #b892e0;
+    --color-brand-500: #5b2a86;
+    --color-brand-600: #4a2170;
+    --color-brand-700: #3a1958;
+    --color-brand-900: #1c0b2e;
+
+    /* FUŞYA AKSAN */
+    --color-accent-50: #fff0f7;
+    --color-accent-100: #ffd6e9;
+    --color-accent-300: #ff8cc2;
+    --color-accent-500: #e11d8f;
+    --color-accent-600: #c4157a;
+    --color-accent-700: #9d1062;
+
+    /* SICAK NÖTR — Tailwind'in slate'i ezilir */
+    --color-slate-50: #faf8fb;
+    --color-slate-100: #f0ecf3;
+    --color-slate-200: #dcd5e1;
+    --color-slate-300: #c7bdcf;
+    --color-slate-400: #8f8699;
+    --color-slate-500: #6f6678;
+    --color-slate-700: #3f3847;
+    --color-slate-900: #1e1926;
+
+    --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+    scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    /* Saf beyaz yerine çok açık mor-gri: bg-white kartlar derinlik kazanır. */
+    @apply bg-slate-50 font-sans text-sm text-slate-700 antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   BUTONLAR
+   Tailwind v4'te özel bir sınıf başka bir özel sınıfı @apply EDEMEZ; bu yüzden
+   ortak taban her sınıfta tekrar edilir. `@apply btn` yazmayın.
+   -------------------------------------------------------------------------- */
+.btn-primary,
+.btn-accent,
+.btn-secondary,
+.btn-soft,
+.btn-danger {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-2.5
+           text-sm font-semibold transition focus:outline-none focus-visible:ring-2
+           disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+/* Sepete Ekle, Devam Et, Gönder */
+.btn-primary {
+    @apply bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700
+           focus-visible:ring-brand-200 disabled:bg-brand-200 disabled:hover:bg-brand-200;
+}
+/* Sayfada tek bir yerde: hero CTA ya da kampanya çağrısı */
+.btn-accent {
+    @apply bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700 focus-visible:ring-accent-100;
+}
+/* Filtrele, İncele, Vazgeç */
+.btn-secondary {
+    @apply border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50
+           focus-visible:ring-brand-200;
+}
+/* Kategori kartları, yumuşak aksiyonlar */
+.btn-soft {
+    @apply bg-brand-50 text-brand-700 hover:bg-brand-100 focus-visible:ring-brand-200;
+}
+.btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-200;
+}
+.btn-sm {
+    @apply px-3 py-1.5 text-xs;
+}
+.btn-lg {
+    @apply px-7 py-3 text-base;
+}
+
+/* FORM */
+.field-input {
+    @apply w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700
+           outline-none transition placeholder:text-slate-400 hover:border-slate-300
+           focus:border-brand-500 focus:ring-1 focus:ring-brand-500
+           disabled:cursor-not-allowed disabled:bg-slate-50;
+}
+.field-label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+}
+
+/* YÜZEYLER */
+.card {
+    @apply rounded-xl border border-slate-100 bg-white shadow-sm;
+}
+.card-hover {
+    @apply transition hover:border-slate-200 hover:shadow-md;
+}
+
+/* ROZETLER */
+.badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+.badge-accent {
+    @apply bg-accent-500 text-white;
+}
+.badge-brand {
+    @apply bg-brand-50 text-brand-700;
+}
+.badge-neutral {
+    @apply bg-slate-100 text-slate-500;
+}
+.badge-success {
+    @apply bg-emerald-50 text-emerald-700;
+}
+
+/* TİPOGRAFİ */
+.heading-1 {
+    @apply text-2xl font-bold text-slate-900 sm:text-3xl;
+}
+.heading-2 {
+    @apply text-xl font-bold text-slate-900 sm:text-2xl;
+}
+.heading-3 {
+    @apply text-base font-semibold text-slate-900 sm:text-lg;
+}
+.text-muted {
+    @apply text-slate-500;
+}
+.link {
+    @apply text-brand-600 transition hover:text-brand-700 hover:underline;
+}
+
+/* Fiyatlar tabular: liste içinde rakamlar hizalı dursun. */
+.price {
+    @apply font-semibold tabular-nums text-slate-900;
+}
+.price-old {
+    @apply text-sm tabular-nums text-slate-400 line-through;
+}
+
+/* Ürün açıklaması ve kurumsal sayfalar panelden HTML olarak gelir. */
+.prose-content {
+    @apply text-sm leading-relaxed text-slate-700;
+}
+.prose-content p {
+    @apply mb-3;
+}
+.prose-content ul {
+    @apply mb-3 list-disc space-y-1 pl-5;
+}
+.prose-content ol {
+    @apply mb-3 list-decimal space-y-1 pl-5;
+}
+.prose-content h2 {
+    @apply mb-2 mt-5 text-lg font-bold text-slate-900;
+}
+.prose-content h3 {
+    @apply mb-2 mt-4 font-semibold text-slate-900;
+}
+.prose-content strong {
+    @apply font-semibold text-slate-900;
+}
+.prose-content a {
+    @apply text-brand-600 hover:underline;
+}
+.prose-content table {
+    @apply mb-3 w-full text-left;
+}
+.prose-content td,
+.prose-content th {
+    @apply border-b border-slate-100 py-2;
+}
+
+/* Yatay kaydırmalı şeritlerde kaydırma çubuğu gizlenir (mobilde gürültü yapar). */
+.no-scrollbar {
+    scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Klavye kullanıcıları için görünür odak — erişilebilirlik. */
+:focus-visible {
+    @apply outline-none ring-2 ring-brand-200;
 }

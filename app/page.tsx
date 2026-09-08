@@ -1,69 +1,55 @@
-import Image from "next/image";
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import HomeSections from '@/components/home/HomeSections';
+import { getHome } from '@/lib/api';
+import { routes, site } from '@/lib/site';
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+export const metadata: Metadata = {
+    title: site.title,
+    description: site.description,
+    alternates: { canonical: '/' },
+};
+
+/**
+ * Anasayfa. Düzenin tamamı panelden gelir (`/home`); yalnızca hero altı güven şeridi
+ * ve H1 kodda sabittir — sayfanın tek H1'i ve ana anahtar kelimesi burada durur.
+ */
+export default async function HomePage() {
+    const { sections } = await getHome();
+
+    return (
+        <>
+            <section className="border-b border-slate-100 bg-white">
+                <div className="mx-auto max-w-7xl px-4 py-8 text-center sm:px-6 sm:py-12 lg:px-8">
+                    <h1 className="heading-1">Yetişkinlere özel ürünler, gizli paketleme ile</h1>
+                    <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-500 sm:text-base">
+                        Vibratörler, kayganlaştırıcılar, iç giyim ve çiftlere özel ürünler; orijinal, faturalı ve
+                        üzerinde içerik bilgisi olmayan kargo paketiyle kapınızda.
+                    </p>
+                    <div className="mt-5 flex flex-wrap justify-center gap-2">
+                        <Link href={routes.group('firsat-urunleri')} className="btn-accent">Fırsat ürünleri</Link>
+                        <Link href={routes.group('yeni-gelenler')} className="btn-secondary">Yeni gelenler</Link>
+                    </div>
+                </div>
+            </section>
+
+            <HomeSections sections={sections} />
+
+            <section className="border-t border-slate-100 bg-white">
+                <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+                    {[
+                        ['Gizli paketleme', 'Kargo etiketinde içerik bilgisi yer almaz.'],
+                        ['Güvenli ödeme', '3D Secure ile korunan ödeme altyapısı.'],
+                        ['Hızlı kargo', 'Saat 16:00’ya kadar verilen siparişler aynı gün kargoda.'],
+                        ['14 gün iade', 'Ambalajı açılmamış ürünlerde koşulsuz iade.'],
+                    ].map(([title, description]) => (
+                        <div key={title} className="text-center sm:text-left">
+                            <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+                            <p className="mt-1 text-xs text-slate-500">{description}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </>
+    );
 }
