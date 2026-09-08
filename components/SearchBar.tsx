@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { formatPrice } from '@/lib/format';
 import { routes } from '@/lib/site';
 import type { Suggestions } from '@/lib/types';
@@ -14,6 +14,9 @@ import type { Suggestions } from '@/lib/types';
  */
 export default function SearchBar({ className = '' }: { className?: string }) {
     const router = useRouter();
+    // Başlıkta iki örnek var (masaüstü ve mobil); sabit bir id ikisinde de tekrarlanır
+    // ve <label for> yanlış alana bağlanır.
+    const inputId = useId();
     const [term, setTerm] = useState('');
     const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
     const [open, setOpen] = useState(false);
@@ -68,28 +71,36 @@ export default function SearchBar({ className = '' }: { className?: string }) {
     );
 
     return (
-        <div ref={containerRef} className={`relative ${className}`}>
-            <form onSubmit={submit} role="search">
-                <label htmlFor="site-search" className="sr-only">Ürün ara</label>
-                <input
-                    id="site-search"
-                    type="search"
-                    value={term}
-                    onChange={(event) => setTerm(event.target.value)}
-                    onFocus={() => hasResults && setOpen(true)}
-                    placeholder="Ürün, kategori veya marka ara"
-                    autoComplete="off"
-                    className="field-input pr-10"
-                />
-                <button type="submit" aria-label="Ara" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-400 hover:text-brand-600">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                        <circle cx="11" cy="11" r="7" />
-                        <path d="m20 20-3.5-3.5" />
-                    </svg>
-                </button>
-            </form>
+        // Dış kap yalnızca dolgu/görünürlük taşır. Konumlandırma bağlamı içteki
+        // sarmalayıcıdadır: aksi halde ikon, kabın px-4 dolgusuna göre hizalanıp
+        // input'un sağ kenarından taşar ve pb-3 yüzünden dikeyde de kayar.
+        <div ref={containerRef} className={className}>
+            <div className="relative">
+                <form onSubmit={submit} role="search" className="relative">
+                    <label htmlFor={inputId} className="sr-only">Ürün ara</label>
+                    <input
+                        id={inputId}
+                        type="search"
+                        value={term}
+                        onChange={(event) => setTerm(event.target.value)}
+                        onFocus={() => hasResults && setOpen(true)}
+                        placeholder="Ürün, kategori veya marka ara"
+                        autoComplete="off"
+                        className="field-input pr-11"
+                    />
+                    <button
+                        type="submit"
+                        aria-label="Ara"
+                        className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 hover:text-brand-600"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                            <circle cx="11" cy="11" r="7" />
+                            <path d="m20 20-3.5-3.5" />
+                        </svg>
+                    </button>
+                </form>
 
-            {open && hasResults && suggestions && (
+                {open && hasResults && suggestions && (
                 <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
                     {suggestions.products.length > 0 && (
                         <ul className="max-h-80 overflow-y-auto">
@@ -149,7 +160,8 @@ export default function SearchBar({ className = '' }: { className?: string }) {
                         &ldquo;{term.trim()}&rdquo; için tüm sonuçlar
                     </Link>
                 </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

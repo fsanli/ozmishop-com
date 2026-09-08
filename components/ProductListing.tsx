@@ -49,119 +49,158 @@ export default async function ProductListing({
     const { facets, pagination, items } = listing;
     const hasFilters = state.values.length > 0 || state.inStock || state.minPrice !== undefined || state.maxPrice !== undefined;
 
+    // Filtre içeriği tek yerde durur; mobilde <details> içinde katlanır,
+    // masaüstünde yapışkan kenar çubuğunda açık görünür.
+    const filterBody = (
+        <>
+                <Link
+                    href={buildHref(basePath, searchParams, { stokta: state.inStock ? undefined : '1' })}
+                    className={`mb-4 flex items-center gap-2 text-sm ${state.inStock ? 'font-medium text-brand-700' : 'text-slate-600'}`}
+                >
+                    <span
+                        aria-hidden
+                        className={`flex h-4 w-4 items-center justify-center rounded border ${
+                            state.inStock ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300'
+                        }`}
+                    >
+                        {state.inStock ? '✓' : ''}
+                    </span>
+                    Sadece stoktakiler
+                </Link>
+
+                {facets?.brands && facets.brands.length > 1 && !baseQuery.brand && (
+                    <div className="mb-4 border-t border-slate-100 pt-4">
+                        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Marka</h3>
+                        <ul className="space-y-1">
+                            {facets.brands.map((brand) => (
+                                <li key={brand.id}>
+                                    <Link
+                                        href={buildHref(basePath, searchParams, { marka: brand.slug })}
+                                        className="flex items-center justify-between text-sm text-slate-600 hover:text-brand-600"
+                                    >
+                                        <span>{brand.name}</span>
+                                        <span className="text-xs text-slate-400">{brand.count}</span>
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {facets?.variantKeys.map((key) => (
+                    <div key={key.id} className="mb-4 border-t border-slate-100 pt-4">
+                        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{key.name}</h3>
+                        {key.inputType === 'color' ? (
+                            <div className="flex flex-wrap gap-2">
+                                {key.values.map((value) => {
+                                    const active = state.values.includes(value.id);
+                                    return (
+                                        <Link
+                                            key={value.id}
+                                            href={toggleValueHref(basePath, searchParams, value.id)}
+                                            title={`${value.name} (${value.count})`}
+                                            aria-label={value.name}
+                                            className={`h-7 w-7 rounded-full border-2 transition ${
+                                                active ? 'border-brand-500 ring-2 ring-brand-200' : 'border-slate-200'
+                                            }`}
+                                            style={{ backgroundColor: value.hexCode || '#e2e2e2' }}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <ul className="space-y-1">
+                                {key.values.map((value) => {
+                                    const active = state.values.includes(value.id);
+                                    return (
+                                        <li key={value.id}>
+                                            <Link
+                                                href={toggleValueHref(basePath, searchParams, value.id)}
+                                                className={`flex items-center justify-between text-sm ${
+                                                    active ? 'font-medium text-brand-700' : 'text-slate-600 hover:text-brand-600'
+                                                }`}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span
+                                                        aria-hidden
+                                                        className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
+                                                            active ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300'
+                                                        }`}
+                                                    >
+                                                        {active ? '✓' : ''}
+                                                    </span>
+                                                    {value.name}
+                                                </span>
+                                                <span className="text-xs text-slate-400">{value.count}</span>
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                    </div>
+                ))}
+
+                {facets?.price && facets.price.max > 0 && (
+                    <div className="border-t border-slate-100 pt-4 text-xs text-slate-500">
+                        Fiyat aralığı: {formatPrice(facets.price.min)} – {formatPrice(facets.price.max)}
+                    </div>
+                )}
+        </>
+    );
+
+    const clearLink = hasFilters ? (
+        <Link href={basePath} className="text-xs text-brand-600 hover:underline">Temizle</Link>
+    ) : null;
+
+    const activeCount = state.values.length + (state.inStock ? 1 : 0)
+        + (state.minPrice !== undefined ? 1 : 0) + (state.maxPrice !== undefined ? 1 : 0);
+
     return (
-        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-            <aside className="lg:sticky lg:top-36 lg:self-start">
+        // min-w-0: ızgara/flex çocukları varsayılan olarak `min-width: auto` alır ve
+        // içeriğinin min-content genişliğinin altına inemez. Sıralama şeridindeki
+        // `whitespace-nowrap` bağlantılar 717px min-content ürettiği için kolon
+        // mobilde 390px yerine 717px'e şişiyor, sayfa yatay taşıyor ve kartlar
+        // ızgaradan taşacak kadar genişliyordu.
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+            {/* Mobil: katlanır filtre. Açık haldeyken tüm facet'ler ürünleri
+                ekranlarca aşağı ittiği için varsayılan kapalıdır. */}
+            <details className="card group min-w-0 p-4 lg:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center gap-2">
+                        Filtreler
+                        {activeCount > 0 && <span className="badge badge-brand">{activeCount}</span>}
+                    </span>
+                    <svg
+                        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                        className="text-slate-400 transition group-open:rotate-180" aria-hidden
+                    >
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
+                </summary>
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                    {clearLink && <div className="mb-3 text-right">{clearLink}</div>}
+                    {filterBody}
+                </div>
+            </details>
+
+            {/* Masaüstü: yapışkan kenar çubuğu */}
+            <aside className="hidden min-w-0 lg:sticky lg:top-36 lg:block lg:self-start">
                 <div className="card p-4">
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-sm font-semibold text-slate-900">Filtreler</h2>
-                        {hasFilters && (
-                            <Link href={basePath} className="text-xs text-brand-600 hover:underline">Temizle</Link>
-                        )}
+                        {clearLink}
                     </div>
-
-                    <Link
-                        href={buildHref(basePath, searchParams, { stokta: state.inStock ? undefined : '1' })}
-                        className={`mb-4 flex items-center gap-2 text-sm ${state.inStock ? 'font-medium text-brand-700' : 'text-slate-600'}`}
-                    >
-                        <span
-                            aria-hidden
-                            className={`flex h-4 w-4 items-center justify-center rounded border ${
-                                state.inStock ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300'
-                            }`}
-                        >
-                            {state.inStock ? '✓' : ''}
-                        </span>
-                        Sadece stoktakiler
-                    </Link>
-
-                    {facets?.brands && facets.brands.length > 1 && !baseQuery.brand && (
-                        <div className="mb-4 border-t border-slate-100 pt-4">
-                            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Marka</h3>
-                            <ul className="space-y-1">
-                                {facets.brands.map((brand) => (
-                                    <li key={brand.id}>
-                                        <Link
-                                            href={buildHref(basePath, searchParams, { marka: brand.slug })}
-                                            className="flex items-center justify-between text-sm text-slate-600 hover:text-brand-600"
-                                        >
-                                            <span>{brand.name}</span>
-                                            <span className="text-xs text-slate-400">{brand.count}</span>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {facets?.variantKeys.map((key) => (
-                        <div key={key.id} className="mb-4 border-t border-slate-100 pt-4">
-                            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{key.name}</h3>
-                            {key.inputType === 'color' ? (
-                                <div className="flex flex-wrap gap-2">
-                                    {key.values.map((value) => {
-                                        const active = state.values.includes(value.id);
-                                        return (
-                                            <Link
-                                                key={value.id}
-                                                href={toggleValueHref(basePath, searchParams, value.id)}
-                                                title={`${value.name} (${value.count})`}
-                                                aria-label={value.name}
-                                                className={`h-7 w-7 rounded-full border-2 transition ${
-                                                    active ? 'border-brand-500 ring-2 ring-brand-200' : 'border-slate-200'
-                                                }`}
-                                                style={{ backgroundColor: value.hexCode || '#e2e2e2' }}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <ul className="space-y-1">
-                                    {key.values.map((value) => {
-                                        const active = state.values.includes(value.id);
-                                        return (
-                                            <li key={value.id}>
-                                                <Link
-                                                    href={toggleValueHref(basePath, searchParams, value.id)}
-                                                    className={`flex items-center justify-between text-sm ${
-                                                        active ? 'font-medium text-brand-700' : 'text-slate-600 hover:text-brand-600'
-                                                    }`}
-                                                >
-                                                    <span className="flex items-center gap-2">
-                                                        <span
-                                                            aria-hidden
-                                                            className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
-                                                                active ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300'
-                                                            }`}
-                                                        >
-                                                            {active ? '✓' : ''}
-                                                        </span>
-                                                        {value.name}
-                                                    </span>
-                                                    <span className="text-xs text-slate-400">{value.count}</span>
-                                                </Link>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
-                        </div>
-                    ))}
-
-                    {facets?.price && facets.price.max > 0 && (
-                        <div className="border-t border-slate-100 pt-4 text-xs text-slate-500">
-                            Fiyat aralığı: {formatPrice(facets.price.min)} – {formatPrice(facets.price.max)}
-                        </div>
-                    )}
+                    {filterBody}
                 </div>
             </aside>
 
-            <div>
+            <div className="min-w-0">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <p className="text-sm text-slate-500">
                         <strong className="font-semibold text-slate-900">{pagination.total}</strong> ürün bulundu
                     </p>
-                    <div className="no-scrollbar flex gap-1 overflow-x-auto">
+                    <div className="no-scrollbar -mx-1 flex max-w-full gap-1 overflow-x-auto px-1">
                         {SORT_OPTIONS.map((option) => (
                             <Link
                                 key={option.value}
