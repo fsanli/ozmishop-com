@@ -2,9 +2,11 @@ import type { HomeSection } from '@/lib/types';
 import BannerBlock from './BannerBlock';
 import BrandStrip from './BrandStrip';
 import CategoryGrid from './CategoryGrid';
+import GuidePromo from './GuidePromo';
 import HeroSlider from './HeroSlider';
 import ProductGroupSection from './ProductGroupSection';
 import SectionShell from './SectionShell';
+import TrustStrip, { type TrustItem } from './TrustStrip';
 
 /**
  * Panelden yönetilen anasayfa düzeni. Bilinmeyen bir tip `null` döner: panel yeni
@@ -14,7 +16,17 @@ export default function HomeSections({ sections }: { sections: HomeSection[] }) 
     return (
         <>
             {sections.map((section, index) => {
-                const settings = section.settings as { columns?: number; groupCode?: string; limit?: number; layout?: 'carousel' | 'grid'; html?: string };
+                const settings = section.settings as {
+                    columns?: number;
+                    groupCode?: string;
+                    limit?: number;
+                    layout?: 'carousel' | 'grid';
+                    html?: string;
+                    items?: TrustItem[];
+                    headline?: string;
+                    body?: string;
+                    buttonText?: string;
+                };
 
                 switch (section.type) {
                     case 'hero_slider':
@@ -54,6 +66,19 @@ export default function HomeSections({ sections }: { sections: HomeSection[] }) 
                             />
                         );
                     }
+
+                    case 'trust_strip':
+                        return <TrustStrip key={section.id} items={settings.items} />;
+
+                    case 'guide_promo':
+                        return (
+                            <GuidePromo
+                                key={section.id}
+                                headline={settings.headline}
+                                body={settings.body}
+                                buttonText={settings.buttonText}
+                            />
+                        );
 
                     case 'html':
                         if (!settings.html) return null;

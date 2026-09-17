@@ -5,7 +5,7 @@ export const site = {
     title: 'ozmishop — Yetişkin Ürünleri',
     description:
         'Gizli paketleme ve güvenli ödeme ile yetişkinlere özel ürünler. Orijinal, faturalı ve hızlı kargo.',
-    url: (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3200').replace(/\/$/, ''),
+    url: (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3201').replace(/\/$/, ''),
     locale: 'tr_TR',
     // robots.ts yalnızca bu alan adlarında taramaya izin verir; test ortamları indekslenmez.
     canonicalHosts: ['ozmishop.com', 'www.ozmishop.com'],
@@ -21,7 +21,49 @@ export const routes = {
     search: (q: string) => `/arama?q=${encodeURIComponent(q)}`,
     searchPage: '/arama',
     page: (slug: string) => `/sayfa/${slug}`,
+
+    // --- v2: alışveriş akışı ---
+    cart: '/sepet',
+    checkout: '/odeme',
+    order: (no: string) => `/siparis/${no}`,
+
+    // --- v2: hesap ---
+    login: '/giris',
+    register: '/giris?ekran=kayit',
+    account: '/hesabim',
+    accountOrders: '/hesabim/siparisler',
+    accountOrder: (no: string) => `/hesabim/siparisler/${no}`,
+    favorites: '/hesabim/favoriler',
+    addresses: '/hesabim/adresler',
+    accountPoints: '/hesabim/puanlar',
+    accountPrivacy: '/hesabim/gizlilik',
+    accountReviews: '/hesabim/yorumlar',
+    accountReturns: '/hesabim/iadeler',
+    accountNotifications: '/hesabim/bildirimler',
+    accountSecurity: '/hesabim/guvenlik',
+
+    // --- v2: içerik ---
+    journal: '/gunluk',
+    post: (slug: string) => `/gunluk/${slug}`,
+    /** Konu filtresi indeks üzerinde çalışır; ayrı bir konu rotası yok. */
+    topic: (slug: string) => `/gunluk?konu=${encodeURIComponent(slug)}`,
+    guide: '/rehber',
 } as const;
+
+/**
+ * Hızlı çıkış hedefi. Ziyaretçi tek tuşla nötr bir sayfaya geçer; bu adres
+ * geçmişe YAZILMAZ (PanicExit location.replace kullanır).
+ */
+export const PANIC_EXIT_URL = 'https://www.google.com/search?q=hava+durumu';
+
+/** Footer'da "Yardım" sütununa düşecek kurumsal sayfalar; kalanı "Kurumsal". */
+export const FOOTER_HELP_SLUGS = [
+    'kargo-ve-teslimat',
+    'iade-ve-degisim',
+    'siparis-takibi',
+    'sikca-sorulan-sorular',
+    'iletisim',
+];
 
 /** Panelden gelen link adresini güvenli hale getirir: yalnızca site içi yollar. */
 export function safeLink(url: string | null | undefined): string | null {

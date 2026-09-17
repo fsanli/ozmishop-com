@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-a40d5f18-8637-4bb8-b3e5-f8e2ba3f3ec9/styles.css">
+<script src="_ds/modernist-a40d5f18-8637-4bb8-b3e5-f8e2ba3f3ec9/_ds_bundle.js"></script>
+<style>
+  body { margin:0; background:#f3f2f2; -webkit-font-smoothing:antialiased; }
+  a { color:#201e1d; text-decoration:none; }
+  a:hover { color:#ec3013; }
+</style>
+</helmet>
+
+<div style="font-family:Archivo,system-ui,sans-serif;color:#201e1d;background:#f3f2f2;min-height:100%">
+
+  <div style="background:#201e1d;color:#f3f2f2">
+    <div style="max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;align-items:center;gap:16px;min-height:34px;flex-wrap:wrap">
+      <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.7">ozmishop Günlük — reklamsız, editör onaylı</span>
+      <a href="01 Anasayfa.dc.html" style="margin-left:auto;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#f3f2f2;display:inline-flex;align-items:center;gap:6px" style-hover="color:#ff9783">
+        Mağazaya dön
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+      </a>
+    </div>
+  </div>
+
+  <header style="border-bottom:2px solid rgba(32,30,29,.4);background:#f3f2f2">
+    <div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vw,34px) clamp(16px,4vw,40px) 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <a href="08 Blog.dc.html" onClick="{{ goHome }}" style="display:block">
+        <span style="display:block;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:rgba(32,30,29,.5)">ozmishop</span>
+        <span style="display:block;font-size:clamp(34px,6vw,62px);line-height:.9;letter-spacing:-.04em;font-weight:800;margin-top:4px">Günlük<span style="color:#ec3013">.</span></span>
+      </a>
+      <p style="margin:0;max-width:34ch;font-size:13px;line-height:1.5;color:rgba(32,30,29,.6);text-align:right">Malzeme, hijyen, güvenlik ve ilişki üzerine kısa yazılar. Ürün satmak için değil, doğru bilgi vermek için yazılır.</p>
+    </div>
+    <nav style="border-top:1px solid rgba(32,30,29,.22);overflow-x:auto;scrollbar-width:none">
+      <div style="max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;white-space:nowrap">
+        <sc-for list="{{ topics }}" as="t" hint-placeholder-count="6">
+          <a href="#" style="padding:12px 16px 12px 0;margin-right:16px;font-size:13px;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">{{ t }}</a>
+        </sc-for>
+      </div>
+    </nav>
+  </header>
+
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <section style="border-bottom:2px solid rgba(32,30,29,.4)">
+        <div style="max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;flex-wrap:wrap">
+          <a href="#" onClick="{{ goPost }}" style="flex:999 1 420px;min-width:0;padding:clamp(24px,4vw,48px) clamp(20px,3vw,44px) clamp(24px,4vw,48px) 0;border-right:1px solid rgba(32,30,29,.22);display:block">
+            <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ec3013;font-weight:800">Malzeme · 6 dk okuma</span>
+            <h1 style="font-size:clamp(30px,5vw,58px);line-height:1;letter-spacing:-.035em;margin:16px 0 0;max-width:20ch;text-wrap:balance">Vücut güvenli silikon nasıl anlaşılır?</h1>
+            <p style="margin:18px 0 0;max-width:56ch;font-size:15.5px;line-height:1.6;color:rgba(32,30,29,.7)">Etikette “body-safe” yazması hiçbir şey ifade etmez — bu bir sertifika değil, pazarlama ifadesidir. Bakılması gereken üç işaret, kaçınılması gereken üç malzeme ve evde yapabileceğiniz basit bir koku testi.</p>
+            <div class="grayscale" style="margin-top:24px;aspect-ratio:16/9;background:#dcdada;border:1px solid rgba(32,30,29,.22);display:grid;place-items:center">
+              <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(32,30,29,.35)">Kapak görseli — siyah beyaz</span>
+            </div>
+          </a>
+
+          <div style="flex:1 1 260px;max-width:360px;min-width:0;padding:clamp(24px,4vw,48px) 0 clamp(24px,4vw,48px) clamp(20px,3vw,44px);display:flex;flex-direction:column">
+            <h2 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 4px;color:rgba(32,30,29,.5)">Bu hafta</h2>
+            <sc-for list="{{ sidebarPosts }}" as="p" hint-placeholder-count="4">
+              <a href="#" onClick="{{ goPost }}" style="display:block;padding:16px 0;border-bottom:1px solid rgba(32,30,29,.2)">
+                <span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#ec3013;font-weight:800">{{ p.tag }}</span>
+                <h3 style="font-size:17px;line-height:1.2;letter-spacing:-.02em;margin:6px 0 0">{{ p.title }}</h3>
+                <span style="font-size:11.5px;color:rgba(32,30,29,.5);display:block;margin-top:6px">{{ p.read }}</span>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section style="border-bottom:2px solid rgba(32,30,29,.4)">
+        <div style="max-width:1240px;margin:0 auto;padding:clamp(28px,4vw,48px) clamp(16px,4vw,40px)">
+          <h2 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 22px;color:rgba(32,30,29,.5)">Tüm yazılar</h2>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:clamp(18px,2.6vw,32px)">
+            <sc-for list="{{ posts }}" as="p" hint-placeholder-count="6">
+              <a href="#" onClick="{{ goPost }}" style="display:flex;flex-direction:column;border:1px solid rgba(32,30,29,.22);background:#f3f2f2" style-hover="border-color:#201e1d">
+                <div class="grayscale" style="aspect-ratio:16/10;background:#dcdada;border-bottom:1px solid rgba(32,30,29,.22);display:grid;place-items:center">
+                  <span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(32,30,29,.35)">Yazı görseli</span>
+                </div>
+                <div style="padding:18px 20px 22px;display:flex;flex-direction:column;gap:9px;flex:1">
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#ec3013;font-weight:800">{{ p.tag }}</span>
+                    <span style="font-size:11px;color:rgba(32,30,29,.45)">{{ p.read }}</span>
+                  </div>
+                  <h3 style="font-size:19px;line-height:1.18;letter-spacing:-.02em;margin:0">{{ p.title }}</h3>
+                  <p style="margin:0;font-size:13.5px;line-height:1.55;color:rgba(32,30,29,.62);flex:1">{{ p.excerpt }}</p>
+                  <span style="font-size:11.5px;color:rgba(32,30,29,.45);margin-top:4px">{{ p.date }}</span>
+                </div>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section style="background:#ec3013;color:#f3f2f2;border-bottom:2px solid rgba(32,30,29,.4)">
+        <div style="max-width:1240px;margin:0 auto;padding:clamp(28px,4.5vw,52px) clamp(16px,4vw,40px);display:flex;flex-wrap:wrap;gap:clamp(20px,4vw,56px);align-items:center">
+          <div style="flex:999 1 320px;min-width:0">
+            <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;opacity:.8">Ayda bir e-posta</span>
+            <h2 style="font-size:clamp(26px,4vw,46px);line-height:1;letter-spacing:-.03em;margin:12px 0 0;max-width:20ch">Reklam yok. Ayda bir yazı, o kadar.</h2>
+            <p style="margin:14px 0 0;max-width:50ch;font-size:14.5px;line-height:1.55;opacity:.9">E-postanın konu satırı her zaman nötrdür: “Günlük — Eylül”. Ürün adı ya da görsel içermez.</p>
+          </div>
+          <div style="flex:1 1 280px;min-width:0;display:flex;gap:0;flex-wrap:wrap">
+            <input type="email" placeholder="ornek@eposta.com" style="flex:1 1 180px;min-width:0;border:1px solid rgba(243,242,242,.5);background:transparent;padding:15px 16px;font:inherit;font-size:15px;color:#f3f2f2;outline:none">
+            <button type="button" style="flex:none;background:#201e1d;color:#f3f2f2;border:0;font:inherit;font-weight:800;font-size:15px;padding:15px 22px;cursor:pointer" style-hover="background:#0f0e0e">Kaydol</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPost }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="max-width:1240px;margin:0 auto;padding:16px clamp(16px,4vw,40px) 0">
+        <button type="button" onClick="{{ goHome }}" style="font:inherit;font-size:12.5px;background:none;border:0;padding:0;cursor:pointer;color:rgba(32,30,29,.6)" style-hover="color:#ec3013">← Günlük</button>
+      </div>
+
+      <article>
+        <header style="border-bottom:2px solid rgba(32,30,29,.4)">
+          <div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vw,36px) clamp(16px,4vw,40px) clamp(24px,3.5vw,40px)">
+            <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ec3013;font-weight:800">Malzeme</span>
+            <h1 style="font-size:clamp(32px,6vw,72px);line-height:.96;letter-spacing:-.04em;margin:16px 0 0;max-width:18ch;text-wrap:balance">Vücut güvenli silikon nasıl anlaşılır?</h1>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:24px;flex-wrap:wrap;font-size:12.5px;color:rgba(32,30,29,.58)">
+              <span><strong style="font-weight:800;color:#201e1d">Dr. Ece Yalın</strong> · Danışman editör</span>
+              <span style="opacity:.4">/</span>
+              <span>4 Eylül 2026</span>
+              <span style="opacity:.4">/</span>
+              <span>6 dk okuma</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="grayscale" style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vw,32px) clamp(16px,4vw,40px) 0">
+          <div style="aspect-ratio:21/9;background:#dcdada;border:1px solid rgba(32,30,29,.22);display:grid;place-items:center">
+            <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(32,30,29,.35)">Kapak görseli — siyah beyaz</span>
+          </div>
+        </div>
+
+        <div style="max-width:1240px;margin:0 auto;padding:clamp(24px,4vw,48px) clamp(16px,4vw,40px);display:flex;flex-wrap:wrap;gap:clamp(24px,4vw,64px);align-items:flex-start">
+          <div style="flex:999 1 420px;min-width:0;max-width:680px">
+            <p style="margin:0 0 20px;font-size:19px;line-height:1.55;letter-spacing:-.01em;color:#201e1d;font-weight:800">Etikette “body-safe” yazması hiçbir şey ifade etmez. Bu bir sertifika değil, pazarlama ifadesidir — ve Türkiye’de bu ifadeyi kullanmak için hiçbir belge gerekmez.</p>
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.72;color:rgba(32,30,29,.82)">Silikon, doğru üretildiğinde gözeneksizdir. Gözeneksiz olması, yüzeyinde bakterinin tutunabileceği mikro boşluk bulunmaması demektir; bu yüzden ılık su ve sabunla yıkanması yeterlidir. Sorun, piyasadaki ürünlerin bir kısmının silikon değil, silikon <em>görünümlü</em> TPE ya da jel olmasıdır.</p>
+            <h2 style="font-size:26px;line-height:1.12;letter-spacing:-.025em;margin:34px 0 14px">Bakılması gereken üç işaret</h2>
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.72;color:rgba(32,30,29,.82)">Birincisi kokudur: gerçek silikon kokusuzdur. Kutuyu açtığınızda plastik ya da vanilya benzeri tatlımsı bir koku alıyorsanız, ürün büyük olasılıkla ftalat içeren bir yumuşatıcıyla üretilmiştir.</p>
+            <div style="border-left:3px solid #ec3013;padding:4px 0 4px 20px;margin:28px 0">
+              <p style="margin:0;font-size:21px;line-height:1.4;letter-spacing:-.02em;font-weight:800">Gerçek silikon kokmaz, yapışmaz ve toz çekmez. Üçünden biri varsa etikette ne yazdığının önemi yok.</p>
+            </div>
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.72;color:rgba(32,30,29,.82)">İkincisi yüzey davranışıdır. Silikon ürünler zamanla hafif toz çeker ama yapışkanlaşmaz. Elinize yapışıyor gibi hissettiren, birbirine değdiğinde deforme olan ürünler jel karışımdır ve tek başına saklanmalıdır.</p>
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.72;color:rgba(32,30,29,.82)">Üçüncüsü kayganlaştırıcı uyumudur. Silikon bazlı kayganlaştırıcı, silikon yüzeyi kimyasal olarak yumuşatır ve kalıcı hasar bırakır. Bu nedenle silikon ürünlerde <strong style="font-weight:800;color:#201e1d">yalnızca su bazlı</strong> kayganlaştırıcı kullanılır — ürün sayfalarımızda bu bilgi teknik künyede ayrı bir satır olarak yazar.</p>
+
+            <h2 style="font-size:26px;line-height:1.12;letter-spacing:-.025em;margin:34px 0 14px">Kaçınılması gereken malzemeler</h2>
+            <ul style="margin:0 0 20px;padding-left:20px;font-size:16px;line-height:1.8;color:rgba(32,30,29,.82)">
+              <li><strong style="font-weight:800;color:#201e1d">Jelly / PVC</strong> — gözenekli, ftalat içerebilir, dezenfekte edilemez.</li>
+              <li><strong style="font-weight:800;color:#201e1d">TPE / TPR</strong> — gözenekli; yalnızca tek kullanıcıya uygundur.</li>
+              <li><strong style="font-weight:800;color:#201e1d">Kokulu ürünler</strong> — koku, çoğunlukla yumuşatıcıyı gizlemek içindir.</li>
+            </ul>
+            <p style="margin:0;font-size:16px;line-height:1.72;color:rgba(32,30,29,.82)">Ozmishop’ta sattığımız tüm ürünlerin malzeme bilgisi ürün sayfasındaki teknik künyede yazar. Emin olamadığınız bir ürün varsa müşteri hizmetlerine yazın — üretici belgesini paylaşırız.</p>
+
+            <div style="display:flex;align-items:center;gap:16px;margin-top:40px;padding-top:24px;border-top:2px solid rgba(32,30,29,.4);flex-wrap:wrap">
+              <div class="grayscale" style="width:60px;height:60px;flex:none;background:#dcdada;border:1px solid rgba(32,30,29,.22)"></div>
+              <div style="flex:1 1 220px;min-width:0">
+                <div style="font-size:15px;font-weight:800;letter-spacing:-.015em">Dr. Ece Yalın</div>
+                <p style="margin:4px 0 0;font-size:13px;line-height:1.5;color:rgba(32,30,29,.62)">Cinsel sağlık danışmanı. Günlük’teki tüm malzeme ve hijyen yazılarını inceler.</p>
+              </div>
+            </div>
+          </div>
+
+          <aside style="flex:1 1 260px;max-width:340px;min-width:0;display:flex;flex-direction:column;gap:24px">
+            <div style="border:2px solid rgba(32,30,29,.4)">
+              <div style="padding:14px 18px;background:#201e1d;color:#f3f2f2;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800">Yazıda geçen ürünler</div>
+              <sc-for list="{{ inlineProducts }}" as="p" hint-placeholder-count="3">
+                <a href="04 Urun Detay.dc.html" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid rgba(32,30,29,.18);align-items:center" style-hover="background:#eae9e9">
+                  <div style="width:48px;height:48px;flex:none;background:#fff;border:1px solid rgba(32,30,29,.2)"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(32,30,29,.5)">{{ p.brand }}</div>
+                    <div style="font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.25">{{ p.name }}</div>
+                  </div>
+                  <span style="font-size:13px;font-weight:800;font-variant-numeric:tabular-nums">{{ p.price }}</span>
+                </a>
+              </sc-for>
+            </div>
+
+            <div style="border-top:2px solid rgba(32,30,29,.4)">
+              <h2 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 0;color:rgba(32,30,29,.5)">İlgili yazılar</h2>
+              <sc-for list="{{ related }}" as="r" hint-placeholder-count="3">
+                <a href="#" onClick="{{ goPost }}" style="display:block;padding:14px 0;border-bottom:1px solid rgba(32,30,29,.2)">
+                  <h3 style="font-size:16px;line-height:1.22;letter-spacing:-.018em;margin:0">{{ r.title }}</h3>
+                  <span style="font-size:11.5px;color:rgba(32,30,29,.5);display:block;margin-top:5px">{{ r.tag }} · {{ r.read }}</span>
+                </a>
+              </sc-for>
+            </div>
+          </aside>
+        </div>
+      </article>
+    </div>
+  </sc-if>
+
+  <footer style="font-family:Archivo,system-ui,sans-serif;background:#201e1d;color:#f3f2f2">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(32px,4.5vw,56px) clamp(16px,4vw,40px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:clamp(24px,4vw,48px)">
+      <div>
+        <div style="font-weight:800;font-size:22px;letter-spacing:-.03em">ozmishop<span style="color:#ec3013">.</span></div>
+        <p style="margin:12px 0 0;font-size:13px;line-height:1.55;opacity:.62;max-width:34ch">Yetişkinlere özel ürünler. Gizli paketleme, nötr ekstre adı ve 3D Secure ödeme.</p>
+        <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+          <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(243,242,242,.3);padding:5px 9px">18+</span>
+          <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(243,242,242,.3);padding:5px 9px">RTA etiketli</span>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px;opacity:.55;font-weight:800">Alışveriş</h3>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Tüm kategoriler</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Fırsat ürünleri</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Yeni gelenler</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Hediye setleri</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Tüm markalar</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px;opacity:.55;font-weight:800">Yardım</h3>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Kargo ve teslimat</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">İade ve değişim</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Gizli paketleme</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Sıkça sorulanlar</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">İletişim</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px;opacity:.55;font-weight:800">Kurumsal</h3>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Hakkımızda</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Mesafeli satış sözleşmesi</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Gizlilik politikası</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">KVKK aydınlatma metni</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Çerez politikası</a></li>
+        </ul>
+      </div>
+    </div>
+    <div style="border-top:1px solid rgba(243,242,242,.16)">
+      <div style="max-width:1440px;margin:0 auto;padding:16px clamp(16px,4vw,40px);display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;font-size:11.5px;opacity:.5">
+        <span>© 2026 ozmishop. Tüm hakları saklıdır.</span>
+        <span>Bu site yalnızca 18 yaşından büyükler içindir.</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { view: 'home' };
+  renderVals() {
+    return {
+      isHome: this.state.view === 'home',
+      isPost: this.state.view === 'post',
+      goPost: (e) => { if (e) e.preventDefault(); this.setState({ view: 'post' }); window.scrollTo(0, 0); },
+      goHome: (e) => { if (e) e.preventDefault(); this.setState({ view: 'home' }); window.scrollTo(0, 0); },
+      topics: ['Tümü', 'Malzeme', 'Hijyen', 'Başlangıç', 'Çiftler', 'Güvenlik', 'Sorular'],
+      sidebarPosts: [
+        { tag: 'Hijyen', title: 'Temizlik: ne, ne sıklıkla, neyle?', read: '5 dk okuma' },
+        { tag: 'Başlangıç', title: 'İlk ürününü seçerken sorulacak 4 soru', read: '4 dk okuma' },
+        { tag: 'Güvenlik', title: 'Su geçirmezlik sınıfları: IPX4 mü, IPX7 mi?', read: '3 dk okuma' },
+        { tag: 'Çiftler', title: 'Birlikte konuşmayı kolaylaştıran üç cümle', read: '7 dk okuma' }
+      ],
+      posts: [
+        { tag: 'Hijyen', read: '5 dk', date: '1 Eylül 2026', title: 'Temizlik: ne, ne sıklıkla, neyle?', excerpt: 'Malzemeye göre değişen temizlik yöntemleri, saklama koşulları ve ne zaman değiştirmek gerektiği.' },
+        { tag: 'Başlangıç', read: '4 dk', date: '27 Ağustos 2026', title: 'İlk ürününü seçerken sorulacak 4 soru', excerpt: 'Ses, boyut, şarj ve su geçirmezlik. İlk alışverişte önemli olan tek şey doğru beklenti.' },
+        { tag: 'Güvenlik', read: '3 dk', date: '22 Ağustos 2026', title: 'Su geçirmezlik sınıfları: IPX4 mü, IPX7 mi?', excerpt: 'Duşta kullanmakla küvete batırmak farklı şeylerdir. Etiketteki rakamın gerçekte ne söylediği.' },
+        { tag: 'Çiftler', read: '7 dk', date: '14 Ağustos 2026', title: 'Birlikte konuşmayı kolaylaştıran üç cümle', excerpt: 'Konuyu açmanın en zor kısmı ilk cümledir. Terapistlerin önerdiği, suçlamayan üç açılış.' },
+        { tag: 'Malzeme', read: '5 dk', date: '8 Ağustos 2026', title: 'Su bazlı mı, silikon bazlı mı kayganlaştırıcı?', excerpt: 'Hangi ürünle hangisi kullanılır, prezervatifle uyumu nasıldır, cilt hassasiyetinde ne seçilir.' },
+        { tag: 'Sorular', read: '6 dk', date: '30 Temmuz 2026', title: 'Müşteri hizmetlerine en çok sorulan 12 soru', excerpt: 'Kargo gizliliğinden garanti sürecine kadar, dolaylı yoldan sorulan ama merak edilen her şey.' }
+      ],
+      inlineProducts: [
+        { brand: 'LELO', name: 'Sona 2 klitoral stimülatör', price: '4.290,00 ₺' },
+        { brand: 'Pjur', name: 'Su bazlı kayganlaştırıcı, 100 ml', price: '389,00 ₺' },
+        { brand: 'Ozmi Basics', name: 'Silikon temizleme spreyi', price: '229,00 ₺' }
+      ],
+      related: [
+        { title: 'Temizlik: ne, ne sıklıkla, neyle?', tag: 'Hijyen', read: '5 dk' },
+        { title: 'Su bazlı mı, silikon bazlı mı kayganlaştırıcı?', tag: 'Malzeme', read: '5 dk' },
+        { title: 'Su geçirmezlik sınıfları: IPX4 mü, IPX7 mi?', tag: 'Güvenlik', read: '3 dk' }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

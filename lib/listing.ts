@@ -25,6 +25,10 @@ export const many = (value: string | string[] | undefined): string[] => {
 
 export interface ListingState {
     values: number[];
+    /** "malzeme:tibbi-silikon" biçiminde künye seçimleri */
+    specs: string[];
+    /** "ses-seviyesi:30:45" biçiminde künye aralıkları */
+    specRanges: string[];
     minPrice?: number;
     maxPrice?: number;
     inStock: boolean;
@@ -38,6 +42,8 @@ export function readListingParams(searchParams: SearchParams): ListingState {
     const sort = one(searchParams.sirala) ?? 'featured';
     return {
         values: many(searchParams.secim).map(Number).filter((value) => Number.isFinite(value) && value > 0),
+        specs: many(searchParams.ozellik).filter((item) => /^[a-z0-9-]+:[a-z0-9-]+$/.test(item)),
+        specRanges: many(searchParams.aralik).filter((item) => /^[a-z0-9-]+:[0-9.,]*:[0-9.,]*$/.test(item)),
         minPrice: Number(one(searchParams.min)) || undefined,
         maxPrice: Number(one(searchParams.max)) || undefined,
         inStock: one(searchParams.stokta) === '1',
@@ -79,6 +85,67 @@ export function toggleValueHref(basePath: string, searchParams: SearchParams, va
     return text ? `${basePath}?${text}` : basePath;
 }
 
+/**
+ * Künye seçeneğini ekler/çıkarır. Varyant değerleriyle AYRI parametre kullanır
+ * (`ozellik` vs `secim`): ikisi farklı id uzayı, karıştırmak çakışma üretir.
+ */
+export function toggleSpecHref(
+    basePath: string,
+    searchParams: SearchParams,
+    definitionSlug: string,
+    optionSlug: string,
+): string {
+    const token = `${definitionSlug}:${optionSlug}`;
+    const current = many(searchParams.ozellik);
+    const next = current.includes(token) ? current.filter((item) => item !== token) : [...current, token];
+
+    const search = new URLSearchParams();
+    Object.entries(searchParams).forEach(([key, value]) => {
+        if (key === 'ozellik' || key === 'sayfa') return;
+        many(value).forEach((item) => search.append(key, item));
+    });
+    next.forEach((item) => search.append('ozellik', item));
+    const text = search.toString();
+    return text ? `${basePath}?${text}` : basePath;
+}
+
+/** Sayısal kovayı ekler/çıkarır. Token biçimi "tanim:min:max". */
+export function toggleRangeHref(
+    basePath: string,
+    searchParams: SearchParams,
+    definitionSlug: string,
+    bucket: string,
+): string {
+    const token = `${definitionSlug}:${bucket}`;
+    const current = many(searchParams.aralik);
+    const next = current.includes(token) ? current.filter((item) => item !== token) : [...current, token];
+
+    const search = new URLSearchParams();
+    Object.entries(searchParams).forEach(([key, value]) => {
+        if (key === 'aralik' || key === 'sayfa') return;
+        many(value).forEach((item) => search.append(key, item));
+    });
+    next.forEach((item) => search.append('aralik', item));
+    const text = search.toString();
+    return text ? `${basePath}?${text}` : basePath;
+}
+
+/** Tüm filtreleri temizler; sıralama ve arama terimi korunur. */
+export function clearFiltersHref(basePath: string, searchParams: SearchParams): string {
+    const search = new URLSearchParams();
+    ['q', 'sirala'].forEach((key) => {
+        const value = one(searchParams[key]);
+        if (value) search.set(key, value);
+    });
+    const text = search.toString();
+    return text ? `${basePath}?${text}` : basePath;
+}
+
+export function hasActiveFilters(state: ListingState): boolean {
+    return state.values.length > 0 || state.specs.length > 0 || state.specRanges.length > 0
+        || state.inStock || state.minPrice !== undefined || state.maxPrice !== undefined;
+}
+
 export function pageHref(basePath: string, searchParams: SearchParams, page: number): string {
     const search = new URLSearchParams();
     Object.entries(searchParams).forEach(([key, value]) => {
@@ -97,7 +164,9 @@ export function pageHref(basePath: string, searchParams: SearchParams, page: num
  */
 export function shouldIndex(searchParams: SearchParams): boolean {
     if (one(searchParams.q)) return false;
-    if (many(searchParams.secim).length > 1) return false;
+    const facetCount = many(searchParams.secim).length + many(searchParams.ozellik).length;
+    if (facetCount > 1) return false;
+    if (many(searchParams.aralik).length > 0) return false;
     if (one(searchParams.min) || one(searchParams.max)) return false;
     const page = Number(one(searchParams.sayfa) ?? 1);
     if (Number.isFinite(page) && page > 1) return false;
@@ -121,4 +190,19 @@ export function selectedValueLabels(facets: Facets | undefined, values: number[]
         });
     });
     return labels;
+}
+
+/** Seçili künye filtrelerinin okunabilir adları ve kaldırma adresleri. */
+export function selectedSpecLabels(
+    facets: Facets | undefined,
+    specs: string[],
+): { token: string; name: string; colorKey: string }[] {
+    if (!facets?.specs) return [];
+    return specs.flatMap((token) => {
+        const [definitionSlug, optionSlug] = token.split(':');
+        const facet = facets.specs!.find((item) => item.slug === definitionSlug);
+        const option = facet?.options.find((item) => item.slug === optionSlug);
+        if (!facet || !option) return [];
+        return [{ token, name: option.name, colorKey: facet.colorKey }];
+    });
 }

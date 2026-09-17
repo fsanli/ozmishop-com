@@ -86,12 +86,12 @@ export default function SearchBar({ className = '' }: { className?: string }) {
                         onFocus={() => hasResults && setOpen(true)}
                         placeholder="Ürün, kategori veya marka ara"
                         autoComplete="off"
-                        className="field-input pr-11"
+                        className="field-input rounded-[14px] border-slate-900/9 bg-surface py-[11px] pr-11 text-[14.5px] hover:border-accent-500/35"
                     />
                     <button
                         type="submit"
                         aria-label="Ara"
-                        className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 hover:text-brand-600"
+                        className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] text-slate-500 transition-colors hover:text-accent-500"
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                             <circle cx="11" cy="11" r="7" />
@@ -101,7 +101,7 @@ export default function SearchBar({ className = '' }: { className?: string }) {
                 </form>
 
                 {open && hasResults && suggestions && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                <div className="absolute left-0 right-0 top-[calc(100%+9px)] z-[70] overflow-hidden rounded-[var(--radius-lg)] border border-slate-900/7 bg-surface shadow-[0_18px_48px_rgba(26,20,24,0.16)]">
                     {suggestions.products.length > 0 && (
                         <ul className="max-h-80 overflow-y-auto">
                             {suggestions.products.map((product) => (
@@ -109,18 +109,18 @@ export default function SearchBar({ className = '' }: { className?: string }) {
                                     <Link
                                         href={routes.product(product.slug)}
                                         onClick={() => setOpen(false)}
-                                        className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50"
+                                        className="flex items-center gap-3 px-3.5 py-2.5 transition-colors hover:bg-slate-100"
                                     >
-                                        <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-slate-100">
+                                        <span className="relative size-10 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-shelf">
                                             {product.image && (
                                                 <Image src={product.image} alt="" fill sizes="40px" className="object-cover" />
                                             )}
                                         </span>
                                         <span className="min-w-0 flex-1">
-                                            <span className="block truncate text-sm text-slate-900">{product.name}</span>
-                                            <span className="block text-xs text-slate-400">{product.brand}</span>
+                                            <span className="brand-line block truncate">{product.brand}</span>
+                                            <span className="block truncate text-[13.5px] text-slate-900">{product.name}</span>
                                         </span>
-                                        <span className="price text-sm">{formatPrice(product.price)}</span>
+                                        <span className="price shrink-0 text-[13px]">{formatPrice(product.price)}</span>
                                     </Link>
                                 </li>
                             ))}
@@ -128,7 +128,7 @@ export default function SearchBar({ className = '' }: { className?: string }) {
                     )}
 
                     {(suggestions.categories.length > 0 || suggestions.brands.length > 0) && (
-                        <div className="flex flex-wrap gap-1 border-t border-slate-100 p-2">
+                        <div className="flex flex-wrap gap-1.5 border-t border-slate-900/7 p-2.5">
                             {suggestions.categories.map((category) => (
                                 <Link
                                     key={`c-${category.id}`}
@@ -155,7 +155,7 @@ export default function SearchBar({ className = '' }: { className?: string }) {
                     <Link
                         href={routes.search(term.trim())}
                         onClick={() => setOpen(false)}
-                        className="block border-t border-slate-100 px-3 py-2 text-center text-sm font-medium text-brand-600 hover:bg-slate-50"
+                        className="block border-t border-slate-900/7 bg-paper px-3.5 py-2.5 text-[13px] font-bold text-accent-500 transition-colors hover:bg-slate-100"
                     >
                         &ldquo;{term.trim()}&rdquo; için tüm sonuçlar
                     </Link>

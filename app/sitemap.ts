@@ -42,5 +42,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             changeFrequency: 'monthly' as const,
             priority: 0.3,
         })),
+        { url: `${site.url}${routes.journal}`, changeFrequency: 'weekly', priority: 0.7 },
+        // Konu adresleri indeksin filtreli hâli; kanonik indeks olduğu için
+        // öncelikleri düşük ama taranmaları yazıların keşfini hızlandırır.
+        ...data.topics.map((topic) => ({
+            url: `${site.url}${routes.topic(topic.slug)}`,
+            lastModified: new Date(topic.updatedAt),
+            changeFrequency: 'weekly' as const,
+            priority: 0.4,
+        })),
+        ...data.posts.map((post) => ({
+            url: `${site.url}${routes.post(post.slug)}`,
+            lastModified: new Date(post.updatedAt),
+            changeFrequency: 'monthly' as const,
+            priority: 0.6,
+        })),
     ];
 }

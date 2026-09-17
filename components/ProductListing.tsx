@@ -1,26 +1,23 @@
-import Link from 'next/link';
 import { getProducts, type ProductQuery } from '@/lib/api';
-import { formatPrice } from '@/lib/format';
-import {
-    buildHref,
-    pageHref,
-    readListingParams,
-    SORT_OPTIONS,
-    toggleValueHref,
-    type SearchParams,
-} from '@/lib/listing';
+import { hasActiveFilters, readListingParams, type SearchParams } from '@/lib/listing';
+import { itemListSchema } from '@/lib/schema';
 import EmptyState from './EmptyState';
 import JsonLd from './JsonLd';
 import ProductGrid from './ProductGrid';
-import { itemListSchema } from '@/lib/schema';
+import ActiveFilters from './listing/ActiveFilters';
+import FilterSidebar from './listing/FilterSidebar';
+import ListingPagination from './listing/ListingPagination';
+import ResultsToolbar from './listing/ResultsToolbar';
 
 /**
  * Kategori, marka ve koleksiyon sayfalarının ortak listeleme bloğu.
  *
  * Filtreler <Link>'tir, istemci durumu yoktur: JavaScript kapalıyken de çalışır,
- * adres paylaşılabilir ve geri tuşu beklendiği gibi davranır. Bu bileşen
- * searchParams okuduğu için çağıran sayfada <Suspense> içine alınır — statik kabuk
- * (başlık, breadcrumb) anında görünür, liste akar.
+ * adres paylaşılabilir ve geri tuşu beklendiği gibi davranır.
+ *
+ * searchParams PROMISE olarak alınır ve burada, yani Suspense sınırının İÇİNDE
+ * await edilir. Çağıran sayfada await edilirse sayfanın statik kabuğu da istek
+ * zamanına ertelenir ve prerender kaybolur.
  */
 export default async function ProductListing({
     basePath,
@@ -28,16 +25,16 @@ export default async function ProductListing({
     baseQuery,
 }: {
     basePath: string;
-    /** Promise olarak alınır: await işlemi Suspense sınırının İÇİNDE kalmalı, yoksa
-     *  sayfanın statik kabuğu da istek zamanına ertelenir. */
     searchParams: Promise<SearchParams>;
-    baseQuery: Omit<ProductQuery, 'page' | 'sort' | 'values' | 'minPrice' | 'maxPrice' | 'inStock'>;
+    baseQuery: Omit<ProductQuery, 'page' | 'sort' | 'values' | 'minPrice' | 'maxPrice' | 'inStock' | 'ozellik' | 'aralik'>;
 }) {
     const searchParams = await searchParamsPromise;
     const state = readListingParams(searchParams);
     const listing = await getProducts({
         ...baseQuery,
         values: state.values,
+        ozellik: state.specs,
+        aralik: state.specRanges,
         minPrice: state.minPrice,
         maxPrice: state.maxPrice,
         inStock: state.inStock || undefined,
@@ -47,179 +44,46 @@ export default async function ProductListing({
     });
 
     const { facets, pagination, items } = listing;
-    const hasFilters = state.values.length > 0 || state.inStock || state.minPrice !== undefined || state.maxPrice !== undefined;
+    const activeCount = state.values.length + state.specs.length + state.specRanges.length
+        + (state.inStock ? 1 : 0)
+        + (state.minPrice !== undefined || state.maxPrice !== undefined ? 1 : 0);
 
-    // Filtre içeriği tek yerde durur; mobilde <details> içinde katlanır,
-    // masaüstünde yapışkan kenar çubuğunda açık görünür.
-    const filterBody = (
-        <>
-                <Link
-                    href={buildHref(basePath, searchParams, { stokta: state.inStock ? undefined : '1' })}
-                    className={`mb-4 flex items-center gap-2 text-sm ${state.inStock ? 'font-medium text-brand-700' : 'text-slate-600'}`}
-                >
-                    <span
-                        aria-hidden
-                        className={`flex h-4 w-4 items-center justify-center rounded border ${
-                            state.inStock ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300'
-                        }`}
-                    >
-                        {state.inStock ? '✓' : ''}
-                    </span>
-                    Sadece stoktakiler
-                </Link>
-
-                {facets?.brands && facets.brands.length > 1 && !baseQuery.brand && (
-                    <div className="mb-4 border-t border-slate-100 pt-4">
-                        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Marka</h3>
-                        <ul className="space-y-1">
-                            {facets.brands.map((brand) => (
-                                <li key={brand.id}>
-                                    <Link
-                                        href={buildHref(basePath, searchParams, { marka: brand.slug })}
-                                        className="flex items-center justify-between text-sm text-slate-600 hover:text-brand-600"
-                                    >
-                                        <span>{brand.name}</span>
-                                        <span className="text-xs text-slate-400">{brand.count}</span>
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
-                {facets?.variantKeys.map((key) => (
-                    <div key={key.id} className="mb-4 border-t border-slate-100 pt-4">
-                        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{key.name}</h3>
-                        {key.inputType === 'color' ? (
-                            <div className="flex flex-wrap gap-2">
-                                {key.values.map((value) => {
-                                    const active = state.values.includes(value.id);
-                                    return (
-                                        <Link
-                                            key={value.id}
-                                            href={toggleValueHref(basePath, searchParams, value.id)}
-                                            title={`${value.name} (${value.count})`}
-                                            aria-label={value.name}
-                                            className={`h-7 w-7 rounded-full border-2 transition ${
-                                                active ? 'border-brand-500 ring-2 ring-brand-200' : 'border-slate-200'
-                                            }`}
-                                            style={{ backgroundColor: value.hexCode || '#e2e2e2' }}
-                                        />
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <ul className="space-y-1">
-                                {key.values.map((value) => {
-                                    const active = state.values.includes(value.id);
-                                    return (
-                                        <li key={value.id}>
-                                            <Link
-                                                href={toggleValueHref(basePath, searchParams, value.id)}
-                                                className={`flex items-center justify-between text-sm ${
-                                                    active ? 'font-medium text-brand-700' : 'text-slate-600 hover:text-brand-600'
-                                                }`}
-                                            >
-                                                <span className="flex items-center gap-2">
-                                                    <span
-                                                        aria-hidden
-                                                        className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
-                                                            active ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300'
-                                                        }`}
-                                                    >
-                                                        {active ? '✓' : ''}
-                                                    </span>
-                                                    {value.name}
-                                                </span>
-                                                <span className="text-xs text-slate-400">{value.count}</span>
-                                            </Link>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        )}
-                    </div>
-                ))}
-
-                {facets?.price && facets.price.max > 0 && (
-                    <div className="border-t border-slate-100 pt-4 text-xs text-slate-500">
-                        Fiyat aralığı: {formatPrice(facets.price.min)} – {formatPrice(facets.price.max)}
-                    </div>
-                )}
-        </>
+    const sidebar = (
+        <FilterSidebar facets={facets} state={state} basePath={basePath} searchParams={searchParams} />
     );
 
-    const clearLink = hasFilters ? (
-        <Link href={basePath} className="text-xs text-brand-600 hover:underline">Temizle</Link>
-    ) : null;
-
-    const activeCount = state.values.length + (state.inStock ? 1 : 0)
-        + (state.minPrice !== undefined ? 1 : 0) + (state.maxPrice !== undefined ? 1 : 0);
-
     return (
-        // min-w-0: ızgara/flex çocukları varsayılan olarak `min-width: auto` alır ve
-        // içeriğinin min-content genişliğinin altına inemez. Sıralama şeridindeki
-        // `whitespace-nowrap` bağlantılar 717px min-content ürettiği için kolon
-        // mobilde 390px yerine 717px'e şişiyor, sayfa yatay taşıyor ve kartlar
-        // ızgaradan taşacak kadar genişliyordu.
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-            {/* Mobil: katlanır filtre. Açık haldeyken tüm facet'ler ürünleri
-                ekranlarca aşağı ittiği için varsayılan kapalıdır. */}
-            <details className="card group min-w-0 p-4 lg:hidden">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
-                    <span className="flex items-center gap-2">
-                        Filtreler
-                        {activeCount > 0 && <span className="badge badge-brand">{activeCount}</span>}
-                    </span>
-                    <svg
-                        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                        className="text-slate-400 transition group-open:rotate-180" aria-hidden
-                    >
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
+        <div className="flex flex-wrap items-start gap-[clamp(14px,2vw,24px)]">
+            {/* Mobilde katlanır, masaüstünde yapışkan kenar çubuğu. */}
+            <details className="w-full lg:hidden">
+                <summary className="btn-secondary w-full cursor-pointer justify-center">
+                    Filtreler{activeCount > 0 ? ` (${activeCount})` : ''}
                 </summary>
-                <div className="mt-4 border-t border-slate-100 pt-4">
-                    {clearLink && <div className="mb-3 text-right">{clearLink}</div>}
-                    {filterBody}
-                </div>
+                <div className="mt-2">{sidebar}</div>
             </details>
 
-            {/* Masaüstü: yapışkan kenar çubuğu */}
-            <aside className="hidden min-w-0 lg:sticky lg:top-36 lg:block lg:self-start">
-                <div className="card p-4">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-slate-900">Filtreler</h2>
-                        {clearLink}
-                    </div>
-                    {filterBody}
-                </div>
+            <aside className="hidden min-w-0 flex-[1_1_220px] lg:sticky lg:top-36 lg:block lg:max-w-[275px]">
+                {sidebar}
             </aside>
 
-            <div className="min-w-0">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm text-slate-500">
-                        <strong className="font-semibold text-slate-900">{pagination.total}</strong> ürün bulundu
-                    </p>
-                    <div className="no-scrollbar -mx-1 flex max-w-full gap-1 overflow-x-auto px-1">
-                        {SORT_OPTIONS.map((option) => (
-                            <Link
-                                key={option.value}
-                                href={buildHref(basePath, searchParams, { sirala: option.value === 'featured' ? undefined : option.value })}
-                                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs transition ${
-                                    state.sort === option.value ? 'bg-brand-50 font-semibold text-brand-700' : 'text-slate-500 hover:bg-slate-100'
-                                }`}
-                            >
-                                {option.label}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+            <div className="min-w-0 flex-[999_1_460px]">
+                <ResultsToolbar
+                    total={pagination.total}
+                    activeFilters={activeCount}
+                    sort={state.sort}
+                    basePath={basePath}
+                    searchParams={searchParams}
+                />
+
+                <ActiveFilters facets={facets} state={state} basePath={basePath} searchParams={searchParams} />
 
                 {items.length === 0 ? (
                     <EmptyState
+                        where="Sonuç"
                         title="Bu filtrelerle ürün bulunamadı"
-                        description="Filtreleri temizleyip tekrar deneyebilir ya da başka bir kategoriye göz atabilirsiniz."
-                        action={<Link href={basePath} className="btn-secondary">Filtreleri temizle</Link>}
+                        description={hasActiveFilters(state)
+                            ? 'Filtrelerden birini kaldırınca büyük ihtimalle sonuç çıkacak.'
+                            : 'Bu listede henüz ürün yok. Diğer kategorilere göz atabilirsin.'}
                     />
                 ) : (
                     <>
@@ -228,27 +92,7 @@ export default async function ProductListing({
                     </>
                 )}
 
-                {pagination.totalPages > 1 && (
-                    <nav aria-label="Sayfalama" className="mt-8 flex items-center justify-center gap-3">
-                        {pagination.page > 1 ? (
-                            <Link rel="prev" href={pageHref(basePath, searchParams, pagination.page - 1)} className="btn-secondary btn-sm">
-                                ← Önceki
-                            </Link>
-                        ) : (
-                            <span className="btn-secondary btn-sm opacity-40">← Önceki</span>
-                        )}
-                        <span className="text-sm text-slate-500">
-                            Sayfa {pagination.page} / {pagination.totalPages}
-                        </span>
-                        {pagination.page < pagination.totalPages ? (
-                            <Link rel="next" href={pageHref(basePath, searchParams, pagination.page + 1)} className="btn-secondary btn-sm">
-                                Sonraki →
-                            </Link>
-                        ) : (
-                            <span className="btn-secondary btn-sm opacity-40">Sonraki →</span>
-                        )}
-                    </nav>
-                )}
+                <ListingPagination pagination={pagination} basePath={basePath} searchParams={searchParams} />
             </div>
         </div>
     );
