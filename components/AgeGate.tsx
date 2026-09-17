@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useSyncExternalStore } from 'react';
+import Logo from '@/components/Logo';
+import { PANIC_EXIT_URL } from '@/lib/site';
 
 const KEY = 'ozmi_18_ok';
 const DAYS = 30;
@@ -63,24 +65,46 @@ export default function AgeGate() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="age-gate-title"
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-900/95 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-block/72 p-4 backdrop-blur-[3px]"
         >
-            <div className="card w-full max-w-md p-6 text-center sm:p-8">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-accent-500">18+</p>
-                <h2 id="age-gate-title" className="heading-2 mb-3">Yaş doğrulama</h2>
-                <p className="mb-6 text-sm text-slate-600">
-                    Bu site yetişkinlere yönelik ürünler içerir. Devam edebilmek için 18 yaşından büyük olduğunuzu
-                    onaylamanız gerekir. Tüm siparişler <strong className="font-semibold text-slate-900">gizli paketleme</strong> ile gönderilir.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row-reverse">
-                    <button type="button" onClick={accept} className="btn-primary btn-lg flex-1">
-                        18 yaşından büyüğüm
-                    </button>
-                    <a href="https://www.google.com" className="btn-secondary btn-lg flex-1">
-                        Siteden ayrıl
-                    </a>
+            <div className="w-full max-w-[470px] overflow-hidden rounded-[var(--radius-xl)] bg-paper shadow-[0_24px_60px_rgba(26,20,24,0.35)]">
+                <div className="flex items-center justify-between bg-ink-block px-6 py-4">
+                    <Logo onDark href={null} className="text-[19px]" />
+                    <span className="badge border border-on-dark/22 text-on-dark/85">18+</span>
                 </div>
-                <p className="mt-4 text-xs text-slate-400">Onayınız bu cihazda 30 gün saklanır.</p>
+
+                <div className="p-[clamp(22px,4vw,32px)]">
+                    <h2 id="age-gate-title" className="heading-2">
+                        18 yaşından<br />büyük müsün?
+                    </h2>
+                    <p className="mt-3.5 text-[14px] leading-relaxed text-slate-600">
+                        Bu site yetişkinlere yönelik ürünler içerir. Devam edebilmek için 18 yaşından büyük
+                        olduğunu onaylaman gerekir. Tüm siparişler{' '}
+                        <strong className="font-bold text-slate-900">gizli paketleme</strong> ile gönderilir.
+                    </p>
+
+                    <div className="mt-6 flex flex-wrap gap-2.5">
+                        <button
+                            type="button"
+                            onClick={accept}
+                            className="btn-primary min-h-[52px] flex-[1_1_170px] justify-center rounded-[14px]"
+                        >
+                            Evet, 18 yaşından büyüğüm
+                        </button>
+                        <a
+                            href={PANIC_EXIT_URL}
+                            rel="noreferrer"
+                            className="btn-secondary min-h-[52px] flex-[1_1_110px] justify-center rounded-[14px]"
+                        >
+                            Hayır, çık
+                        </a>
+                    </div>
+
+                    <p className="mt-4 text-[12px] leading-relaxed text-slate-600">
+                        Onayın bu cihazda 30 gün saklanır. Devam ederek Gizlilik politikası ve Çerez
+                        politikasını kabul etmiş olursun. Site RTA etiketlidir.
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#faf8f8; -webkit-font-smoothing:antialiased; }
+  a { color:#1a1418; text-decoration:none; }
+  a:hover { color:#9b1f47; }
+  ::selection { background:#f7dfe6; }
+</style>
+</helmet>
+
+<div style="font-family:Manrope,system-ui,sans-serif;color:#1a1418;background:#faf8f8;min-height:100%">
+
+  <section style="max-width:1240px;margin:0 auto;padding:clamp(26px,4.4vw,60px) clamp(16px,4vw,44px) 0">
+    <span style="display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#9b1f47"><span style="width:16px;height:2px;background:#9b1f47"></span>ozmishop · yeniden tasarım · Eylül 2026</span>
+    <h1 style="font-family:Sora,sans-serif;font-weight:600;font-size:clamp(32px,5.6vw,68px);line-height:1.1;letter-spacing:-.05em;margin:16px 0 0;max-width:16ch">İki tasarım yönü</h1>
+    <p style="margin:18px 0 0;max-width:62ch;font-size:15.5px;line-height:1.7;color:#635a60">Her dosya tarayıcıda açılan çalışan bir ekran. Birden fazla durum içeren dosyalarda üstte küçük bir “Ekran” şeridi var — o düğmeler yalnızca gezinmek için, üründe yer almaz.</p>
+  </section>
+
+  <section style="max-width:1240px;margin:0 auto;padding:clamp(22px,3.4vw,40px) clamp(16px,4vw,44px) 0">
+    <div style="display:flex;flex-wrap:wrap;gap:clamp(12px,1.8vw,18px)">
+      <sc-for list="{{ versions }}" as="v" hint-placeholder-count="2">
+        <div style="flex:1 1 300px;min-width:0;background:{{ v.bg }};color:{{ v.fg }};border:1px solid {{ v.bd }};border-radius:22px;padding:clamp(22px,3vw,32px)">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-family:Sora,sans-serif;font-weight:700;font-size:22px;letter-spacing:-.04em">{{ v.tag }}</span>
+            <span style="font-size:12px;font-weight:700;padding:5px 12px;border-radius:99px;background:{{ v.pillBg }};color:{{ v.pillFg }}">{{ v.name }}</span>
+          </div>
+          <p style="margin:14px 0 0;font-size:14px;line-height:1.7;color:{{ v.muted }}">{{ v.body }}</p>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:16px">
+            <sc-for list="{{ v.traits }}" as="t" hint-placeholder-count="4">
+              <span style="font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid {{ v.chipBd }};color:{{ v.chipFg }}">{{ t }}</span>
+            </sc-for>
+          </div>
+          <a href="{{ v.href }}" style="display:inline-flex;align-items:center;gap:9px;margin-top:20px;background:{{ v.ctaBg }};color:{{ v.ctaFg }};font-weight:700;font-size:14px;padding:13px 19px;border-radius:13px">
+            {{ v.cta }}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+          </a>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1240px;margin:0 auto;padding:clamp(30px,4.4vw,56px) clamp(16px,4vw,44px) 0">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:clamp(22px,2.8vw,32px);line-height:1.1;letter-spacing:-.04em;margin:0">v2 — Karanlık Oda</h2>
+      <span style="font-size:13px;color:#635a60">Güncel yön · 10 ekran</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:clamp(10px,1.6vw,16px)">
+      <sc-for list="{{ v2 }}" as="s" hint-placeholder-count="10">
+        <a href="{{ s.href }}" style="display:flex;flex-direction:column;background:#fff;border:1px solid rgba(26,20,24,.07);border-radius:20px;padding:20px 22px 22px;min-height:180px;border-top:3px solid {{ s.c }};transition:border-color .18s" style-hover="border-color:rgba(26,20,24,.28)">
+          <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:700;color:{{ s.c }}">{{ s.no }}</span>
+            <sc-if value="{{ s.isNew }}" hint-placeholder-val="{{ true }}">
+              <span style="font-size:10.5px;font-weight:700;background:#1a1418;color:#f6f1f3;padding:3px 9px;border-radius:99px">Yeni sayfa</span>
+            </sc-if>
+          </div>
+          <h3 style="font-family:Sora,sans-serif;font-weight:600;font-size:20px;line-height:1.18;letter-spacing:-.035em;margin:11px 0 0">{{ s.title }}</h3>
+          <p style="margin:8px 0 0;font-size:13.5px;line-height:1.6;color:#635a60;flex:1">{{ s.body }}</p>
+          <span style="display:inline-flex;align-items:center;gap:8px;margin-top:13px;font-size:13px;font-weight:700;color:#9b1f47">
+            Aç
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+          </span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1240px;margin:0 auto;padding:clamp(30px,4.4vw,56px) clamp(16px,4vw,44px) 0">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:clamp(22px,2.8vw,32px);line-height:1.1;letter-spacing:-.04em;margin:0">v1 — Modernist</h2>
+      <span style="font-size:13px;color:#635a60">İlk yön · karşılaştırma için duruyor</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,215px),1fr));gap:10px">
+      <sc-for list="{{ v1 }}" as="s" hint-placeholder-count="9">
+        <a href="{{ s.href }}" style="display:flex;align-items:center;gap:12px;background:#f4f1f2;border:1px solid rgba(26,20,24,.06);border-radius:14px;padding:15px 17px" style-hover="background:#efe9eb">
+          <span style="font-size:12px;font-weight:700;color:#7a7076;flex:none">{{ s.no }}</span>
+          <span style="font-size:14px;font-weight:600;letter-spacing:-.02em;flex:1;min-width:0">{{ s.title }}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7a7076" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="m9 18 6-6-6-6"></path></svg>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1240px;margin:0 auto;padding:clamp(30px,4.4vw,56px) clamp(16px,4vw,44px) clamp(32px,5vw,64px)">
+    <div style="display:flex;flex-wrap:wrap;gap:clamp(18px,3vw,44px)">
+      <div style="flex:999 1 340px;min-width:0">
+        <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:clamp(21px,2.8vw,30px);line-height:1.15;letter-spacing:-.035em;margin:0 0 16px">Claude Code'a nasıl aktarılır</h2>
+        <div style="background:#fff;border:1px solid rgba(26,20,24,.07);border-radius:20px;padding:4px 22px">
+          <sc-for list="{{ steps }}" as="st" hint-placeholder-count="4">
+            <div style="display:flex;gap:15px;padding:16px 0;border-bottom:1px solid rgba(26,20,24,.06)">
+              <span style="width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:99px;background:#f4eef0;color:#9b1f47;font-size:11.5px;font-weight:800">{{ st.n }}</span>
+              <div>
+                <div style="font-size:15px;font-weight:700;letter-spacing:-.02em">{{ st.t }}</div>
+                <p style="margin:5px 0 0;font-size:13.5px;line-height:1.65;color:#635a60;max-width:64ch">{{ st.d }}</p>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:1 1 260px;max-width:360px;min-width:0">
+        <div style="background:#241a20;color:#f6f1f3;border-radius:20px;padding:26px">
+          <span style="display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#e0899f"><span style="width:16px;height:2px;background:#e0899f"></span>Klasördeki dosyalar</span>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:15px">
+            <sc-for list="{{ files }}" as="f" hint-placeholder-count="3">
+              <div style="display:flex;gap:11px">
+                <span style="width:6px;height:6px;flex:none;border-radius:99px;background:{{ f.c }};margin-top:7px"></span>
+                <div>
+                  <div style="font-size:14.5px;font-weight:700;letter-spacing:-.015em">{{ f.n }}</div>
+                  <p style="margin:4px 0 0;font-size:12.5px;line-height:1.6;color:rgba(246,241,243,.6)">{{ f.d }}</p>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background:#1a1418;color:#f6f1f3">
+    <div style="max-width:1240px;margin:0 auto;padding:26px clamp(16px,4vw,44px);display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center">
+      <div style="font-family:Sora,sans-serif;font-weight:700;font-size:20px;letter-spacing:-.04em">ozmishop<span style="color:#d4557a">.</span></div>
+      <span style="font-size:11.5px;color:rgba(246,241,243,.42)">Tasarım teslimi · iki versiyon · Eylül 2026</span>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    const C = { berry: '#9b1f47', plum: '#6b3fa0', amber: '#c77d12', teal: '#10726b', rose: '#c2506e' };
+    return {
+      versions: [
+        {
+          tag: 'v2', name: 'Karanlık Oda', bg: '#1a1418', fg: '#f6f1f3', bd: '#1a1418',
+          pillBg: 'rgba(246,241,243,.12)', pillFg: '#f6f1f3', muted: 'rgba(246,241,243,.65)',
+          chipBd: 'rgba(246,241,243,.22)', chipFg: 'rgba(246,241,243,.85)',
+          ctaBg: '#9b1f47', ctaFg: '#fff', cta: 'v2 anasayfayı aç', href: '01 Anasayfa v2.dc.html',
+          body: 'Açık nötr zemin, koyu şarap-siyah bloklar, bordo aksiyon. Renk yalnızca ince detaylarda: kategori noktaları, 3px kenar şeritleri, spec rozetleri. Sora + Manrope.',
+          traits: ['Yumuşak köşe', 'Koyu bloklar', 'Kategori renk kodu', 'Sora / Manrope']
+        },
+        {
+          tag: 'v1', name: 'Modernist', bg: '#fff', fg: '#1a1418', bd: 'rgba(26,20,24,.09)',
+          pillBg: '#f4f1f2', pillFg: '#3d353a', muted: '#635a60',
+          chipBd: 'rgba(26,20,24,.12)', chipFg: '#3d353a',
+          ctaBg: '#1a1418', ctaFg: '#f6f1f3', cta: 'v1 anasayfayı aç', href: '01 Anasayfa.dc.html',
+          body: 'İsviçre tipografisi: kağıt zemin, tek kırmızı vurgu, görünür modüler ızgara, sıfır köşe yarıçapı, 2px ayraçlar. Archivo.',
+          traits: ['Sıfır köşe', '2px ızgara', 'Tek kırmızı', 'Archivo']
+        }
+      ],
+      v2: [
+        { no: '01', c: C.berry, title: 'Anasayfa', href: '01 Anasayfa v2.dc.html', isNew: false, body: 'Hero, güven kartları, başlangıç rehberi bloğu, kategori ızgarası, çok satanlar, Günlük tanıtımı, yeni gelenler, marka şeridi.' },
+        { no: '02', c: C.plum, title: 'Kategori / listeleme', href: '02 Kategori v2.dc.html', isNew: false, body: 'Renk kodlu facet grupları — malzeme, ses (dB), su geçirmezlik (IPX), uzunluk. Rehberli filtre şeridi, SEO metni ve SSS.' },
+        { no: '03', c: C.teal, title: 'Arama & marka', href: '03 Arama ve Marka v2.dc.html', isNew: false, body: 'Arama sonuçları, yazarken açılan öneri katmanı ve marka sayfası — üç ekran tek dosyada.' },
+        { no: '04', c: C.rose, title: 'Ürün detay', href: '04 Urun Detay v2.dc.html', isNew: false, body: 'Galeri, varyant seçici, gizlilik bloğu, renk kodlu 12 hücrelik teknik künye, “bu ürün sana uygun mu”, yorumlar.' },
+        { no: '05', c: C.amber, title: 'Sepet & ödeme', href: '05 Sepet ve Odeme v2.dc.html', isNew: true, body: 'Sepet sayfası, sağdan çekmece, tek sayfa ödeme (taksit tablosuyla) ve sipariş onayı.' },
+        { no: '06', c: C.berry, title: 'Hesabım', href: '06 Hesabim v2.dc.html', isNew: true, body: 'Siparişler, sipariş detay ve takip, adresler, favoriler, puan & kupon, gizlilik modu — dokuz bölüm.' },
+        { no: '07', c: C.plum, title: 'Giriş & durumlar', href: '07 Giris ve Durumlar v2.dc.html', isNew: true, body: 'Giriş / üye ol, misafir alışveriş, 18+ kapısı, 404 ve dört boş durum.' },
+        { no: '08', c: C.teal, title: 'Günlük (blog)', href: '08 Blog v2.dc.html', isNew: true, body: 'Blogun kendi mastheadı ve renk kodlu konu navigasyonu; blog anasayfa ve blog detay.' },
+        { no: '09', c: C.amber, title: 'Başlangıç rehberi', href: '09 Baslangic Rehberi v2.dc.html', isNew: true, body: 'Dört soruluk akış ve gerekçeli üç ürün önerisi. Çalışır durumda — soruları tıklayarak ilerleyin.' },
+        { no: '10', c: C.rose, title: 'Tasarım sistemi (CSS)', href: 'uygulama/globals-v2.css', isNew: true, body: 'uygulama/globals-v2.css — app/globals.css ile birebir değiştirilecek Tailwind 4 tema dosyası. Sınıf isimleri aynı.' }
+      ],
+      v1: [
+        { no: '01', title: 'Anasayfa', href: '01 Anasayfa.dc.html' },
+        { no: '02', title: 'Kategori', href: '02 Kategori.dc.html' },
+        { no: '03', title: 'Arama & marka', href: '03 Arama ve Marka.dc.html' },
+        { no: '04', title: 'Ürün detay', href: '04 Urun Detay.dc.html' },
+        { no: '05', title: 'Sepet & ödeme', href: '05 Sepet ve Odeme.dc.html' },
+        { no: '06', title: 'Hesabım', href: '06 Hesabim.dc.html' },
+        { no: '07', title: 'Giriş & durumlar', href: '07 Giris ve Durumlar.dc.html' },
+        { no: '08', title: 'Günlük (blog)', href: '08 Blog.dc.html' },
+        { no: '09', title: 'Başlangıç rehberi', href: '09 Baslangic Rehberi.dc.html' }
+      ],
+      steps: [
+        { n: '1', t: 'Klasörü indir', d: 'Sohbetteki indirme kartından tüm projeyi zip olarak al ve aç.' },
+        { n: '2', t: 'ozmishop-com’un yanına koy', d: 'Klasörü depo dışında bir yere koy; Claude Code’un ikisini birden görebileceği bir konum yeterli.' },
+        { n: '3', t: 'Hangi versiyonu istediğini söyle', d: '“Yanımdaki tasarım klasöründeki HANDOFF.md’yi oku. v2 (Karanlık Oda) yönünü uygula: uygulama/globals-v2.css’i app/globals.css ile değiştir, fontu Sora + Manrope yap, sonra ekran–dosya haritasındaki sırayla ilerle.”' },
+        { n: '4', t: 'Sırayla ilerle', d: 'Önce CSS + font + header/footer. Sonra ürün kartı ve listeleme. En son yeni rotalar: sepet, ödeme, hesabım, günlük, rehber.' }
+      ],
+      files: [
+        { c: '#e0899f', n: 'HANDOFF.md', d: 'Ekran–dosya haritası, iki versiyonun tasarım kuralları, API’de açılması gereken yeni alanlar.' },
+        { c: '#b79ae0', n: 'uygulama/globals-v2.css', d: 'v2 tema dosyası — güncel yön. Sınıf isimleri mevcut projeyle aynı.' },
+        { c: '#7ec4bb', n: 'uygulama/globals.css', d: 'v1 (Modernist) tema dosyası — karşılaştırma için duruyor.' }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

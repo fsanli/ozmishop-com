@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-a40d5f18-8637-4bb8-b3e5-f8e2ba3f3ec9/styles.css">
+<script src="_ds/modernist-a40d5f18-8637-4bb8-b3e5-f8e2ba3f3ec9/_ds_bundle.js"></script>
+<style>
+  *, *::before, *::after { box-sizing:border-box; }
+  body { margin:0; background:#f3f2f2; -webkit-font-smoothing:antialiased; }
+  a { color:#201e1d; text-decoration:none; }
+  a:hover { color:#ec3013; }
+  .ozgrid > * { border-right:1px solid rgba(32,30,29,.22); border-bottom:1px solid rgba(32,30,29,.22); }
+</style>
+</helmet>
+
+<div style="font-family:Archivo,system-ui,sans-serif;color:#201e1d;background:#f3f2f2;min-height:100%">
+
+  <div style="position:sticky;top:0;z-index:30">
+    <div style="font-family:Archivo,system-ui,sans-serif;color:#201e1d">
+    <div style="background:#201e1d;color:#f3f2f2">
+      <div style="max-width:1440px;margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;align-items:center;gap:16px;min-height:34px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:14px;font-size:11px;letter-spacing:.06em;text-transform:uppercase">
+          <span>Gizli paketleme</span>
+          <span style="opacity:.35">/</span>
+          <span>Aynı gün kargo</span>
+          <span style="opacity:.35">/</span>
+          <span>3D Secure</span>
+        </div>
+        <button type="button" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#f3f2f2;font:inherit;font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:6px 0" style-hover="color:#ff9783">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.73 5.08a10.74 10.74 0 0 1 11.2 6.57 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-1.44 2.49"></path><path d="M14.08 14.16a3 3 0 0 1-4.24-4.24"></path><path d="M17.48 17.5a10.75 10.75 0 0 1-15.42-5.15 1 1 0 0 1 0-.7 10.75 10.75 0 0 1 4.45-5.14"></path><path d="m2 2 20 20"></path></svg>
+          Hızlı çıkış
+        </button>
+      </div>
+    </div>
+
+    <header style="background:#f3f2f2;border-bottom:2px solid rgba(32,30,29,.4)">
+      <div style="max-width:1440px;margin:0 auto;padding:14px clamp(16px,4vw,40px);display:flex;align-items:center;gap:clamp(12px,3vw,32px)">
+        <a href="01 Anasayfa.dc.html" style="font-weight:800;font-size:clamp(19px,2.4vw,24px);letter-spacing:-.03em;flex:none;text-decoration:none;color:#201e1d">ozmishop<span style="color:#ec3013">.</span></a>
+
+        <div data-search-box="1" style="flex:1;min-width:0;position:relative">
+        <label style="display:flex;display:flex;align-items:center;gap:8px;border-bottom:2px solid rgba(32,30,29,.4);padding:6px 2px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none;opacity:.55"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="text" placeholder="Ürün, marka veya kategori ara" value="{{ sq }}" onChange="{{ onQuery }}" onFocus="{{ onFocus }}" onKeyDown="{{ onKey }}" style="flex:1;min-width:0;border:0;background:none;font:inherit;font-size:14px;color:#201e1d;outline:none">
+        </label>
+        <sc-if value="{{ sOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:70;background:#f3f2f2;border:2px solid #201e1d">
+            <sc-for list="{{ sHits }}" as="h" hint-placeholder-count="0">
+              <a href="04 Urun Detay.dc.html" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(32,30,29,.16)" style-hover="background:#eae9e9">
+                <span style="width:40px;height:40px;flex:none;background:#fff;border:1px solid rgba(32,30,29,.2)"></span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(32,30,29,.55)">{{ h.brand }}</span>
+                  <span style="display:block;font-size:13.5px;font-weight:800;letter-spacing:-.01em">{{ h.name }}</span>
+                </span>
+                <span style="font-size:13px;font-weight:800;flex:none;font-variant-numeric:tabular-nums">{{ h.price }}</span>
+              </a>
+            </sc-for>
+            <sc-if value="{{ sHasCats }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:11px 14px 5px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(32,30,29,.55)">Kategoriler</div>
+            </sc-if>
+            <sc-if value="{{ sHasCats }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:7px">
+                <sc-for list="{{ sCats }}" as="c" hint-placeholder-count="0">
+                  <a href="02 Kategori.dc.html" style="font-size:12.5px;border:1px solid rgba(32,30,29,.28);padding:6px 11px" style-hover="border-color:#201e1d;background:#eae9e9">{{ c }}</a>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ sEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:14px;font-size:13px;line-height:1.55;color:rgba(32,30,29,.65)">Eşleşen ürün yok. Enter’a basıp tüm sonuçlara bakabilirsin.</div>
+            </sc-if>
+            <a href="03 Arama ve Marka.dc.html" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#201e1d;color:#f3f2f2;font-size:12.5px;font-weight:800">
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">“{{ sq }}” için tüm sonuçlar</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </a>
+          </div>
+        </sc-if>
+      </div>
+
+        <div style="display:flex;align-items:center;gap:4px;flex:none">
+          <a href="06 Hesabim.dc.html" title="Hesabım" style="width:38px;height:38px;display:grid;place-items:center;color:#201e1d" style-hover="background:rgba(32,30,29,.07)">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </a>
+          <a href="06 Hesabim.dc.html" title="Favorilerim" style="width:38px;height:38px;display:grid;place-items:center;color:#201e1d" style-hover="background:rgba(32,30,29,.07)">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+          </a>
+          <a href="05 Sepet ve Odeme.dc.html" title="Sepetim" style="position:relative;display:inline-flex;align-items:center;gap:8px;background:#201e1d;color:#f3f2f2;padding:9px 14px;text-decoration:none" style-hover="background:#ec3013">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            <span style="font-weight:800;font-size:13px;letter-spacing:.02em">2</span>
+          </a>
+        </div>
+      </div>
+
+      <nav style="border-top:1px solid rgba(32,30,29,.22);overflow-x:auto;scrollbar-width:none">
+        <div style="max-width:1440px;margin:0 auto;padding:0 clamp(16px,4vw,40px);display:flex;align-items:stretch;white-space:nowrap">
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">Vibratörler</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">Masaj & dokunma</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">Kayganlaştırıcılar</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">Çiftlere özel</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">İç giyim</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">Prezervatif</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">Bakım & hijyen</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;margin-right:14px;font-size:13px;letter-spacing:.01em;text-decoration:none;color:#201e1d;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013;color:#ec3013">Hediye setleri</a>
+          <a href="02 Kategori.dc.html" style="padding:11px 14px 11px 0;font-size:13px;font-weight:800;color:#ec3013;letter-spacing:.01em;text-decoration:none;border-bottom:2px solid transparent" style-hover="border-bottom-color:#ec3013">Fırsatlar</a>
+        </div>
+      </nav>
+    </header>
+  </div>
+  </div>
+
+  <section style="border-bottom:2px solid rgba(32,30,29,.4)">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(20px,3vw,36px) clamp(16px,4vw,40px);display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ec3013;font-weight:800">Hesabım</span>
+        <h1 style="font-size:clamp(28px,4vw,48px);line-height:1;letter-spacing:-.035em;margin:10px 0 0">Merhaba, Deniz</h1>
+        <p style="margin:8px 0 0;font-size:13.5px;color:rgba(32,30,29,.6)">deniz@ornek.com · Üyelik: Mart 2024</p>
+      </div>
+      <div style="display:flex;gap:0;border:1px solid rgba(32,30,29,.28);flex-wrap:wrap">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+          <div style="padding:12px 18px;border-right:1px solid rgba(32,30,29,.18);min-width:110px">
+            <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(32,30,29,.5)">{{ s.k }}</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-.03em;margin-top:2px;font-variant-numeric:tabular-nums">{{ s.v }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <div style="max-width:1440px;margin:0 auto;padding:0 clamp(16px,4vw,40px) clamp(32px,5vw,64px);display:flex;flex-wrap:wrap;align-items:flex-start">
+
+    <aside style="flex:1 1 200px;max-width:250px;min-width:0;padding:24px 24px 24px 0;border-right:1px solid rgba(32,30,29,.22)">
+      <sc-for list="{{ menu }}" as="m" hint-placeholder-count="10">
+        <button type="button" onClick="{{ m.go }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;font:inherit;font-size:13.5px;font-weight:{{ m.weight }};padding:10px 12px;border:0;cursor:pointer;background:{{ m.bg }};color:{{ m.fg }}">
+          <span style="flex:1;min-width:0">{{ m.label }}</span>
+          <sc-if value="{{ m.count }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size:11px;opacity:.6;font-variant-numeric:tabular-nums">{{ m.count }}</span>
+          </sc-if>
+        </button>
+      </sc-for>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(32,30,29,.22)">
+        <button type="button" style="width:100%;text-align:left;font:inherit;font-size:13px;padding:10px 12px;border:0;background:none;cursor:pointer;color:rgba(32,30,29,.6)" style-hover="color:#ec3013">Çıkış yap</button>
+      </div>
+    </aside>
+
+    <div style="flex:999 1 460px;min-width:0;padding:24px 0 0 clamp(0px,2vw,32px)">
+
+      <sc-if value="{{ isOrders }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:2px solid rgba(32,30,29,.4)">
+            <h2 style="font-size:clamp(22px,2.6vw,30px);line-height:1;letter-spacing:-.03em;margin:0">Siparişlerim</h2>
+            <div style="display:flex;border:1px solid rgba(32,30,29,.28)">
+              <span style="font-size:12px;font-weight:800;padding:8px 12px;background:#201e1d;color:#f3f2f2">Tümü</span>
+              <span style="font-size:12px;padding:8px 12px;border-left:1px solid rgba(32,30,29,.2);cursor:pointer">Yolda</span>
+              <span style="font-size:12px;padding:8px 12px;border-left:1px solid rgba(32,30,29,.2);cursor:pointer">Teslim</span>
+              <span style="font-size:12px;padding:8px 12px;border-left:1px solid rgba(32,30,29,.2);cursor:pointer">İade</span>
+            </div>
+          </div>
+
+          <sc-for list="{{ orders }}" as="o" hint-placeholder-count="4">
+            <div style="border:1px solid rgba(32,30,29,.22);margin-top:18px">
+              <div style="display:flex;align-items:center;gap:16px;padding:13px 18px;background:#eae9e9;border-bottom:1px solid rgba(32,30,29,.2);flex-wrap:wrap">
+                <div>
+                  <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(32,30,29,.5)">Sipariş</div>
+                  <div style="font-size:14px;font-weight:800;font-variant-numeric:tabular-nums">{{ o.no }}</div>
+                </div>
+                <div>
+                  <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(32,30,29,.5)">Tarih</div>
+                  <div style="font-size:14px;font-weight:800">{{ o.date }}</div>
+                </div>
+                <div>
+                  <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(32,30,29,.5)">Tutar</div>
+                  <div style="font-size:14px;font-weight:800;font-variant-numeric:tabular-nums">{{ o.total }}</div>
+                </div>
+                <span style="margin-left:auto;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;padding:5px 10px;background:{{ o.statusBg }};color:{{ o.statusFg }}">{{ o.status }}</span>
+              </div>
+              <div style="padding:16px 18px;display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+                <div style="display:flex;gap:8px;flex:1 1 200px">
+                  <sc-for list="{{ o.thumbs }}" as="t" hint-placeholder-count="2">
+                    <div style="width:56px;height:56px;background:#fff;border:1px solid rgba(32,30,29,.2)"></div>
+                  </sc-for>
+                  <div style="align-self:center">
+                    <div style="font-size:13.5px;font-weight:800;letter-spacing:-.01em">{{ o.summary }}</div>
+                    <div style="font-size:12px;color:rgba(32,30,29,.55);margin-top:2px">{{ o.detail }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button type="button" onClick="{{ goOrder }}" style="font:inherit;font-size:12.5px;font-weight:800;border:1px solid rgba(32,30,29,.35);background:none;padding:9px 13px;cursor:pointer;color:#201e1d" style-hover="background:rgba(32,30,29,.07)">Detay</button>
+                  <button type="button" style="font:inherit;font-size:12.5px;font-weight:800;border:0;background:#201e1d;color:#f3f2f2;padding:9px 13px;cursor:pointer" style-hover="background:#ec3013">Tekrar sipariş ver</button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isOrder }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <button type="button" onClick="{{ goOrders }}" style="font:inherit;font-size:12.5px;background:none;border:0;padding:0 0 12px;cursor:pointer;color:rgba(32,30,29,.6)" style-hover="color:#ec3013">← Siparişlerim</button>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:2px solid rgba(32,30,29,.4)">
+            <div>
+              <h2 style="font-size:clamp(22px,2.6vw,30px);line-height:1;letter-spacing:-.03em;margin:0">Sipariş #48198</h2>
+              <p style="margin:8px 0 0;font-size:13px;color:rgba(32,30,29,.6)">2 Eylül 2026, 14:22 · Aras Kargo 7392 4471 0021</p>
+            </div>
+            <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;padding:6px 11px;background:#ec3013;color:#f3f2f2">Yolda</span>
+          </div>
+
+          <div style="display:flex;margin-top:22px;border:1px solid rgba(32,30,29,.22);flex-wrap:wrap">
+            <sc-for list="{{ track }}" as="t" hint-placeholder-count="4">
+              <div style="flex:1 1 130px;padding:14px 16px;border-right:1px solid rgba(32,30,29,.18);background:{{ t.bg }};color:{{ t.fg }}">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.6">{{ t.when }}</div>
+                <div style="font-size:14px;font-weight:800;letter-spacing:-.01em;margin-top:3px">{{ t.title }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:clamp(20px,3vw,40px);margin-top:26px;align-items:flex-start">
+            <div style="flex:999 1 320px;min-width:0;border-top:2px solid rgba(32,30,29,.4)">
+              <sc-for list="{{ orderLines }}" as="l" hint-placeholder-count="2">
+                <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid rgba(32,30,29,.2);flex-wrap:wrap">
+                  <div style="width:72px;height:72px;flex:none;background:#fff;border:1px solid rgba(32,30,29,.2)"></div>
+                  <div style="flex:1 1 180px;min-width:0">
+                    <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(32,30,29,.5)">{{ l.brand }}</div>
+                    <div style="font-size:14.5px;font-weight:800;letter-spacing:-.01em;margin-top:2px">{{ l.name }}</div>
+                    <div style="font-size:12px;color:rgba(32,30,29,.55);margin-top:3px">{{ l.variant }} · {{ l.qty }} adet</div>
+                    <div style="display:flex;gap:12px;margin-top:8px;font-size:12px">
+                      <span style="border-bottom:1px solid rgba(32,30,29,.28);cursor:pointer">Değerlendir</span>
+                      <span style="border-bottom:1px solid rgba(32,30,29,.28);cursor:pointer">İade talebi</span>
+                      <span style="border-bottom:1px solid rgba(32,30,29,.28);cursor:pointer">Tekrar al</span>
+                    </div>
+                  </div>
+                  <span style="font-weight:800;font-size:15px;font-variant-numeric:tabular-nums">{{ l.total }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1 1 260px;max-width:340px;min-width:0;display:flex;flex-direction:column;gap:18px">
+              <div style="border:1px solid rgba(32,30,29,.22)">
+                <div style="padding:12px 16px;border-bottom:1px solid rgba(32,30,29,.18);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800">Özet</div>
+                <div style="padding:14px 16px;display:flex;flex-direction:column;gap:9px">
+                  <sc-for list="{{ orderSummary }}" as="s" hint-placeholder-count="4">
+                    <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px">
+                      <span style="color:rgba(32,30,29,.68)">{{ s.k }}</span>
+                      <span style="font-weight:800;font-variant-numeric:tabular-nums">{{ s.v }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="border:1px solid rgba(32,30,29,.22)">
+                <div style="padding:12px 16px;border-bottom:1px solid rgba(32,30,29,.18);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800">Teslimat</div>
+                <div style="padding:14px 16px;font-size:13px;line-height:1.6;color:rgba(32,30,29,.75)">Deniz Kaya<br>Caferağa Mah. Moda Cad. No: 12 D: 4<br>Kadıköy / İstanbul<br>0532 000 00 00</div>
+              </div>
+              <button type="button" style="font:inherit;font-size:13px;font-weight:800;border:1px solid rgba(32,30,29,.35);background:none;padding:12px 16px;cursor:pointer;color:#201e1d" style-hover="background:rgba(32,30,29,.07)">Faturayı indir (PDF)</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFav }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:2px solid rgba(32,30,29,.4)">
+            <h2 style="font-size:clamp(22px,2.6vw,30px);line-height:1;letter-spacing:-.03em;margin:0">Favorilerim</h2>
+            <span style="font-size:13px;color:rgba(32,30,29,.55)">6 ürün · 2’si indirime girdi</span>
+          </div>
+          <div class="ozgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50% - 1px,200px),1fr));border-left:1px solid rgba(32,30,29,.22);margin-top:20px;border-top:1px solid rgba(32,30,29,.22)">
+            <sc-for list="{{ favs }}" as="f" hint-placeholder-count="6">
+              <div style="display:flex;flex-direction:column;background:#f3f2f2">
+                <div style="aspect-ratio:1/1;background:#fff;position:relative">
+                  <div style="position:absolute;inset:0;display:grid;place-items:center"><span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(32,30,29,.28)">Ürün görseli</span></div>
+                  <sc-if value="{{ f.badge }}" hint-placeholder-val="{{ true }}">
+                    <span style="position:absolute;left:0;top:0;background:#ec3013;color:#f3f2f2;font-size:10px;font-weight:800;padding:4px 8px">{{ f.badge }}</span>
+                  </sc-if>
+                </div>
+                <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1">
+                  <span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(32,30,29,.5)">{{ f.brand }}</span>
+                  <span style="font-size:13.5px;line-height:1.3">{{ f.name }}</span>
+                  <span style="margin-top:auto;padding-top:8px;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums">{{ f.price }}</span>
+                  <div style="display:flex;gap:6px;margin-top:8px">
+                    <button type="button" style="flex:1;font:inherit;font-size:12px;font-weight:800;border:0;background:#201e1d;color:#f3f2f2;padding:8px;cursor:pointer" style-hover="background:#ec3013">Sepete ekle</button>
+                    <button type="button" title="Kaldır" style="width:32px;font:inherit;border:1px solid rgba(32,30,29,.3);background:none;cursor:pointer;color:#201e1d;display:grid;place-items:center" style-hover="background:rgba(32,30,29,.07)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAddr }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:2px solid rgba(32,30,29,.4)">
+            <h2 style="font-size:clamp(22px,2.6vw,30px);line-height:1;letter-spacing:-.03em;margin:0">Adreslerim</h2>
+            <button type="button" style="font:inherit;font-size:13px;font-weight:800;border:0;background:#ec3013;color:#f3f2f2;padding:10px 15px;cursor:pointer" style-hover="background:#dd2b0f">+ Yeni adres</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:16px;margin-top:20px">
+            <sc-for list="{{ addresses }}" as="a" hint-placeholder-count="3">
+              <div style="border:1px solid rgba(32,30,29,.25);padding:18px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:800">{{ a.label }}</span>
+                  <sc-if value="{{ a.default }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:#201e1d;color:#f3f2f2;padding:3px 7px">Varsayılan</span>
+                  </sc-if>
+                </div>
+                <div style="font-size:14px;font-weight:800;letter-spacing:-.01em">{{ a.name }}</div>
+                <p style="margin:0;font-size:13px;line-height:1.55;color:rgba(32,30,29,.68)">{{ a.body }}</p>
+                <div style="display:flex;gap:12px;margin-top:6px;font-size:12.5px">
+                  <span style="border-bottom:1px solid rgba(32,30,29,.28);cursor:pointer">Düzenle</span>
+                  <span style="border-bottom:1px solid rgba(32,30,29,.28);cursor:pointer">Sil</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPoints }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="padding-bottom:14px;border-bottom:2px solid rgba(32,30,29,.4)">
+            <h2 style="font-size:clamp(22px,2.6vw,30px);line-height:1;letter-spacing:-.03em;margin:0">Kupon ve puanlarım</h2>
+          </div>
+          <div style="display:flex;gap:0;margin-top:20px;border:2px solid rgba(32,30,29,.4);flex-wrap:wrap">
+            <div style="flex:1 1 200px;padding:22px;border-right:1px solid rgba(32,30,29,.25)">
+              <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(32,30,29,.5)">Kullanılabilir puan</div>
+              <div style="font-size:46px;font-weight:800;letter-spacing:-.04em;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums">1.284</div>
+              <p style="margin:8px 0 0;font-size:12.5px;color:rgba(32,30,29,.6)">100 puan = 10 ₺ · 320 puan 14 Ekim’de sona eriyor</p>
+            </div>
+            <div style="flex:1 1 200px;padding:22px;background:#ec3013;color:#f3f2f2">
+              <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.8">Tekrar sipariş</div>
+              <div style="font-size:17px;font-weight:800;letter-spacing:-.02em;margin-top:6px">Bitmek üzere olanlar</div>
+              <p style="margin:8px 0 12px;font-size:12.5px;opacity:.9">Kayganlaştırıcını 42 gün önce aldın. Tipik kullanımda bu aralıkta biter.</p>
+              <button type="button" style="font:inherit;font-size:12.5px;font-weight:800;border:0;background:#201e1d;color:#f3f2f2;padding:9px 13px;cursor:pointer" style-hover="background:#0f0e0e">Tek tıkla tekrar sipariş ver</button>
+            </div>
+          </div>
+          <h3 style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin:28px 0 0;color:rgba(32,30,29,.55)">Kuponlarım</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:14px;margin-top:14px">
+            <sc-for list="{{ coupons }}" as="c" hint-placeholder-count="3">
+              <div style="border:1px dashed rgba(32,30,29,.4);padding:16px;display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:20px;font-weight:800;letter-spacing:-.02em">{{ c.code }}</span>
+                <span style="font-size:13px;color:rgba(32,30,29,.7)">{{ c.desc }}</span>
+                <span style="font-size:11.5px;color:rgba(32,30,29,.5);margin-top:4px">{{ c.until }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPrivacy }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="padding-bottom:14px;border-bottom:2px solid rgba(32,30,29,.4)">
+            <h2 style="font-size:clamp(22px,2.6vw,30px);line-height:1;letter-spacing:-.03em;margin:0">Gizlilik modu</h2>
+            <p style="margin:10px 0 0;max-width:62ch;font-size:14px;line-height:1.55;color:rgba(32,30,29,.65)">Bu ayarlar yalnızca senin hesabın için geçerlidir ve istediğin an değiştirilebilir. Hiçbiri sipariş takibini engellemez.</p>
+          </div>
+
+          <div style="border:1px solid rgba(32,30,29,.22);margin-top:20px">
+            <sc-for list="{{ privacyToggles }}" as="p" hint-placeholder-count="5">
+              <div style="display:flex;align-items:flex-start;gap:16px;padding:18px;border-bottom:1px solid rgba(32,30,29,.18)">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15px;font-weight:800;letter-spacing:-.015em">{{ p.title }}</div>
+                  <p style="margin:5px 0 0;font-size:13px;line-height:1.55;color:rgba(32,30,29,.62);max-width:64ch">{{ p.body }}</p>
+                  <sc-if value="{{ p.extra }}" hint-placeholder-val="{{ true }}">
+                    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                      <input type="text" value="••••" style="width:88px;border:1px solid rgba(32,30,29,.3);background:#eae9e9;padding:9px 12px;font:inherit;font-size:16px;letter-spacing:.4em;color:#201e1d;outline:none;text-align:center">
+                      <span style="font-size:12px;color:rgba(32,30,29,.55)">{{ p.extra }}</span>
+                    </div>
+                  </sc-if>
+                </div>
+                <span style="width:46px;height:26px;flex:none;background:{{ p.on }};border:1px solid rgba(32,30,29,.3);position:relative;cursor:pointer">
+                  <span style="position:absolute;top:2px;left:{{ p.knob }};width:20px;height:20px;background:#f3f2f2;border:1px solid rgba(32,30,29,.3)"></span>
+                </span>
+              </div>
+            </sc-for>
+            <div style="padding:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <div style="flex:1 1 260px">
+                <div style="font-size:15px;font-weight:800;letter-spacing:-.015em;color:#ae1800">Hesap geçmişini sil</div>
+                <p style="margin:5px 0 0;font-size:13px;line-height:1.55;color:rgba(32,30,29,.62);max-width:60ch">Sipariş geçmişin, favorilerin ve yorumların kalıcı olarak silinir. Yasal saklama süresi gereği faturalar 10 yıl daha muhafaza edilir.</p>
+              </div>
+              <button type="button" style="font:inherit;font-size:13px;font-weight:800;border:1px solid #ae1800;background:none;color:#ae1800;padding:11px 16px;cursor:pointer" style-hover="background:#ae1800;color:#f3f2f2">Geçmişi sil</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isOther }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="padding-bottom:14px;border-bottom:2px solid rgba(32,30,29,.4)">
+            <h2 style="font-size:clamp(22px,2.6vw,30px);line-height:1;letter-spacing:-.03em;margin:0">{{ otherTitle }}</h2>
+          </div>
+          <div style="border:1px solid rgba(32,30,29,.22);margin-top:20px;padding:clamp(28px,5vw,56px);display:flex;flex-direction:column;align-items:flex-start;gap:12px">
+            <span style="width:34px;height:34px;display:grid;place-items:center;background:#201e1d;color:#f3f2f2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16v-4"></path><path d="M12 8h.01"></path><circle cx="12" cy="12" r="10"></circle></svg>
+            </span>
+            <h3 style="font-size:19px;letter-spacing:-.02em;margin:6px 0 0">{{ otherEmpty }}</h3>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:rgba(32,30,29,.62);max-width:52ch">{{ otherBody }}</p>
+            <a href="02 Kategori.dc.html" style="margin-top:8px;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(32,30,29,.35);padding:11px 16px;font-size:13px;font-weight:800" style-hover="background:rgba(32,30,29,.07)">{{ otherCta }}</a>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <footer style="font-family:Archivo,system-ui,sans-serif;background:#201e1d;color:#f3f2f2">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(32px,4.5vw,56px) clamp(16px,4vw,40px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:clamp(24px,4vw,48px)">
+      <div>
+        <div style="font-weight:800;font-size:22px;letter-spacing:-.03em">ozmishop<span style="color:#ec3013">.</span></div>
+        <p style="margin:12px 0 0;font-size:13px;line-height:1.55;opacity:.62;max-width:34ch">Yetişkinlere özel ürünler. Gizli paketleme, nötr ekstre adı ve 3D Secure ödeme.</p>
+        <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+          <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(243,242,242,.3);padding:5px 9px">18+</span>
+          <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(243,242,242,.3);padding:5px 9px">RTA etiketli</span>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px;opacity:.55;font-weight:800">Alışveriş</h3>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Tüm kategoriler</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Fırsat ürünleri</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Yeni gelenler</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Hediye setleri</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Tüm markalar</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px;opacity:.55;font-weight:800">Yardım</h3>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Kargo ve teslimat</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">İade ve değişim</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Gizli paketleme</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Sıkça sorulanlar</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">İletişim</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px;opacity:.55;font-weight:800">Kurumsal</h3>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Hakkımızda</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Mesafeli satış sözleşmesi</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Gizlilik politikası</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">KVKK aydınlatma metni</a></li>
+          <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">Çerez politikası</a></li>
+        </ul>
+      </div>
+    </div>
+    <div style="border-top:1px solid rgba(243,242,242,.16)">
+      <div style="max-width:1440px;margin:0 auto;padding:16px clamp(16px,4vw,40px);display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;font-size:11.5px;opacity:.5">
+        <span>© 2026 ozmishop. Tüm hakları saklıdır.</span>
+        <span>Bu site yalnızca 18 yaşından büyükler içindir.</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  SEARCH_POOL = [
+    { brand: 'LELO', name: 'Sona 2 klitoral stimülatör', price: '4.290,00 ₺', kw: 'sessiz vibratör silikon ipx7 38 db klitoral hava basıncı' },
+    { brand: 'LELO', name: 'Soraya Wave, çift uyarımlı', price: '8.190,00 ₺', kw: 'sessiz vibratör silikon ipx7 çift uyarım' },
+    { brand: 'LELO', name: 'Mia 3, ruj formunda seyahat', price: '2.390,00 ₺', kw: 'mini seyahat vibratör abs küçük' },
+    { brand: 'Satisfyer', name: 'Pro 2 Generation 3', price: '1.749,00 ₺', kw: 'sessiz vibratör silikon ipx7 42 db su geçirmez' },
+    { brand: 'Satisfyer', name: 'Curvy 1+, uygulama kontrollü', price: '1.290,00 ₺', kw: 'vibratör silikon ipx7 uygulama ucuz' },
+    { brand: 'Womanizer', name: 'Premium 2, otomatik kapanan', price: '6.490,00 ₺', kw: 'sessiz vibratör silikon ipx7 36 db' },
+    { brand: 'Womanizer', name: 'Starlet 3, giriş seviyesi', price: '2.190,00 ₺', kw: 'sessiz vibratör ilk kez başlangıç silikon ipx7' },
+    { brand: 'We-Vibe', name: 'Melt hava basınçlı stimülatör', price: '5.290,00 ₺', kw: 'sessiz vibratör 35 db hava basıncı' },
+    { brand: 'We-Vibe', name: 'Chorus çift kullanımlı', price: '7.950,00 ₺', kw: 'çiftlere özel vibratör uzaktan kumanda silikon' },
+    { brand: 'Fun Factory', name: 'Stronic G, gövde hareketli', price: '5.480,00 ₺', kw: 'vibratör silikon iç uyarım' },
+    { brand: 'Pjur', name: 'Su bazlı kayganlaştırıcı, 100 ml', price: '389,00 ₺', kw: 'kayganlaştırıcı su bazlı jel lubrikant' },
+    { brand: 'Durex', name: 'İnce dokulu prezervatif, 24’lü', price: '449,00 ₺', kw: 'prezervatif kondom ince' },
+    { brand: 'Ozmi Basics', name: 'Silikon temizleme spreyi, 150 ml', price: '229,00 ₺', kw: 'temizleyici hijyen bakım sprey' }
+  ];
+  SEARCH_CATS = ['Vibratörler','Masaj & dokunma','Kayganlaştırıcılar','Çiftlere özel','İç giyim','Prezervatif','Bakım & hijyen','Hediye setleri'];
+
+
+  componentDidMount() {
+    this._searchAway = (e) => {
+      if (!this.state.sOpen) return;
+      const t = e.target;
+      if (!(t && t.closest && t.closest('[data-search-box]'))) this.setState({ sOpen: false });
+    };
+    document.addEventListener('click', this._searchAway, true);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('click', this._searchAway, true);
+  }
+
+  norm(s) {
+    return s.toLocaleLowerCase('tr').replace(/ı/g, 'i').replace(/İ/g, 'i')
+      .replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c');
+  }
+  searchHits() {
+    const q = this.norm((this.state.sq || '').trim());
+    if (!q) return [];
+    return this.SEARCH_POOL.filter((p) => this.norm(p.brand + ' ' + p.name + ' ' + (p.kw || '')).includes(q)).slice(0, 4);
+  }
+  catHits() {
+    const q = this.norm((this.state.sq || '').trim());
+    if (!q) return [];
+    return this.SEARCH_CATS.filter((c) => this.norm(c).includes(q)).slice(0, 4);
+  }
+
+  state = { sq: '', sOpen: false, section: 'orders' };
+
+  renderVals() {
+    const s = this.state.section;
+    const item = (key, label, count) => ({
+      label, count: count || '',
+      bg: s === key || (key === 'orders' && s === 'order') ? '#201e1d' : 'transparent',
+      fg: s === key || (key === 'orders' && s === 'order') ? '#f3f2f2' : '#201e1d',
+      weight: s === key || (key === 'orders' && s === 'order') ? '800' : '400',
+      go: () => this.setState({ section: key })
+    });
+
+    const otherCopy = {
+      reviews: { title: 'Yorumlarım', empty: 'Değerlendirilecek 2 ürün var', body: 'Aldığın ürünler için yazdığın yorumlar burada listelenir. Yorumlar takma adla yayımlanır, adın hiçbir yerde görünmez.', cta: 'Değerlendirme yaz' },
+      returns: { title: 'İade taleplerim', empty: 'Açık iade talebin yok', body: 'Ambalajı açılmamış ürünlerde teslimattan sonra 14 gün içinde iade talebi oluşturabilirsin. Kargo kodu tarafımızdan gönderilir.', cta: 'İade talebi oluştur' },
+      notifications: { title: 'Bildirim tercihleri', empty: 'Tüm bildirimler nötr', body: 'Sipariş bildirimleri her zaman gelir ve konu satırında ürün adı geçmez. Kampanya e-postalarını buradan kapatabilirsin.', cta: 'Tercihleri düzenle' },
+      security: { title: 'Hesap güvenliği', empty: 'Hesabın korunuyor', body: 'Şifreni değiştirebilir, iki adımlı doğrulamayı açabilir ve oturum açtığın cihazları görebilirsin.', cta: 'Şifreyi değiştir' }
+    };
+    const oc = otherCopy[s] || otherCopy.reviews;
+
+    return {
+      stats: [
+        { k: 'Sipariş', v: '12' },
+        { k: 'Puan', v: '1.284' },
+        { k: 'Favori', v: '6' }
+      ],
+      menu: [
+        item('orders', 'Siparişlerim', '12'),
+        item('addresses', 'Adreslerim', '3'),
+        item('favorites', 'Favorilerim', '6'),
+        item('points', 'Kupon / puanlarım', '1.284'),
+        item('reviews', 'Yorumlarım', '4'),
+        item('returns', 'İade taleplerim', ''),
+        item('notifications', 'Bildirim tercihleri', ''),
+        item('security', 'Hesap güvenliği', ''),
+        item('privacy', 'Gizlilik modu', 'Açık')
+      ],
+      isOrders: s === 'orders',
+      isOrder: s === 'order',
+      isFav: s === 'favorites',
+      isAddr: s === 'addresses',
+      isPoints: s === 'points',
+      isPrivacy: s === 'privacy',
+      isOther: ['reviews', 'returns', 'notifications', 'security'].includes(s),
+      otherTitle: oc.title, otherEmpty: oc.empty, otherBody: oc.body, otherCta: oc.cta,
+      goOrder: () => this.setState({ section: 'order' }),
+      goOrders: () => this.setState({ section: 'orders' }),
+
+      orders: [
+        { no: '#48201', date: '9 Eylül 2026', total: '6.567,00 ₺', status: 'Hazırlanıyor', statusBg: '#201e1d', statusFg: '#f3f2f2', thumbs: [1, 2], summary: '3 ürün · LELO Sona 2 ve 2 ürün daha', detail: 'Bugün kargoya verilecek' },
+        { no: '#48198', date: '2 Eylül 2026', total: '2.138,00 ₺', status: 'Yolda', statusBg: '#ec3013', statusFg: '#f3f2f2', thumbs: [1, 2], summary: '2 ürün · Satisfyer Pro 2 ve 1 ürün daha', detail: 'Aras Kargo 7392 4471 0021' },
+        { no: '#47903', date: '14 Ağustos 2026', total: '389,00 ₺', status: 'Teslim edildi', statusBg: '#eae9e9', statusFg: '#201e1d', thumbs: [1], summary: '1 ürün · Pjur su bazlı kayganlaştırıcı', detail: '42 gün önce teslim edildi · Bitmek üzere olabilir' },
+        { no: '#47455', date: '3 Temmuz 2026', total: '5.290,00 ₺', status: 'İade edildi', statusBg: '#ffe0d9', statusFg: '#ae1800', thumbs: [1], summary: '1 ürün · We-Vibe Melt', detail: 'İade tutarı 5 iş gününde kartına yansıdı' }
+      ],
+      track: [
+        { when: '2 Eylül', title: 'Sipariş alındı', bg: '#201e1d', fg: '#f3f2f2' },
+        { when: '2 Eylül', title: 'Hazırlandı', bg: '#201e1d', fg: '#f3f2f2' },
+        { when: '3 Eylül', title: 'Kargoda', bg: '#ec3013', fg: '#f3f2f2' },
+        { when: 'Tahmini 10 Eylül', title: 'Teslim', bg: 'transparent', fg: '#201e1d' }
+      ],
+      orderLines: [
+        { brand: 'Satisfyer', name: 'Pro 2 Generation 3', variant: 'Siyah', qty: '1', total: '1.749,00 ₺' },
+        { brand: 'Pjur', name: 'Su bazlı kayganlaştırıcı, 100 ml', variant: 'Standart', qty: '1', total: '389,00 ₺' }
+      ],
+      orderSummary: [
+        { k: 'Ara toplam', v: '2.138,00 ₺' },
+        { k: 'Kargo', v: 'Ücretsiz' },
+        { k: 'Kullanılan puan', v: '−0,00 ₺' },
+        { k: 'Toplam', v: '2.138,00 ₺' }
+      ],
+      favs: [
+        { brand: 'LELO', name: 'Soraya Wave, çift uyarımlı', price: '8.190,00 ₺', badge: '' },
+        { brand: 'Womanizer', name: 'Premium 2, otomatik kapanan', price: '6.490,00 ₺', badge: '%12 indi' },
+        { brand: 'Fun Factory', name: 'Manta çiftler için', price: '4.950,00 ₺', badge: '' },
+        { brand: 'Ozmi Basics', name: 'Pamuklu dantel takım, siyah', price: '899,00 ₺', badge: '' },
+        { brand: 'We-Vibe', name: 'Chorus çift kullanımlı', price: '7.950,00 ₺', badge: '%11 indi' },
+        { brand: 'Pjur', name: 'Silikon bazlı kayganlaştırıcı, 30 ml', price: '319,00 ₺', badge: '' }
+      ],
+      addresses: [
+        { label: 'Ev', default: true, name: 'Deniz Kaya', body: 'Caferağa Mah. Moda Cad. No: 12 D: 4, Kadıköy / İstanbul · 0532 000 00 00' },
+        { label: 'İş', default: false, name: 'Deniz Kaya', body: 'Esentepe Mah. Büyükdere Cad. No: 201 Kat 8, Şişli / İstanbul · 0532 000 00 00' },
+        { label: 'Aras şube teslim', default: false, name: 'Deniz Kaya', body: 'Aras Kargo Moda Şubesi — paketi şubeden teslim al, eve gelmesin.' }
+      ],
+      coupons: [
+        { code: 'ILKALIS10', desc: 'İlk siparişte %10 indirim', until: '31 Aralık 2026’ya kadar' },
+        { code: 'KARGO0', desc: '750 ₺ üzeri ücretsiz kargo', until: 'Süresiz' },
+        { code: 'PUAN250', desc: '250 puan hediye — yorum yazana', until: '14 Ekim 2026’ya kadar' }
+      ],
+      privacyToggles: [
+        { title: 'Sipariş geçmişini PIN ile koru', body: 'Hesabına giriş yapılsa bile siparişlerin ve favorilerin 4 haneli PIN girilmeden görüntülenemez.', extra: '4 haneli PIN · son değişiklik 12 gün önce', on: '#ec3013', knob: '22px' },
+        { title: 'Nötr ekstre adı', body: 'Kart dökümünde “OZM DIŞ TİC. LTD.” görünür. Kapatırsan ekstrede ozmishop.com yazar.', extra: '', on: '#ec3013', knob: '22px' },
+        { title: 'Nötr e-posta konusu', body: '“Siparişiniz — #48201” formatı kullanılır; ürün adı hiçbir e-postada geçmez.', extra: '', on: '#ec3013', knob: '22px' },
+        { title: 'Kampanya e-postaları', body: 'Haftada en fazla bir e-posta. Sipariş bildirimlerini etkilemez.', extra: '', on: 'transparent', knob: '2px' },
+        { title: 'Hızlı çıkış tuşu', body: 'Sitenin üst köşesinde tek tıkla hava durumu sayfasına geçen bir çıkış tuşu gösterilir; geçmiş kaydı bırakmaz.', extra: '', on: '#ec3013', knob: '22px' }
+      ],
+      sq: this.state.sq,
+      sOpen: this.state.sOpen && this.state.sq.trim().length > 0,
+      sHits: this.searchHits(),
+      sEmpty: this.state.sq.trim().length > 0 && this.searchHits().length === 0 && this.catHits().length === 0,
+      sCats: this.catHits(),
+      sHasCats: this.catHits().length > 0,
+      onQuery: (e) => this.setState({ sq: e.target.value, sOpen: true }),
+      onFocus: () => this.setState({ sOpen: true }),
+      onKey: (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); window.location.href = '03 Arama ve Marka.dc.html'; }
+        if (e.key === 'Escape') this.setState({ sOpen: false });
+      },
+      sClose: () => this.setState({ sOpen: false })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

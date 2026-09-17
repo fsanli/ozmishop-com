@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Tasarım teslim klasörü: prototip runtime'ı (support.js, image-slot.js) ve
+    // .dc.html dosyaları uygulama kaynağı değil, referans. Lint edilmez.
+    "Ozmishop Web Design/**",
   ]),
 ]);
 

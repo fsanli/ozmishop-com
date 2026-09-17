@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { recordProductView } from '@/lib/api';
 
-/** Görüntülenme sayacı vekili (bkz. ProductViewPing). */
+/** Ürün görüntülenme sayacı vekili (bkz. ViewPing). */
 export async function POST(request: NextRequest) {
     let slug = '';
     try {

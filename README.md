@@ -11,7 +11,7 @@ cd ../ozmishop-api && npm run dev     # :4000
 
 cp .env.example .env.local
 npm install
-npm run dev                            # http://localhost:3200
+npm run dev                            # http://localhost:3201
 ```
 
 > `npm run build` API'ye ihtiyaç duyar: sayfalar derleme sırasında önbelleğe alınır ve örnek
@@ -20,7 +20,7 @@ npm run dev                            # http://localhost:3200
 
 | Komut | Ne yapar |
 |---|---|
-| `npm run dev` / `build` / `start` | Geliştirme (3200) · derleme · üretim |
+| `npm run dev` / `build` / `start` | Geliştirme (3201) · derleme · üretim |
 | `npm run check` | `tsc --noEmit` + ESLint |
 
 ## Önbellek mimarisi (bu projenin ana fikri)

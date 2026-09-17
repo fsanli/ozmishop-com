@@ -5,6 +5,14 @@ import type {
     CategoryDetail,
     ContentPage,
     HomeSection,
+    GuideQuestion,
+    GuideResult,
+    JournalIndex,
+    JournalPostDetail,
+    JournalTopic,
+    ReviewList,
+    SiteSettings,
+    MenuTree,
     ProductDetail,
     ProductGroup,
     ProductListing,
@@ -24,7 +32,7 @@ import type {
  *   home · products · categories · brands · groups · banners · pages
  *   product:{slug} · category:{slug} · brand:{slug} · group:{code} · page:{slug}
  */
-const API_BASE = (process.env.API_BASE_URL || 'http://localhost:4000').replace(/\/$/, '');
+const API_BASE = (process.env.API_BASE_URL || 'http://localhost:4200').replace(/\/$/, '');
 
 export class ApiError extends Error {
     readonly statusCode: number;
@@ -74,9 +82,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /** 404'ü null'a çevirir; diğer hatalar yükselir. */
-async function tryRequest<T>(path: string): Promise<T | null> {
+async function tryRequest<T>(path: string, init?: RequestInit): Promise<T | null> {
     try {
-        return await request<T>(path);
+        return await request<T>(path, init);
     } catch (error) {
         if (error instanceof ApiError && error.isNotFound) return null;
         throw error;
@@ -106,6 +114,21 @@ export async function getHome(): Promise<{ sections: HomeSection[] }> {
 }
 
 // --- Kategoriler --------------------------------------------------------------
+/**
+ * Anasayfa taslağı, panelin ürettiği kısa ömürlü önizleme jetonuyla.
+ * ASLA önbelleklenmez: taslak içerik ne müşteriye ne de önbelleğe girer.
+ */
+export async function getHomePreview(token: string): Promise<{ sections: HomeSection[] } | null> {
+    try {
+        return await request<{ sections: HomeSection[] }>(
+            `/home?preview=${encodeURIComponent(token)}`, { cache: 'no-store' },
+        );
+    } catch {
+        // Süresi dolmuş ya da bozuk jeton: 404'e düşülür, hata sayfası gösterilmez.
+        return null;
+    }
+}
+
 export async function getCategoryTree(): Promise<Category[]> {
     'use cache';
     cacheTag('categories');
@@ -142,6 +165,10 @@ export interface ProductQuery {
     category?: string;
     brand?: string;
     values?: number[];
+    /** "tanim-slug:secenek-slug" — künye seçimleri (varyantlardan ayrı kanal) */
+    ozellik?: string[];
+    /** "tanim-slug:min:max" — künye aralıkları */
+    aralik?: string[];
     minPrice?: number;
     maxPrice?: number;
     inStock?: boolean;
@@ -217,6 +244,107 @@ export async function getPage(slug: string): Promise<ContentPage | null> {
     return tryRequest<ContentPage>(`/pages/${slug}`);
 }
 
+// --- Günlük ------------------------------------------------------------------
+/**
+ * Günlük indeksi. `posts` etiketiyle önbelleklenir; konu filtresi varsa o konunun
+ * etiketi de eklenir, böylece panelde bir yazı değişince yalnız ilgili sayfalar
+ * tazelenir.
+ *
+ * Zamanlanmış yayın burada bir tuzak: API `published_at <= now()` filtreliyor ama
+ * önbellek süresi gün mertebesinde. `cacheLife('hours')` bilinçli — zamanı gelen
+ * bir yazının en geç bir saat içinde görünmesini garanti eder, panel tetiklemesi
+ * beklemeden.
+ */
+export async function getJournal(params: { topic?: string; page?: number } = {}): Promise<JournalIndex> {
+    'use cache';
+    cacheTag(...['posts', params.topic && `topic:${params.topic}`].filter(Boolean) as string[]);
+    cacheLife('hours');
+    return request<JournalIndex>(`/gunluk${query(params)}`);
+}
+
+export async function getPost(slug: string): Promise<JournalPostDetail | null> {
+    'use cache';
+    cacheTag('posts', `post:${slug}`);
+    cacheLife('days');
+    return tryRequest<JournalPostDetail>(`/gunluk/${slug}`);
+}
+
+export async function getJournalTopics(): Promise<JournalTopic[]> {
+    'use cache';
+    cacheTag('topics', 'posts');
+    cacheLife('days');
+    const data = await request<{ items: JournalTopic[] }>('/gunluk/konular');
+    return data.items;
+}
+
+export async function getJournalTopic(slug: string): Promise<JournalTopic | null> {
+    'use cache';
+    cacheTag('topics', `topic:${slug}`);
+    cacheLife('days');
+    return tryRequest<JournalTopic>(`/gunluk/konular/${slug}`);
+}
+
+// --- Değerlendirmeler ----------------------------------------------------------
+/**
+ * Ürün değerlendirmeleri. `reviews` etiketi yok — yorum onaylanınca API
+ * `product:{slug}` düşürüyor (bkz. cache.js → case 'review'), o yüzden burada
+ * ürünün kendi etiketi yeterli.
+ */
+export async function getReviews(slug: string, page = 1): Promise<ReviewList | null> {
+    'use cache';
+    cacheTag('products', `product:${slug}`);
+    cacheLife('hours');
+    return tryRequest<ReviewList>(`/catalog/products/${slug}/reviews${query({ page })}`);
+}
+
+// --- Ayarlar ve menü ------------------------------------------------------------
+/**
+ * Açık ayarlar. Vitrinin HER yerinde okunuyor (kargo eşiği, KDV, 18+ metni,
+ * nötr ekstre adı) — bu yüzden uzun ömürlü ve `settings` etiketiyle düşer.
+ */
+export async function getSettings(): Promise<SiteSettings> {
+    'use cache';
+    cacheTag('settings');
+    cacheLife('days');
+    return request<SiteSettings>('/settings');
+}
+
+export async function getMenu(code: string): Promise<MenuTree> {
+    'use cache';
+    cacheTag('settings');
+    cacheLife('days');
+    return request<MenuTree>(`/menus/${code}`);
+}
+
+// --- Başlangıç rehberi --------------------------------------------------------
+/** Sorular panelden yönetiliyor; `guide` etiketiyle önbelleklenir. */
+export async function getGuideQuestions(): Promise<GuideQuestion[]> {
+    'use cache';
+    cacheTag('guide');
+    cacheLife('days');
+    const data = await request<{ items: GuideQuestion[] }>('/guide');
+    return data.items;
+}
+
+/**
+ * Sonuç. `products` etiketi de eklenir: bir ürün tükendiğinde ya da fiyatı
+ * değiştiğinde rehberin önerisi de bayatlar.
+ *
+ * Yol (`path`) argüman olarak `use cache` anahtarına giriyor — içinde kimlik
+ * bilgisi YOK, yalnızca dört harf. Cevaplar kaydedilmiyor iddiası korunuyor:
+ * hangi ziyaretçinin hangi yolu seçtiği hiçbir yere yazılmıyor.
+ */
+export async function getGuideResults(path: string): Promise<GuideResult> {
+    'use cache';
+    cacheTag('guide', 'products');
+    cacheLife('hours');
+    return request<GuideResult>('/guide/results', {
+        method: 'POST',
+        body: JSON.stringify({ path }),
+        headers: { 'Content-Type': 'application/json' },
+    });
+}
+
 export async function getSitemapData(): Promise<SitemapData> {
     'use cache';
     cacheTag('products', 'categories', 'brands', 'groups', 'pages');
@@ -236,6 +364,28 @@ export async function suggest(q: string): Promise<Suggestions> {
 
 export async function resolveRedirect(path: string): Promise<{ redirect: string | null }> {
     return request<{ redirect: string | null }>(`/redirects/resolve${query({ path })}`, { cache: 'no-store' });
+}
+
+export async function recordPostView(slug: string): Promise<void> {
+    await request('/events/post-view', {
+        method: 'POST',
+        body: JSON.stringify({ slug }),
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+    });
+}
+
+/**
+ * Bülten kaydı. Hata mesajı çağırana AYNEN döner: API zaten "zaten kayıtlısınız"
+ * demiyor (bilgi sızdırmamak için), yani buradan sızacak bir şey yok.
+ */
+export async function subscribeNewsletter(email: string, source = 'gunluk'): Promise<void> {
+    await request('/newsletter', {
+        method: 'POST',
+        body: JSON.stringify({ email, source }),
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+    });
 }
 
 export async function recordProductView(slug: string): Promise<void> {

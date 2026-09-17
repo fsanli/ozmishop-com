@@ -2,6 +2,12 @@ import type { NextConfig } from 'next';
 
 const r2Host = process.env.R2_PUBLIC_HOSTNAME || '';
 
+/**
+ * Panelin adresi. Anasayfa önizleme rotası YALNIZCA bu kaynaktan iframe'e
+ * alınabilir; tanımlı değilse hiçbir yerden alınamaz ('none').
+ */
+const adminOrigin = process.env.ADMIN_BASE_URL || '';
+
 const nextConfig: NextConfig = {
     // Cache Components: veri varsayılan olarak dinamik, `use cache` ile önbelleklenir ve
     // sayfa statik kabuk + akan içerik (PPR) olarak render edilir. Tazelik zamana değil,
@@ -20,7 +26,7 @@ const nextConfig: NextConfig = {
         remotePatterns: [
             ...(r2Host ? [{ protocol: 'https' as const, hostname: r2Host }] : []),
             // Yerel geliştirmede medya API'nin /uploads klasöründen gelir.
-            { protocol: 'http' as const, hostname: 'localhost', port: '4000' },
+            { protocol: 'http' as const, hostname: 'localhost', port: '4200' },
             // Seed verisindeki yer tutucu görseller.
             { protocol: 'https' as const, hostname: 'placehold.co' },
         ],
@@ -31,7 +37,29 @@ const nextConfig: NextConfig = {
     async headers() {
         return [
             {
-                source: '/:path*',
+                /*
+                 * Önizleme rotası: panelin taslak anasayfayı görebildiği tek yer.
+                 * `frame-ancestors` yalnız panele izin verir; adres tanımsızsa
+                 * hiçbir yere. `X-Frame-Options` BURAYA KOYULMAZ — aşağıdaki
+                 * genel kural da bu yolu dışlıyor, çünkü XFO'nun "yalnız şu
+                 * kaynak" diye bir değeri yok ve SAMEORIGIN paneli engellerdi.
+                 *
+                 * Cache-Control verilmiyor: rota zaten dinamik ve Next kendi
+                 * `no-cache, must-revalidate` başlığını basıyor; buraya `no-store`
+                 * yazmak override edilip yanlış bir vaat bırakıyordu.
+                 */
+                source: '/onizleme/:path*',
+                headers: [
+                    {
+                        key: 'Content-Security-Policy',
+                        value: `frame-ancestors ${adminOrigin || "'none'"}`,
+                    },
+                    { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+                ],
+            },
+            {
+                // `/onizleme` HARİÇ her yol: oraya SAMEORIGIN uygulanmamalı.
+                source: '/((?!onizleme).*)',
                 headers: [
                     { key: 'X-Content-Type-Options', value: 'nosniff' },
                     { key: 'X-Frame-Options', value: 'SAMEORIGIN' },

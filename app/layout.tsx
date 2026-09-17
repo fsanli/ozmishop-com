@@ -1,19 +1,23 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Manrope, Sora } from 'next/font/google';
 import AgeGate from '@/components/AgeGate';
-import Footer from '@/components/Footer';
-import Header from '@/components/Header';
 import JsonLd from '@/components/JsonLd';
 import { organizationSchema, websiteSchema } from '@/lib/schema';
 import { site } from '@/lib/site';
 import './globals.css';
 
-// latin-ext alt kümesi Türkçe karakterler (ş, ğ, ı, İ, ö, ü, ç) için zorunlu.
-const inter = Inter({
-    subsets: ['latin', 'latin-ext'],
-    variable: '--font-inter',
-    display: 'swap',
-});
+/**
+ * Kök yerleşim KABUK İÇERMEZ. Header/Footer grup yerleşimlerinde:
+ *   (magaza) → UtilityBar + Header + Footer
+ *   (gunluk) → Günlük mastheadı + Footer
+ * İç içe bir yerleşim üstündekinin kabuğunu KALDIRAMAZ; blogun kendi başlığı
+ * olduğu için tek doğru çözüm rota grupları.
+ *
+ * latin-ext Türkçe karakterler (ş ğ ı İ ö ü ç) için zorunlu. weight dizisi
+ * verilmiyor: iki font da variable eksen taşıyor, tek dosyada 400–700 gelir.
+ */
+const sora = Sora({ subsets: ['latin', 'latin-ext'], variable: '--font-sora', display: 'swap' });
+const manrope = Manrope({ subsets: ['latin', 'latin-ext'], variable: '--font-manrope', display: 'swap' });
 
 export const metadata: Metadata = {
     metadataBase: new URL(site.url),
@@ -40,14 +44,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="tr" className={`${inter.variable} h-full`}>
+        <html lang="tr" className={`${sora.variable} ${manrope.variable} h-full`}>
             <body className="flex min-h-full flex-col">
-                <a href="#icerik" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded focus:bg-white focus:p-2">
+                <a
+                    href="#icerik"
+                    className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded-[var(--radius-md)] focus:bg-surface focus:p-2 focus:font-bold"
+                >
                     İçeriğe geç
                 </a>
-                <Header />
-                <main id="icerik" className="flex-1">{children}</main>
-                <Footer />
+                {children}
                 <AgeGate />
                 <JsonLd data={[organizationSchema(), websiteSchema()]} />
             </body>

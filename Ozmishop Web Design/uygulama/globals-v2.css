@@ -1,0 +1,253 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   OZMISHOP TASARIM SİSTEMİ — v2 "Karanlık Oda"
+   ==========================================================================
+   Bu dosya mevcut app/globals.css'in yerine geçer. SINIF İSİMLERİ AYNI KALDI
+   (btn-primary, card, badge, heading-1, price, field-input, prose-content …)
+   — bileşenlerde tek satır değiştirmeden yeni görünüme geçilir.
+
+   v1 (Modernist) ile FARKI: yumuşak köşeler, açık nötr zemin, koyu şarap-siyah
+   bloklar ve renk YALNIZCA ince detaylarda (kategori noktaları, 3px kenar
+   şeritleri, spec rozetleri).
+
+   KURALLAR
+   1. Köşe yarıçapı var ve tutarlı: kart 18px, buton/alan 12–14px, rozet 999px.
+   2. Gölge neredeyse yok — ayrım 1px kenarlıkla yapılır, hover'da kenar koyulaşır.
+   3. Renk seyrek: sayfa başına bir bordo aksiyon. Diğer renkler 5–7px noktalarda,
+      3px şeritlerde ve küçük rozetlerde kalır.
+   4. Koyu bloklar (#1a1418 / #241a20) sayfada 1–2 tane: hero, gizlilik, CTA.
+   5. Ürün görselleri saf beyaza yakın (#fbf9fa) zeminde durur.
+   ========================================================================== */
+
+@theme {
+    /* NÖTRLER — sıcak, hafif mor alt tonlu (Tailwind slate ezilir) */
+    --color-slate-50:  #faf8f8;
+    --color-slate-100: #f4f1f2;
+    --color-slate-200: #efe9eb;
+    --color-slate-300: #d8d1d4;
+    --color-slate-400: #8f858a;   /* kontrast tabanı — bundan açığı metinde kullanma */
+    --color-slate-500: #7a7076;
+    --color-slate-600: #635a60;   /* ikincil metin */
+    --color-slate-700: #3d353a;   /* gövde metni */
+    --color-slate-900: #1a1418;   /* mürekkep */
+
+    /* MARKA = mürekkep (brand-* çağrıları bozulmasın) */
+    --color-brand-50:  #faf8f8;
+    --color-brand-100: #f4f1f2;
+    --color-brand-200: #efe9eb;
+    --color-brand-300: #8f858a;
+    --color-brand-500: #1a1418;
+    --color-brand-600: #241a20;
+    --color-brand-700: #1a1418;
+    --color-brand-900: #0f0b0d;
+
+    /* AKSAN — bordo */
+    --color-accent-50:  #fdf6f8;
+    --color-accent-100: #f7dfe6;
+    --color-accent-200: #f4eef0;
+    --color-accent-300: #d4557a;
+    --color-accent-500: #9b1f47;
+    --color-accent-600: #821a3b;
+    --color-accent-700: #6b1531;
+
+    /* KATEGORİ RENKLERİ — yalnızca ince detaylarda kullanılır.
+       Her rengin: -dot (nokta/şerit), -ink (küçük metin), -tint (rozet zemini) */
+    --color-plum-dot:  #6b3fa0;
+    --color-plum-ink:  #5b4180;
+    --color-plum-tint: #f0ebf7;
+
+    --color-teal-dot:  #10726b;
+    --color-teal-ink:  #0d6159;
+    --color-teal-tint: #e4f2f0;
+
+    --color-amber-dot:  #c77d12;
+    --color-amber-ink:  #8a5509;
+    --color-amber-tint: #faf0e0;
+
+    --color-rose-dot:  #c2506e;
+    --color-rose-ink:  #a53d5c;
+    --color-rose-tint: #faecf0;
+
+    /* Koyu blok üzerinde kullanılacak açık karşılıklar */
+    --color-on-dark-berry: #e0899f;
+    --color-on-dark-plum:  #b79ae0;
+    --color-on-dark-amber: #e3a86a;
+    --color-on-dark-teal:  #7ec4bb;
+
+    --color-paper: #faf8f8;
+    --color-surface: #ffffff;
+    --color-shelf: #fbf9fa;   /* ürün görseli zemini */
+    --color-ink-block: #1a1418;
+    --color-ink-block-soft: #241a20;
+
+    --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+    --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-2xl: 28px;
+    --radius-full: 999px;
+}
+
+/* Fontlar — layout.tsx içinde:
+   import { Sora, Manrope } from 'next/font/google';
+   const sora = Sora({ subsets:['latin','latin-ext'], weight:['400','500','600','700'],
+                       variable:'--font-sora', display:'swap' });
+   const manrope = Manrope({ subsets:['latin','latin-ext'], weight:['400','500','600','700'],
+                             variable:'--font-manrope', display:'swap' });
+   <body className={`${sora.variable} ${manrope.variable}`}>
+   latin-ext Türkçe karakterler için ZORUNLU. */
+
+html { scroll-behavior: smooth; }
+
+body {
+    @apply bg-paper font-sans text-[15px] text-slate-900 antialiased;
+}
+
+/* Başlıklar Sora, gövde Manrope */
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    @apply font-semibold tracking-tight;
+    line-height: 1.1;
+}
+
+/* --------------------------------------------------------------------------
+   BUTONLAR
+   Tailwind v4'te özel bir sınıf başka bir özel sınıfı @apply EDEMEZ.
+   -------------------------------------------------------------------------- */
+.btn-primary,
+.btn-accent,
+.btn-secondary,
+.btn-soft,
+.btn-danger {
+    @apply inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)]
+           px-5 py-3 text-sm font-bold tracking-tight transition
+           focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2
+           focus-visible:outline-accent-500 disabled:cursor-not-allowed disabled:opacity-45;
+}
+
+/* Sepete Ekle, Ödemeye geç, Siparişi tamamla — sayfada TEK bordo buton */
+.btn-primary {
+    @apply bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700
+           disabled:bg-slate-300 disabled:hover:bg-slate-300;
+}
+/* Nötr birincil: koyu mürekkep. Hover'da bordoya döner */
+.btn-accent {
+    @apply bg-slate-900 text-paper hover:bg-accent-500;
+}
+/* İkincil: çerçeveli */
+.btn-secondary {
+    @apply border border-slate-900/15 bg-transparent text-slate-900
+           hover:border-slate-900 hover:bg-slate-900 hover:text-paper;
+}
+.btn-soft {
+    @apply bg-slate-100 text-slate-900 hover:bg-slate-200;
+}
+.btn-danger {
+    @apply border border-accent-500 bg-transparent text-accent-500 hover:bg-accent-500 hover:text-white;
+}
+.btn-sm { @apply px-3.5 py-2.5 text-xs; }
+.btn-lg { @apply rounded-[var(--radius-lg)] px-6 py-4 text-base; }
+.btn-pill { @apply rounded-full; }
+
+/* FORM */
+.field-input {
+    @apply w-full rounded-[var(--radius-md)] border border-slate-900/13 bg-paper px-3.5 py-3
+           text-sm text-slate-900 outline-none transition placeholder:text-slate-400
+           hover:border-slate-900/25 focus:border-accent-500
+           disabled:cursor-not-allowed disabled:opacity-45;
+}
+.field-label { @apply mb-1.5 block text-xs font-semibold text-slate-600; }
+.field-checkbox { @apply size-[17px] shrink-0 rounded-[6px] border-[1.5px] border-slate-900/22; }
+.field-radio { @apply size-[17px] shrink-0 rounded-full border-[1.5px] border-slate-900/25; }
+
+/* YÜZEYLER — gölge yok, 1px kenarlık; hover'da kenar koyulaşır */
+.card {
+    @apply rounded-[var(--radius-lg)] border border-slate-900/7 bg-surface;
+}
+.card-hover { @apply transition-colors hover:border-slate-900/28; }
+.card-xl { @apply rounded-[var(--radius-xl)]; }
+
+/* Kategori rengini karta bağlayan ince şerit */
+.card-edge-top  { @apply border-t-[3px]; }
+.card-edge-left { @apply border-l-[3px]; }
+
+/* Koyu bloklar — hero, gizlilik paneli, CTA */
+.block-dark {
+    @apply rounded-[var(--radius-xl)] bg-[var(--color-ink-block)] text-paper;
+}
+.block-dark-soft {
+    @apply rounded-[var(--radius-xl)] bg-[var(--color-ink-block-soft)] text-paper;
+}
+
+/* ROZETLER */
+.badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold;
+}
+.badge-accent  { @apply bg-accent-500 text-white; }
+.badge-brand   { @apply bg-slate-900 text-paper; }
+.badge-neutral { @apply border border-slate-900/12 text-slate-600; }
+.badge-plum    { @apply bg-plum-tint text-plum-ink; }
+.badge-teal    { @apply bg-teal-tint text-teal-ink; }
+.badge-amber   { @apply bg-amber-tint text-amber-ink; }
+.badge-rose    { @apply bg-rose-tint text-rose-ink; }
+
+/* Kategori noktası — nav, filtre başlığı, liste maddeleri */
+.dot { @apply inline-block size-[5px] shrink-0 rounded-full; }
+.dot-lg { @apply size-[6px]; }
+
+/* Bölüm başlığı üstündeki renkli kicker: kısa çizgi + etiket */
+.kicker {
+    @apply inline-flex items-center gap-2 text-[12.5px] font-bold text-accent-500;
+}
+.kicker::before {
+    content: '';
+    @apply inline-block h-0.5 w-4 bg-current;
+}
+
+/* TİPOGRAFİ */
+.heading-1 { font-family: var(--font-display); @apply text-3xl font-semibold tracking-[-0.04em] text-slate-900 sm:text-5xl; }
+.heading-2 { font-family: var(--font-display); @apply text-2xl font-semibold tracking-[-0.035em] text-slate-900 sm:text-3xl; }
+.heading-3 { font-family: var(--font-display); @apply text-lg font-semibold tracking-[-0.03em] text-slate-900; }
+.text-muted { @apply text-slate-600; }
+.link { @apply font-semibold text-accent-500 underline-offset-4 transition hover:text-accent-600; }
+
+.price { font-family: var(--font-display); @apply font-semibold tracking-[-0.03em] text-slate-900; }
+.price-lg { font-family: var(--font-display); @apply text-2xl font-semibold tracking-[-0.04em] sm:text-4xl; }
+.price-old { @apply text-sm text-slate-500 line-through; }
+
+/* Marka satırı — ürün kartı üstü */
+.brand-line { @apply text-[11px] font-bold uppercase tracking-[0.05em] text-slate-600; }
+
+.hr { @apply my-4 h-px border-0 bg-slate-900/8; }
+
+/* Panelden gelen HTML */
+.prose-content { @apply text-base leading-[1.8] text-slate-700; }
+.prose-content p { @apply mb-4; }
+.prose-content ul { @apply mb-4 list-disc space-y-1 pl-5; }
+.prose-content ol { @apply mb-4 list-decimal space-y-1 pl-5; }
+.prose-content h2 { font-family: var(--font-display); @apply mb-3.5 mt-8 text-2xl font-semibold tracking-[-0.035em] text-slate-900; }
+.prose-content h3 { font-family: var(--font-display); @apply mb-2 mt-6 text-lg font-semibold tracking-[-0.03em] text-slate-900; }
+.prose-content strong { @apply font-bold text-slate-900; }
+.prose-content a { @apply font-semibold text-accent-500 underline underline-offset-4; }
+.prose-content table { @apply mb-4 w-full text-left; }
+.prose-content td, .prose-content th { @apply border-b border-slate-900/8 py-2.5; }
+.prose-content blockquote {
+    font-family: var(--font-display);
+    @apply my-6 rounded-[var(--radius-lg)] border border-slate-900/7 border-l-[3px] border-l-accent-500
+           bg-surface px-6 py-5 text-lg font-semibold leading-snug tracking-[-0.03em] text-slate-900;
+}
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+::selection { background: #f7dfe6; }
+:focus-visible { @apply outline-2 outline-offset-2 outline-accent-500; }
+
+/* KONTRAST NOTU
+   slate-400 (#8f858a) yalnızca görsel yer tutucu metinlerinde kullanılır.
+   Gerçek içerik metninde en açık ton slate-600 (#635a60) olmalıdır.
+   Koyu bloklarda bordo (#9b1f47) okunmaz — on-dark-berry (#e0899f) kullan. */

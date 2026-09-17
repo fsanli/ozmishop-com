@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-a40d5f18-8637-4bb8-b3e5-f8e2ba3f3ec9/styles.css">
+<script src="_ds/modernist-a40d5f18-8637-4bb8-b3e5-f8e2ba3f3ec9/_ds_bundle.js"></script>
+</helmet>
+
+<footer style="font-family:Archivo,system-ui,sans-serif;background:#201e1d;color:#f3f2f2">
+  <div style="max-width:1440px;margin:0 auto;padding:clamp(32px,4.5vw,56px) clamp(16px,4vw,40px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:clamp(24px,4vw,48px)">
+    <div>
+      <div style="font-weight:800;font-size:22px;letter-spacing:-.03em">ozmishop<span style="color:#ec3013">.</span></div>
+      <p style="margin:12px 0 0;font-size:13px;line-height:1.55;opacity:.62;max-width:34ch">Yetişkinlere özel ürünler. Gizli paketleme, nötr ekstre adı ve 3D Secure ödeme.</p>
+      <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+        <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(243,242,242,.3);padding:5px 9px">18+</span>
+        <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(243,242,242,.3);padding:5px 9px">RTA etiketli</span>
+      </div>
+    </div>
+    <sc-for list="{{ cols }}" as="col" hint-placeholder-count="3">
+      <div>
+        <h3 style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px;opacity:.55;font-weight:800">{{ col.title }}</h3>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ col.links }}" as="l" hint-placeholder-count="5">
+            <li><a href="#" style="font-size:13.5px;color:rgba(243,242,242,.78);text-decoration:none" style-hover="color:#ec3013">{{ l }}</a></li>
+          </sc-for>
+        </ul>
+      </div>
+    </sc-for>
+  </div>
+  <div style="border-top:1px solid rgba(243,242,242,.16)">
+    <div style="max-width:1440px;margin:0 auto;padding:16px clamp(16px,4vw,40px);display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;font-size:11.5px;opacity:.5">
+      <span>© 2026 ozmishop. Tüm hakları saklıdır.</span>
+      <span>Bu site yalnızca 18 yaşından büyükler içindir.</span>
+    </div>
+  </div>
+</footer>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      cols: [
+        { title: 'Alışveriş', links: ['Tüm kategoriler', 'Fırsat ürünleri', 'Yeni gelenler', 'Hediye setleri', 'Tüm markalar'] },
+        { title: 'Yardım', links: ['Kargo ve teslimat', 'İade ve değişim', 'Gizli paketleme', 'Sıkça sorulanlar', 'İletişim'] },
+        { title: 'Kurumsal', links: ['Hakkımızda', 'Mesafeli satış sözleşmesi', 'Gizlilik politikası', 'KVKK aydınlatma metni', 'Çerez politikası'] }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

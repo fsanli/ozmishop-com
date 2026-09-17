@@ -1,5 +1,7 @@
 import { routes, site } from './site';
-import type { Category, ProductCard, ProductDetail } from './types';
+import type {
+    Category, JournalPost, JournalPostDetail, ProductCard, ProductDetail, ReviewList,
+} from './types';
 
 /**
  * schema.org üreticileri. @id çapaları (`/#organization`) düğümlerin birbirine
@@ -46,7 +48,13 @@ export function breadcrumbSchema(items: { name: string; url: string }[]) {
     };
 }
 
-export function productSchema(product: ProductDetail) {
+/**
+ * Ürün. `reviews` verilirse `aggregateRating` ve ilk üç yorum eklenir.
+ *
+ * DİKKAT: `reviewCount: 0` olan bir `aggregateRating` Google'da doğrulama
+ * hatası verir — bu yüzden yalnız gerçekten yorum varken basılır.
+ */
+export function productSchema(product: ProductDetail, reviews?: ReviewList | null) {
     const images = product.images.map((image) => image.url).slice(0, 6);
     const inStock = product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
     const url = `${site.url}${routes.product(product.slug)}`;
@@ -81,6 +89,24 @@ export function productSchema(product: ProductDetail) {
         brand: { '@type': 'Brand', name: product.brand.name },
         category: product.category.name,
         offers,
+        ...(reviews && reviews.summary.count > 0 && reviews.summary.average !== null ? {
+            aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: Number(reviews.summary.average.toFixed(1)),
+                reviewCount: reviews.summary.count,
+                bestRating: 5,
+                worstRating: 1,
+            },
+            review: reviews.items.slice(0, 3).map((item) => ({
+                '@type': 'Review',
+                reviewRating: { '@type': 'Rating', ratingValue: item.rating, bestRating: 5, worstRating: 1 },
+                // Yayında takma ad görünür; yapısal veride de gerçek ad YOK.
+                author: { '@type': 'Person', name: item.author },
+                datePublished: item.createdAt,
+                ...(item.title ? { name: item.title } : {}),
+                reviewBody: item.body,
+            })),
+        } : {}),
     };
 }
 
@@ -105,5 +131,58 @@ export function collectionSchema(category: Category) {
         name: category.name,
         description: category.metaDescription || category.description || undefined,
         url: `${site.url}${routes.category(category.slug)}`,
+    };
+}
+
+
+// --- Günlük ------------------------------------------------------------------
+/**
+ * Yazı detayı. `author` bir Person: Günlük'ün tüm değeri yazıların bir kişiye
+ * bağlı olmasında, `Organization` yazmak o iddiayı silerdi.
+ */
+export function postSchema(post: JournalPostDetail) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        '@id': `${site.url}${routes.post(post.slug)}#post`,
+        headline: post.title,
+        description: post.excerpt,
+        ...(post.cover ? { image: [post.cover.url] } : {}),
+        ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+        ...(post.author.name ? {
+            author: {
+                '@type': 'Person',
+                name: post.author.name,
+                ...(post.author.title ? { jobTitle: post.author.title } : {}),
+            },
+        } : {}),
+        publisher: { '@id': `${site.url}/#organization` },
+        inLanguage: 'tr-TR',
+        isAccessibleForFree: true,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': `${site.url}${routes.post(post.slug)}` },
+        ...(post.topic ? { articleSection: post.topic.name } : {}),
+        timeRequired: `PT${post.readMinutes}M`,
+    };
+}
+
+export function journalSchema(posts: JournalPost[]) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        '@id': `${site.url}${routes.journal}#collection`,
+        name: 'ozmishop Günlük',
+        url: `${site.url}${routes.journal}`,
+        isPartOf: { '@id': `${site.url}/#website` },
+        inLanguage: 'tr-TR',
+        mainEntity: {
+            '@type': 'ItemList',
+            numberOfItems: posts.length,
+            itemListElement: posts.map((post, index) => ({
+                '@type': 'ListItem',
+                position: index + 1,
+                url: `${site.url}${routes.post(post.slug)}`,
+                name: post.title,
+            })),
+        },
     };
 }

@@ -1,0 +1,183 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   OZMISHOP TASARIM SİSTEMİ v2 — "Modernist"
+   ==========================================================================
+   Bu dosya mevcut app/globals.css'in yerine geçer. SINIF İSİMLERİ AYNI KALDI
+   (btn-primary, card, badge, heading-1, price …) — bileşenlerde tek satır
+   değiştirmeden yeni görünüme geçilir. Değişen tek şey token'lar ve stiller.
+
+   ink    — Neredeyse siyah mürekkep: metin, çizgi, birincil yüzey
+   accent — Kırmızı: tek vurgu rengi. Birincil aksiyon, rozet, kırılma noktası
+   paper  — Kağıt zemini. Ürün görselleri saf beyaz (#fff) üzerinde durur
+
+   KURALLAR
+   1. Köşe yarıçapı YOK. --radius-* değerleri 0. Hiçbir yerde rounded-* kullanma.
+   2. Bölüm ayrımı 2px çizgiyle yapılır (.hr / border-b-2), boşlukla değil.
+   3. Buton etiketleri ve başlıklar sola dayalı. text-center kullanma.
+   4. Fotoğraflar siyah beyaz: .grayscale sarmalayıcısı zorunlu.
+   5. Accent seyrek: bir ekranda tek kırmızı buton.
+   ========================================================================== */
+
+@theme {
+    /* MÜREKKEP — Tailwind slate'i ezilir, mevcut sınıflar çalışmaya devam eder */
+    --color-slate-50: #f8f4f4;
+    --color-slate-100: #eae7e7;
+    --color-slate-200: #d7d3d3;
+    --color-slate-300: #bab6b6;
+    --color-slate-400: #9b9797;
+    --color-slate-500: #7d7979;
+    --color-slate-700: #444141;
+    --color-slate-900: #201e1d;
+
+    /* MARKA = mürekkep (eski gece moru kaldırıldı; brand-* çağrıları bozulmasın) */
+    --color-brand-50: #f8f4f4;
+    --color-brand-100: #eae7e7;
+    --color-brand-200: #d7d3d3;
+    --color-brand-300: #9b9797;
+    --color-brand-500: #201e1d;
+    --color-brand-600: #2d2b2b;
+    --color-brand-700: #201e1d;
+    --color-brand-900: #0f0e0e;
+
+    /* AKSAN — kırmızı */
+    --color-accent-50: #fff2ef;
+    --color-accent-100: #ffe0d9;
+    --color-accent-300: #ffc4b8;
+    --color-accent-500: #ec3013;
+    --color-accent-600: #dd2b0f;
+    --color-accent-700: #ae1800;
+
+    --color-paper: #f3f2f2;
+    --color-surface: #eae9e9;
+
+    --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+
+    --radius-none: 0px;
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+    --radius-xl: 0px;
+    --radius-2xl: 0px;
+    --radius-full: 0px;
+}
+
+/* Archivo — layout.tsx içinde:
+   import { Archivo } from 'next/font/google';
+   const archivo = Archivo({ subsets: ['latin','latin-ext'], weight: ['400','600','800'],
+                             variable: '--font-archivo', display: 'swap' });
+   latin-ext Türkçe karakterler için ZORUNLU. */
+
+html { scroll-behavior: smooth; }
+
+body {
+    @apply bg-paper font-sans text-[15px] text-slate-900 antialiased;
+    font-feature-settings: 'ss01';
+}
+
+h1, h2, h3, h4 { @apply font-extrabold tracking-tight; line-height: 1.08; }
+
+/* --------------------------------------------------------------------------
+   BUTONLAR — etiket SOLA DAYALI (btn-block genişken bile ortalanmaz)
+   Tailwind v4'te özel bir sınıf başka bir özel sınıfı @apply EDEMEZ.
+   -------------------------------------------------------------------------- */
+.btn-primary,
+.btn-accent,
+.btn-secondary,
+.btn-soft,
+.btn-danger {
+    @apply inline-flex cursor-pointer items-center gap-2 rounded-none px-5 py-3
+           text-sm font-extrabold tracking-tight transition
+           focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2
+           focus-visible:outline-accent-500 disabled:cursor-not-allowed disabled:opacity-45;
+}
+
+/* Sepete Ekle, Ödemeye geç, Siparişi tamamla — sayfada TEK kırmızı buton */
+.btn-primary {
+    @apply bg-accent-500 text-paper hover:bg-accent-600 active:bg-accent-700
+           disabled:bg-slate-300 disabled:hover:bg-slate-300;
+}
+/* Nötr birincil: koyu mürekkep */
+.btn-accent {
+    @apply bg-slate-900 text-paper hover:bg-accent-500;
+}
+/* Filtrele, İncele, Vazgeç */
+.btn-secondary {
+    @apply border border-slate-900/35 bg-transparent text-slate-900
+           hover:bg-slate-900/[0.07] active:bg-slate-900/[0.14];
+}
+.btn-soft {
+    @apply bg-surface text-slate-900 hover:bg-slate-900/[0.1];
+}
+.btn-danger {
+    @apply border border-accent-700 bg-transparent text-accent-700 hover:bg-accent-700 hover:text-paper;
+}
+.btn-sm { @apply px-3 py-2 text-xs; }
+.btn-lg { @apply px-6 py-4 text-base; }
+
+/* FORM — yüzey dolgulu, çerçeveli, köşesiz */
+.field-input {
+    @apply w-full rounded-none border border-slate-900/30 bg-surface px-3.5 py-3 text-sm text-slate-900
+           outline-none transition placeholder:text-slate-400
+           hover:border-slate-900/45 focus:border-accent-500
+           disabled:cursor-not-allowed disabled:opacity-45;
+}
+.field-label {
+    @apply mb-1.5 block text-[11px] font-normal uppercase tracking-[0.1em] text-slate-500;
+}
+
+/* YÜZEYLER — gölge yok, çizgi var */
+.card { @apply rounded-none border border-slate-900/22 bg-paper; }
+.card-hover { @apply transition hover:border-slate-900 hover:bg-surface; }
+
+/* Modüler ızgara: hücreler arası çizgi. Kap: border-t-2 + border-l */
+.grid-ruled { @apply border-l border-t-2 border-slate-900/22; }
+.grid-ruled > * { @apply border-b border-r border-slate-900/22; }
+
+/* ROZETLER — köşesiz, küçük, versal */
+.badge {
+    @apply inline-flex items-center gap-1 rounded-none px-2 py-1
+           text-[10px] font-extrabold uppercase tracking-[0.06em];
+}
+.badge-accent { @apply bg-accent-500 text-paper; }
+.badge-brand { @apply bg-slate-900 text-paper; }
+.badge-neutral { @apply border border-slate-900/25 text-slate-500; }
+.badge-success { @apply bg-accent-100 text-accent-700; }
+
+/* TİPOGRAFİ */
+.heading-1 { @apply text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl; }
+.heading-2 { @apply text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl; }
+.heading-3 { @apply text-lg font-extrabold tracking-tight text-slate-900; }
+.kicker { @apply text-[11px] font-extrabold uppercase tracking-[0.14em] text-accent-500; }
+.text-muted { @apply text-slate-500; }
+.link { @apply text-slate-900 underline-offset-4 transition hover:text-accent-500; }
+
+.price { @apply font-extrabold tabular-nums tracking-tight text-slate-900; }
+.price-old { @apply text-sm tabular-nums text-slate-400 line-through; }
+
+/* 2px kural çizgisi — bölüm ayracı */
+.hr { @apply my-4 h-0.5 border-0 bg-slate-900/40; }
+
+/* Fotoğraflar siyah beyaz basılır */
+.grayscale-photo { filter: grayscale(1) contrast(1.08); }
+
+/* Panelden gelen HTML */
+.prose-content { @apply text-[15px] leading-relaxed text-slate-700; }
+.prose-content p { @apply mb-4; }
+.prose-content ul { @apply mb-4 list-disc space-y-1 pl-5; }
+.prose-content ol { @apply mb-4 list-decimal space-y-1 pl-5; }
+.prose-content h2 { @apply mb-3 mt-8 text-2xl font-extrabold tracking-tight text-slate-900; }
+.prose-content h3 { @apply mb-2 mt-6 text-lg font-extrabold tracking-tight text-slate-900; }
+.prose-content strong { @apply font-extrabold text-slate-900; }
+.prose-content a { @apply text-accent-700 underline underline-offset-4; }
+.prose-content table { @apply mb-4 w-full text-left; }
+.prose-content td, .prose-content th { @apply border-b border-slate-900/20 py-2.5; }
+.prose-content blockquote {
+    @apply my-7 border-l-[3px] border-accent-500 pl-5 text-xl font-extrabold leading-snug tracking-tight text-slate-900;
+}
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+::selection { background: color-mix(in srgb, #ec3013 30%, transparent); }
+:focus-visible { @apply outline-2 outline-offset-2 outline-accent-500; }
