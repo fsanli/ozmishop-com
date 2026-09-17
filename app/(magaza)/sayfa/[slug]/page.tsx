@@ -3,15 +3,15 @@ import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/Breadcrumb';
 import { getPage, getPages } from '@/lib/api';
 import { redirectIfMoved } from '@/lib/redirects';
-import { routes, site } from '@/lib/site';
+import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 
 export async function generateStaticParams() {
     try {
         const pages = await getPages();
         const slugs = pages.map((page) => ({ slug: page.slug }));
-        return slugs.length ? slugs : [{ slug: '__ornek__' }];
+        return slugs.length ? slugs : [{ slug: PLACEHOLDER_SLUG }];
     } catch {
-        return [{ slug: '__ornek__' }];
+        return [{ slug: PLACEHOLDER_SLUG }];
     }
 }
 

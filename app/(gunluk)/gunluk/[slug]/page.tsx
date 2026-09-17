@@ -11,7 +11,7 @@ import { CATEGORY_COLOR } from '@/lib/colors';
 import { formatDate, formatPrice } from '@/lib/format';
 import { one, type SearchParams } from '@/lib/listing';
 import { breadcrumbSchema, postSchema } from '@/lib/schema';
-import { routes, site } from '@/lib/site';
+import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import ViewPing from '@/components/ViewPing';
 import type { JournalPost, JournalPostDetail } from '@/lib/types';
 
@@ -24,9 +24,9 @@ export async function generateStaticParams() {
     try {
         const data = await getSitemapData();
         const slugs = data.posts.slice(0, 50).map((post) => ({ slug: post.slug }));
-        return slugs.length ? slugs : [{ slug: '__ornek__' }];
+        return slugs.length ? slugs : [{ slug: PLACEHOLDER_SLUG }];
     } catch {
-        return [{ slug: '__ornek__' }];
+        return [{ slug: PLACEHOLDER_SLUG }];
     }
 }
 

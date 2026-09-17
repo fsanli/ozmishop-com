@@ -11,15 +11,15 @@ import { getBrand, getSitemapData } from '@/lib/api';
 import { canonicalFor, shouldIndex, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema } from '@/lib/schema';
-import { routes, site } from '@/lib/site';
+import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 
 export async function generateStaticParams() {
     try {
         const data = await getSitemapData();
         const slugs = data.brands.slice(0, 50).map((brand) => ({ slug: brand.slug }));
-        return slugs.length ? slugs : [{ slug: '__ornek__' }];
+        return slugs.length ? slugs : [{ slug: PLACEHOLDER_SLUG }];
     } catch {
-        return [{ slug: '__ornek__' }];
+        return [{ slug: PLACEHOLDER_SLUG }];
     }
 }
 

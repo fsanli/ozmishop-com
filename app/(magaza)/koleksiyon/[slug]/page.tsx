@@ -9,16 +9,16 @@ import { getProductGroup, getSitemapData } from '@/lib/api';
 import { one, pageHref, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, itemListSchema } from '@/lib/schema';
-import { routes, site } from '@/lib/site';
+import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import { Suspense } from 'react';
 
 export async function generateStaticParams() {
     try {
         const data = await getSitemapData();
         const slugs = data.groups.slice(0, 50).map((group) => ({ slug: group.slug }));
-        return slugs.length ? slugs : [{ slug: '__ornek__' }];
+        return slugs.length ? slugs : [{ slug: PLACEHOLDER_SLUG }];
     } catch {
-        return [{ slug: '__ornek__' }];
+        return [{ slug: PLACEHOLDER_SLUG }];
     }
 }
 

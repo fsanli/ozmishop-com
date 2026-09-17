@@ -15,7 +15,7 @@ import { getProduct, getReviews, getSitemapData } from '@/lib/api';
 import { one, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, productSchema } from '@/lib/schema';
-import { routes, site } from '@/lib/site';
+import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import ProductGallery from './ProductGallery';
 import ProductPurchasePanel from './ProductPurchasePanel';
 import ViewPing from '@/components/ViewPing';
@@ -29,9 +29,9 @@ export async function generateStaticParams() {
     try {
         const data = await getSitemapData();
         const slugs = data.products.slice(0, 50).map((product) => ({ slug: product.slug }));
-        return slugs.length ? slugs : [{ slug: '__ornek__' }];
+        return slugs.length ? slugs : [{ slug: PLACEHOLDER_SLUG }];
     } catch {
-        return [{ slug: '__ornek__' }];
+        return [{ slug: PLACEHOLDER_SLUG }];
     }
 }
 

@@ -11,6 +11,17 @@ export const site = {
     canonicalHosts: ['ozmishop.com', 'www.ozmishop.com'],
 } as const;
 
+/**
+ * Boş bir koleksiyonda `generateStaticParams` için yer tutucu.
+ *
+ * Cache Components dinamik rotalarda en az bir örnek param ister. Değer API'nin
+ * slug desenine (`^[a-z0-9-]+$`) UYMAK ZORUNDA: uymayan bir slug 404 değil
+ * 400 döner, `tryRequest` onu null'a çeviremez ve `next build` düşer.
+ * Eski `__ornek__` alt çizgi içerdiği için tam olarak bu hataya yol açıyordu —
+ * Günlük'te yazı yokken üretim derlemesi bu yüzden patladı.
+ */
+export const PLACEHOLDER_SLUG = 'ornek-yer-tutucu';
+
 export const routes = {
     home: '/',
     product: (slug: string) => `/urun/${slug}`,

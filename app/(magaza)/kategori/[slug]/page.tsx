@@ -13,15 +13,15 @@ import { getCategory, getSitemapData } from '@/lib/api';
 import { canonicalFor, shouldIndex, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, collectionSchema } from '@/lib/schema';
-import { routes, site } from '@/lib/site';
+import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 
 export async function generateStaticParams() {
     try {
         const data = await getSitemapData();
         const slugs = data.categories.slice(0, 50).map((category) => ({ slug: category.slug }));
-        return slugs.length ? slugs : [{ slug: '__ornek__' }];
+        return slugs.length ? slugs : [{ slug: PLACEHOLDER_SLUG }];
     } catch {
-        return [{ slug: '__ornek__' }];
+        return [{ slug: PLACEHOLDER_SLUG }];
     }
 }
 
