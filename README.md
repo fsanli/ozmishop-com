@@ -9,7 +9,7 @@ ozmishop.com vitrini. Next.js 16 (App Router) · React 19 · Tailwind 4.
 # Önce API çalışmalı
 cd ../ozmishop-api && npm run dev     # :4000
 
-cp .env.example .env.local
+cp .env.example .env            # tek ortam dosyası; yerel blok için dosya içindeki nota bakın
 npm install
 npm run dev                            # http://localhost:3201
 ```
