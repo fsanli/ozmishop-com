@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import TransferPanel from '@/components/order/TransferPanel';
 import PrivacyPanel from '@/components/privacy/PrivacyPanel';
 import { getMyOrder } from '@/lib/account';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -129,6 +130,10 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ n
                             <Row label="Toplam" value={formatPrice(order.totals.grandTotal)} strong />
                         </dl>
                     </section>
+
+                    {/* Havale özeti: kalan tutar en çok sorulan şey, adresin
+                        üstünde dursun. Kart siparişinde alan hiç gelmiyor. */}
+                    {order.transfer && <TransferPanel settlement={order.transfer} orderNumber={order.orderNumber} />}
 
                     <section className="card overflow-hidden">
                         <h3 className="border-b border-slate-900/6 px-4 py-3 text-[12.5px] font-bold">Teslimat</h3>

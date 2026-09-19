@@ -6,6 +6,7 @@ import PrivacyPanel from '@/components/privacy/PrivacyPanel';
 import { CheckIcon } from '@/components/icons';
 import { getOrder } from '@/lib/cart';
 import { formatPrice } from '@/lib/format';
+import TransferPanel from '@/components/order/TransferPanel';
 import { routes } from '@/lib/site';
 import type { OrderStatus } from '@/lib/types';
 
@@ -46,7 +47,8 @@ async function OrderContent({
 
     const reached = STEPS.findIndex((item) => item.status === order.status);
     const failed = order.status === 'cancelled' || order.paymentStatus === 'failed';
-    const awaitingTransfer = order.paymentMethod === 'transfer' && order.paymentStatus === 'pending';
+    // Havale özeti API'den geliyor; "ödeme bekleniyor" rozetini de o belirliyor.
+    const awaitingTransfer = order.transfer ? order.transfer.remaining > 0 : false;
 
     return (
         <div className="flex flex-wrap items-start gap-[clamp(18px,3vw,44px)]">
@@ -76,17 +78,8 @@ async function OrderContent({
                     )}
                 </p>
 
-                {awaitingTransfer && (
-                    <div className="card mt-5 p-[18px_20px]">
-                        <h2 className="text-[14.5px] font-bold">Havale / EFT bilgileri</h2>
-                        <p className="mt-2 text-[13.5px] leading-relaxed text-slate-600">
-                            Açıklamaya yalnızca <strong className="font-bold text-slate-900">{order.orderNumber}</strong> yazman
-                            yeterli. Ödemen ulaştığında siparişin hazırlanmaya başlar.
-                        </p>
-                        <p className="mt-2 text-[12.5px] text-slate-600">
-                            Banka bilgileri sipariş e-postanda yer alır.
-                        </p>
-                    </div>
+                {order.transfer && !failed && (
+                    <TransferPanel settlement={order.transfer} orderNumber={order.orderNumber} className="mt-5" />
                 )}
 
                 {!failed && (

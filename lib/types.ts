@@ -387,6 +387,28 @@ export interface Order {
     }[];
     history: { status: OrderStatus; note: string | null; createdAt: string }[];
     allowedTransitions: OrderStatus[];
+    /**
+     * Yalnızca havale/EFT siparişlerinde dolu. Kart siparişinde alan hiç gelmez,
+     * yani `transfer &&` kontrolü ödeme yöntemini ayrıca sormayı gereksiz kılar.
+     */
+    transfer?: TransferSettlement;
+}
+
+/** Havale bakiyesi. Yönetici panelinin gördüğü hesabın müşteriye açık kısmı. */
+export interface TransferSettlement {
+    state: 'bekliyor' | 'eksik' | 'tam' | 'fazla';
+    paid: number;
+    remaining: number;
+    overpaid: number;
+    grandTotal: number;
+    receipts: { amount: number; receivedAt: string }[];
+    bank: {
+        accountName: string;
+        bankName: string;
+        iban: string;
+        note: string;
+        dueDays: number | null;
+    };
 }
 
 export interface InstallmentOption {
