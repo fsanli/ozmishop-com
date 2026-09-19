@@ -3,6 +3,27 @@ import type { NextConfig } from 'next';
 const r2Host = process.env.R2_PUBLIC_HOSTNAME || '';
 
 /**
+ * R2 kapalıyken görseller API'nin /uploads klasöründen gelir; izin verilen host
+ * o zaman API'nin kendi hostudur. Sabit 'localhost' yazmak yerine API_BASE_URL'den
+ * TÜRETİLİYOR — aksi halde API Render'a taşındığında next/image sessizce 400 döner
+ * ve seed verisi placehold.co kullandığı için bu ancak ilk gerçek yüklemede fark edilir.
+ */
+const apiPattern = (() => {
+    try {
+        const url = new URL(process.env.API_BASE_URL || 'http://localhost:4200');
+        return [
+            {
+                protocol: url.protocol.replace(':', '') as 'http' | 'https',
+                hostname: url.hostname,
+                ...(url.port ? { port: url.port } : {}),
+            },
+        ];
+    } catch {
+        return [];
+    }
+})();
+
+/**
  * Panelin adresi. Anasayfa önizleme rotası YALNIZCA bu kaynaktan iframe'e
  * alınabilir; tanımlı değilse hiçbir yerden alınamaz ('none').
  */
@@ -25,8 +46,7 @@ const nextConfig: NextConfig = {
     images: {
         remotePatterns: [
             ...(r2Host ? [{ protocol: 'https' as const, hostname: r2Host }] : []),
-            // Yerel geliştirmede medya API'nin /uploads klasöründen gelir.
-            { protocol: 'http' as const, hostname: 'localhost', port: '4200' },
+            ...apiPattern,
             // Seed verisindeki yer tutucu görseller.
             { protocol: 'https' as const, hostname: 'placehold.co' },
         ],

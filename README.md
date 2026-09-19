@@ -7,12 +7,18 @@ ozmishop.com vitrini. Next.js 16 (App Router) · React 19 · Tailwind 4.
 
 ```bash
 # Önce API çalışmalı
-cd ../ozmishop-api && npm run dev     # :4000
+cd ../ozmishop-api && npm run dev     # :4200
 
-cp .env.example .env            # tek ortam dosyası; yerel blok için dosya içindeki nota bakın
+cp .env.example .env            # üretim değerleri
+# .env.example'ın sonundaki "ÖRNEK .env.local" bloğunu .env.local'e kopyalayın
 npm install
 npm run dev                            # http://localhost:3201
 ```
+
+> **İki ortam dosyası var.** `.env` ÜRETİM değerlerini taşır (dağıtım panosuna
+> girilecek olanlar); `.env.local` yalnızca yerelde FARKLI olanları taşır ve
+> `.env`ten sonra yüklenerek onu ezer. Yerelde çalışmak için `.env`te hiçbir şeyi
+> yorumlamayın. İkisi de git'e girmez; şablon `.env.example`.
 
 > `npm run build` API'ye ihtiyaç duyar: sayfalar derleme sırasında önbelleğe alınır ve örnek
 > adresler (`generateStaticParams`) API'den okunur. API kapalıysa derleme açık bir mesajla durur —
