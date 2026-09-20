@@ -19,7 +19,10 @@ export default async function PointsPage() {
     const points = await getMyPoints();
 
     return (
-        <AccountShell active={routes.accountPoints} title="Kupon ve puanlarım">
+        <AccountShell active={routes.accountPoints} title={points ? 'Kupon ve puanlarım' : 'Kuponlarım'}>
+            {/* Puan sistemi kapalıyken bölüm HİÇ çizilmez — "0 puanınız var"
+                demek, olmayan bir programın varmış gibi görünmesi olurdu. */}
+            {points && (
             <div className="card card-xl card-edge-top border-t-amber-dot p-[clamp(20px,3vw,28px)]">
                 <span className="text-[12px] font-bold text-slate-600">Kullanılabilir puan</span>
                 <div className="price mt-2 text-[46px] leading-none tracking-[-0.05em]">{points.balance}</div>
@@ -30,8 +33,9 @@ export default async function PointsPage() {
                     )}
                 </p>
             </div>
+            )}
 
-            {points.entries.length > 0 && (
+            {points && points.entries.length > 0 && (
                 <div className="card mt-4 px-[22px] py-1.5">
                     {points.entries.map((entry) => (
                         <div key={entry.id} className="flex items-baseline justify-between gap-3 border-b border-slate-900/7 py-3 last:border-0">

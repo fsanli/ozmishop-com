@@ -640,6 +640,7 @@ export interface GuideResult {
  * silinirse sayfa çökmemeli.
  */
 export interface SiteSettings {
+    'puan.aktif'?: boolean;
     'iletisim.whatsapp_numarasi'?: string;
     'iletisim.whatsapp_mesaji'?: string;
     'iletisim.whatsapp_destek_mesaji'?: string;

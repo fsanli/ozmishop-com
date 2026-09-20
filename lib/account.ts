@@ -23,7 +23,18 @@ export const getMyOrder = (orderNumber: string) =>
     accountFetch<Order>(`/orders/${encodeURIComponent(orderNumber)}`);
 export const getMyAddresses = () => accountFetch<{ items: Address[] }>('/users/me/addresses');
 export const getMyFavorites = () => accountFetch<{ items: ProductCard[] }>('/users/me/favorites');
-export const getMyPoints = () => accountFetch<PointsSummary>('/users/me/points');
+/**
+ * Puan özeti. Sistem KAPALIYKEN API 409 döner ve burada `null`a çevrilir:
+ * kapalı bir özellik hesabım sayfasını çökertmemeli. Çağıran `null` görünce
+ * bölümü hiç çizmiyor.
+ */
+export async function getMyPoints(): Promise<PointsSummary | null> {
+    try {
+        return await accountFetch<PointsSummary>('/users/me/points');
+    } catch {
+        return null;
+    }
+}
 export const getMyPrivacy = () => accountFetch<PrivacySettings>('/users/me/privacy');
 export const getMyNotifications = () => accountFetch<NotificationPrefs>('/users/me/notifications');
 export const getMyReviews = () => accountFetch<{

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CATEGORY_COLOR } from '@/lib/colors';
+import { getSettings } from '@/lib/api';
 import { routes } from '@/lib/site';
 import { logoutAction } from '@/app/(magaza)/giris/actions';
 
@@ -8,7 +9,7 @@ export const SECTIONS = [
     { href: routes.accountOrders, label: 'Siparişlerim', color: 'berry' },
     { href: routes.addresses, label: 'Adreslerim', color: 'plum' },
     { href: routes.favorites, label: 'Favorilerim', color: 'rose' },
-    { href: routes.accountPoints, label: 'Kupon / puanlarım', color: 'amber' },
+    { href: routes.accountPoints, label: 'Kuponlarım', color: 'amber' },
     { href: routes.accountReviews, label: 'Yorumlarım', color: 'teal' },
     { href: routes.accountReturns, label: 'İade taleplerim', color: 'plum' },
     { href: routes.accountNotifications, label: 'Bildirim tercihleri', color: 'teal' },
@@ -16,7 +17,12 @@ export const SECTIONS = [
     { href: routes.accountPrivacy, label: 'Gizlilik modu', color: 'berry' },
 ] as const;
 
-export default function AccountNav({ active }: { active: string }) {
+export default async function AccountNav({ active }: { active: string }) {
+    // Puan sistemi kapalıyken menü "puanlarım" dememeli: olmayan bir programı
+    // varmış gibi göstermek, en çok destek çağrısı üreten şey.
+    const settings = await getSettings();
+    const pointsOn = settings['puan.aktif'] === true;
+
     return (
         <nav className="card card-xl p-3" aria-label="Hesabım">
             <ul className="space-y-0.5">
@@ -32,7 +38,7 @@ export default function AccountNav({ active }: { active: string }) {
                                 }`}
                             >
                                 <span className={`dot ${isActive ? 'bg-on-dark' : CATEGORY_COLOR[section.color].dot}`} />
-                                {section.label}
+                                {section.href === routes.accountPoints && pointsOn ? 'Kupon / puanlarım' : section.label}
                             </Link>
                         </li>
                     );
