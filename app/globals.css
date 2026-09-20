@@ -234,7 +234,14 @@ h1, h2, h3, h4 {
 .text-muted { @apply text-slate-600; }
 .link { @apply font-semibold text-accent-500 underline-offset-4 transition hover:text-accent-600; }
 
-.price { font-family: var(--font-display); @apply font-semibold tracking-[-0.03em] text-slate-900; }
+/* RENK YOK — bilerek. `.price` derlenmiş CSS'te renk yardımcılarından SONRA
+   geliyor ve aynı özgüllükte, yani `text-slate-900` taşısaydı yanına yazılan
+   her renk sınıfını sessizce ezerdi. Üç yerde tam olarak bu oldu: koyu hero'daki
+   sayılar ve marka sayfasındaki istatistikler görünmez oldu, puan defterindeki
+   +/- renk kodu kayboldu.
+   Gövde zaten `text-slate-900`; açık zeminde görünüm değişmiyor, koyu blokta
+   artık ezilebiliyor. */
+.price { font-family: var(--font-display); @apply font-semibold tracking-[-0.03em]; }
 .price-lg { font-family: var(--font-display); @apply text-2xl font-semibold tracking-[-0.04em] sm:text-4xl; }
 .price-old { @apply text-sm text-slate-500 line-through; }
 
