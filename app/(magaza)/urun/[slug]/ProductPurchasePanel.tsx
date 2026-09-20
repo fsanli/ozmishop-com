@@ -222,8 +222,6 @@ export default function ProductPurchasePanel({
                 {buyForm('sm')}
             </div>
 
-            {/* Sabit çubuğun altında kalan içerik için pay. */}
-            <div aria-hidden className="h-[96px] lg:hidden" />
 
             <ul className="space-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500">
                 <li>Gizli paketleme — kargo etiketinde içerik bilgisi yer almaz.</li>

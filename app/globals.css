@@ -298,8 +298,22 @@ h1, h2, h3, h4 {
    sayfada yukarı çıkıyor — bunu JavaScript'le yapmak, iki ayrı bileşenin
    birbirinin varlığını bilmesini gerektirirdi.
 --------------------------------------------------------------------------- */
+:root {
+    /* Ürün sayfasındaki mobil satın alma çubuğunun yüksekliği. Hem sayfa payı
+       hem destek balonunun konumu buradan okunuyor; iki yerde iki sayı olmasın. */
+    --buy-bar-h: 100px;
+}
+
 @media (width < 64rem) {
     body:has(.buy-bar) .support-dock {
-        bottom: calc(96px + 0.75rem);
+        bottom: calc(var(--buy-bar-h) + 0.75rem);
+    }
+
+    /* Sabit çubuğun altında kalan içerik için pay.
+       SAYFANIN SONUNA veriliyor, çubuğun yanına değil: pay bileşenin içinde
+       bir <div> iken sayfanın ORTASINDA 96px boşluk açıyor ve asıl işini —
+       son bölümün çubuk altında kalmasını önlemek — hiç yapmıyordu. */
+    body:has(.buy-bar) #icerik {
+        padding-bottom: calc(var(--buy-bar-h) + 0.5rem);
     }
 }

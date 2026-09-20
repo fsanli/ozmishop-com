@@ -1,3 +1,4 @@
+import { toLocal } from '@/lib/phone';
 import type { SiteSettings } from '@/lib/types';
 
 /**
@@ -9,16 +10,18 @@ import type { SiteSettings } from '@/lib/types';
  */
 
 /**
- * wa.me yalnızca RAKAM kabul eder. Ayar `+90 (555) 111 22 33` gibi
- * girilebilsin diye buradan geçiriliyor; editörün biçim ezberlemesi gerekmiyor.
+ * wa.me yalnızca RAKAM ve ülke kodlu biçim kabul eder: 905551112233.
+ *
+ * Normalleştirme `lib/phone.ts`'teki `toLocal`'a devredildi — telefon alanının
+ * kullandığı fonksiyonun aynısı. Burada ikinci bir sürüm yazmak canlıda
+ * gerçekten patladı: editör ayara "+90 0551 390 66 97" yazdı (ülke kodu VE
+ * baştaki sıfır birlikte), eski kod 13 haneyi olduğu gibi geçirdi ve üretilen
+ * `wa.me/9005513906697` bağlantısı hiçbir yerde açılmadı.
  */
 export const normaliseNumber = (raw: string | undefined | null): string => {
-    const digits = String(raw ?? '').replace(/\D/g, '');
-    // 0 ile başlayan yerel yazım (05551112233) → 90 eklenir. 10 hane (5551112233)
-    // de aynı şekilde. Zaten ülke kodu varsa dokunulmaz.
-    if (digits.length === 11 && digits.startsWith('0')) return `90${digits.slice(1)}`;
-    if (digits.length === 10 && digits.startsWith('5')) return `90${digits}`;
-    return digits;
+    const local = toLocal(String(raw ?? ''));       // 0XXXXXXXXXX
+    if (local.length !== 11) return '';             // yarım numara = buton çizilmesin
+    return `90${local.slice(1)}`;
 };
 
 /** {{urun}} {{link}} {{fiyat}} — render.js'teki sözdiziminin aynısı. */
