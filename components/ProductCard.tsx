@@ -20,6 +20,13 @@ import type { ProductCard as ProductCardType } from '@/lib/types';
  *
  * `priority` yalnızca listenin ilk satırındaki kartlara verilir (LCP).
  *
+ * YÜKSEKLİK: kart `h-full` ile satırının en uzun kartına eşitlenir; sabit bir
+ * min-height YOK. Rozet sayısı ve başlık uzunluğu ürüne göre değişiyor, sabit
+ * bir sayı (ör. 411px) bugünkü en uzun içeriğe göre seçilmiş olurdu: dört
+ * rozetli bir ürün yine taşar, hiç rozeti olmayan bir satır ise o kadar boşluk
+ * bırakırdı. Fiyat ve aksiyonlar `mt-auto` ile dibe yaslandığı için kartlar
+ * uzayınca da aynı hizada kalıyor.
+ *
  * Aksiyon ikonları (favori / sepet / WhatsApp) `ProductActions`'tan geliyor;
  * arama açılırı da aynı bileşeni kullanıyor. Dolu kalp `<Suspense>` içinde
  * akıyor: kartın kendisi statik kalsın, yalnız kalbin durumu istek zamanına
@@ -38,7 +45,7 @@ export default async function ProductCard({
         && product.minPrice !== null && product.maxPrice !== null && product.minPrice !== product.maxPrice;
 
     return (
-        <article className="card card-hover group relative flex flex-col overflow-hidden">
+        <article className="card card-hover group relative flex h-full flex-col overflow-hidden">
             <div className="relative aspect-square overflow-hidden bg-shelf">
                 {product.image ? (
                     <Image
