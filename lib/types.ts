@@ -68,6 +68,12 @@ export interface ProductCard {
     maxPrice: number | null;
     variantCount: number;
     hasVariants: boolean;
+    /**
+     * Varsayılan varyantın (satın alınabilir ürünün) kimliği. Karttaki "sepete
+     * ekle" bunu kullanır; `hasVariants` ise kullanıcı seçim yapmalı ve buton
+     * ürün sayfasına bağlanır.
+     */
+    defaultProductId: number | null;
     inStock: boolean;
     totalStock: number;
     image: ApiImage | null;
@@ -260,7 +266,11 @@ export interface ContentPage {
 }
 
 export interface Suggestions {
-    products: { id: number; name: string; slug: string; price: number; compareAtPrice: number | null; image: string | null; brand: string }[];
+    products: {
+        id: number; name: string; slug: string; price: number; compareAtPrice: number | null;
+        image: string | null; brand: string;
+        defaultProductId: number | null; hasVariants: boolean; inStock: boolean;
+    }[];
     categories: { id: number; name: string; slug: string }[];
     brands: { id: number; name: string; slug: string }[];
 }
@@ -622,6 +632,11 @@ export interface GuideResult {
  * silinirse sayfa çökmemeli.
  */
 export interface SiteSettings {
+    'iletisim.whatsapp_numarasi'?: string;
+    'iletisim.whatsapp_mesaji'?: string;
+    'iletisim.whatsapp_destek_mesaji'?: string;
+    'iletisim.whatsapp_destek_aktif'?: boolean;
+    'iletisim.tawkto_kimlik'?: string;
     'magaza.kdv_orani'?: number;
     'magaza.yas_kapisi_metni'?: string;
     'kargo.ucretsiz_esigi'?: number;

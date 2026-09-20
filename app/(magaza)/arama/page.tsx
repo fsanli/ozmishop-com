@@ -79,7 +79,7 @@ async function SearchResults({ searchParams: searchParamsPromise }: { searchPara
             </div>
 
             <div className="mt-5">
-                <ProductGrid products={results.items} priorityCount={4} />
+                <ProductGrid products={results.items} priorityCount={4} back={routes.search(term)} />
                 <ListingPagination
                     pagination={results.pagination}
                     basePath={routes.searchPage}

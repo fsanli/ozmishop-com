@@ -1,4 +1,5 @@
 import 'server-only';
+import { cacheLife } from 'next/cache';
 import { accountFetch } from './session';
 import type {
     AccountOrder, Address, Cart, Customer, MyReview, NotificationPrefs,
@@ -63,6 +64,30 @@ export const saveAddress = (id: number | null, payload: Record<string, unknown>)
 
 export const deleteAddress = (id: number) =>
     accountFetch<{ ok: true }>(`/users/me/addresses/${id}`, { method: 'DELETE' });
+
+/**
+ * Favori ürün kimlikleri — listelerdeki dolu kalp için.
+ *
+ * `use cache: private` + kısa ömür: aynı render'daki yirmi kart tek istek
+ * paylaşır, ama favori ekleyince en geç bir dakikada tazelenir. Tam ürün
+ * kartlarını çeken `/users/me/favorites` yerine hafif `favorite-ids` ucu
+ * kullanılıyor; listeye yalnızca kimlikler gerekiyor.
+ *
+ * Misafirde BOŞ küme döner ve hata fırlatmaz: kalp her kullanıcıya çizilir,
+ * tıklayınca giriş ekranına yollar.
+ */
+export async function getFavoriteIds(): Promise<Set<number>> {
+    'use cache: private';
+    cacheLife({ stale: 30, revalidate: 30, expire: 120 });
+
+    try {
+        const { ids } = await accountFetch<{ ids: number[] }>('/users/me/favorite-ids');
+        return new Set(ids);
+    } catch {
+        // Oturum yok ya da API erişilemedi: favori göstermemek doğru davranış.
+        return new Set();
+    }
+}
 
 export const toggleFavorite = (baseProductId: number) =>
     accountFetch<{ favorited: boolean }>('/users/me/favorites', {

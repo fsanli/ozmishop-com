@@ -4,7 +4,7 @@ import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
     changePassword, createReturn, createReview, deleteAddress, hideOrderHistory,
-    saveAddress, toggleFavorite, updateNotifications, updatePrivacy, updateProfile,
+    saveAddress, updateNotifications, updatePrivacy, updateProfile,
 } from '@/lib/account';
 import { routes } from '@/lib/site';
 
@@ -163,7 +163,3 @@ export async function changePasswordAction(formData: FormData) {
     redirect(`${routes.accountSecurity}?kaydedildi=parola`);
 }
 
-export async function toggleFavoriteAction(formData: FormData) {
-    await toggleFavorite(Number(formData.get('baseProductId')));
-    refresh();
-}

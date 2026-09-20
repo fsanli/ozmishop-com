@@ -4,15 +4,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
+import ProductActions from '@/components/product/ProductActions';
 import { formatPrice } from '@/lib/format';
 import { routes } from '@/lib/site';
-import type { Suggestions } from '@/lib/types';
+import type { SiteSettings, Suggestions } from '@/lib/types';
 
 /**
  * Arama çubuğu — öneriler /api/suggest vekilinden gelir; tarayıcı API adresini görmez.
  * Yazım durunca (250 ms) istek atılır, önceki istek iptal edilir.
  */
-export default function SearchBar({ className = '' }: { className?: string }) {
+export default function SearchBar({
+    className = '', settings, siteUrl,
+}: {
+    className?: string;
+    /** Aksiyon ikonları WhatsApp numarasını buradan okur; Header geçiriyor. */
+    settings: SiteSettings;
+    siteUrl: string;
+}) {
     const router = useRouter();
     // Başlıkta iki örnek var (masaüstü ve mobil); sabit bir id ikisinde de tekrarlanır
     // ve <label for> yanlış alana bağlanır.
@@ -105,23 +113,42 @@ export default function SearchBar({ className = '' }: { className?: string }) {
                     {suggestions.products.length > 0 && (
                         <ul className="max-h-80 overflow-y-auto">
                             {suggestions.products.map((product) => (
-                                <li key={product.id}>
-                                    <Link
-                                        href={routes.product(product.slug)}
-                                        onClick={() => setOpen(false)}
-                                        className="flex items-center gap-3 px-3.5 py-2.5 transition-colors hover:bg-slate-100"
-                                    >
-                                        <span className="relative size-10 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-shelf">
-                                            {product.image && (
-                                                <Image src={product.image} alt="" fill sizes="40px" className="object-cover" />
-                                            )}
-                                        </span>
-                                        <span className="min-w-0 flex-1">
-                                            <span className="brand-line block truncate">{product.brand}</span>
-                                            <span className="block truncate text-[13.5px] text-slate-900">{product.name}</span>
-                                        </span>
-                                        <span className="price shrink-0 text-[13px]">{formatPrice(product.price)}</span>
-                                    </Link>
+                                // Satır artık tek bir <a> DEĞİL: içinde aksiyon
+                                // butonları var ve iç içe etkileşimli öğe geçersiz
+                                // HTML. Ürün kartındaki stretched-link kalıbının
+                                // aynısı — bağlantı `after:absolute` ile satırı
+                                // kaplıyor, ikonlar `relative z-10` ile üstünde.
+                                <li key={product.id} className="group relative flex items-center gap-3 px-3.5 py-2.5 transition-colors hover:bg-slate-100">
+                                    <span className="relative size-10 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-shelf">
+                                        {product.image && (
+                                            <Image src={product.image} alt="" fill sizes="40px" className="object-cover" />
+                                        )}
+                                    </span>
+
+                                    <span className="min-w-0 flex-1">
+                                        <span className="brand-line block truncate">{product.brand}</span>
+                                        <Link
+                                            href={routes.product(product.slug)}
+                                            onClick={() => setOpen(false)}
+                                            className="block truncate text-[13.5px] text-slate-900 after:absolute after:inset-0"
+                                        >
+                                            {product.name}
+                                        </Link>
+                                    </span>
+
+                                    {/* Fiyat ve ikonlar TEK sütunda, sağa yaslı:
+                                        ikon şeridi fiyatın genişliğini aşmıyor ve
+                                        satırların hizası bozulmuyor. */}
+                                    <span className="flex shrink-0 flex-col items-end gap-1">
+                                        <span className="price text-[13px]">{formatPrice(product.price)}</span>
+                                        <ProductActions
+                                            product={product}
+                                            settings={settings}
+                                            siteUrl={siteUrl}
+                                            back={routes.product(product.slug)}
+                                            size="sm"
+                                        />
+                                    </span>
                                 </li>
                             ))}
                         </ul>

@@ -1,6 +1,7 @@
 'use client';
 
 import SubmitButton from '@/components/form/SubmitButton';
+import { WhatsappIcon } from '@/components/icons';
 import { addToCartAction } from '@/app/(magaza)/sepet/actions';
 
 import Image from 'next/image';
@@ -18,7 +19,17 @@ import type { ProductDetail, ProductVariant } from '@/lib/types';
  * "Sepete ekle" gerçek bir <form>: seçili varyantın id'si sunucu aksiyonuna
  * gider. Bekleme durumunu SubmitButton gösterir, başka istemci durumu yok.
  */
-export default function ProductPurchasePanel({ product }: { product: ProductDetail }) {
+export default function ProductPurchasePanel({
+    product, whatsappUrl,
+}: {
+    product: ProductDetail;
+    /**
+     * Sunucuda kurulur (mesaj kalıbı ve numara ayarlardan). `null` ise numara
+     * tanımsız demektir ve buton HİÇ çizilmez — tıklanınca bir şey yapmayan
+     * bir buton, butonsuzluktan kötü.
+     */
+    whatsappUrl: string | null;
+}) {
     const defaultVariant = product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
 
     const [selection, setSelection] = useState<Record<number, number>>(() =>
@@ -161,6 +172,18 @@ export default function ProductPurchasePanel({ product }: { product: ProductDeta
                     {inStock ? 'Sepete ekle' : 'Tükendi'}
                 </SubmitButton>
             </form>
+
+            {whatsappUrl && (
+                <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-h-[50px] items-center justify-center gap-2 rounded-[14px] border border-teal-ink/25 bg-teal-tint text-[15px] font-bold text-teal-ink transition hover:border-teal-ink/45"
+                >
+                    <WhatsappIcon className="size-[18px]" />
+                    WhatsApp ile satın al
+                </a>
+            )}
 
             {!selectedVariant && product.variantAxes.length > 0 && (
                 <p className="text-xs text-slate-500">Bu kombinasyon mevcut değil; lütfen başka bir seçim yapın.</p>

@@ -1,8 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Suspense } from 'react';
+import ProductActions, { FavoriteButton } from '@/components/product/ProductActions';
+import FavoriteState from '@/components/product/FavoriteState';
+import { getSettings } from '@/lib/api';
 import { SPEC_BADGE } from '@/lib/colors';
 import { formatPrice } from '@/lib/format';
-import { routes } from '@/lib/site';
+import { routes, site } from '@/lib/site';
 import type { ProductCard as ProductCardType } from '@/lib/types';
 
 /**
@@ -15,8 +19,21 @@ import type { ProductCard as ProductCardType } from '@/lib/types';
  * yığın bağlamında (z-10) üstte kalır.
  *
  * `priority` yalnızca listenin ilk satırındaki kartlara verilir (LCP).
+ *
+ * Aksiyon ikonları (favori / sepet / WhatsApp) `ProductActions`'tan geliyor;
+ * arama açılırı da aynı bileşeni kullanıyor. Dolu kalp `<Suspense>` içinde
+ * akıyor: kartın kendisi statik kalsın, yalnız kalbin durumu istek zamanına
+ * düşsün — Header'daki CartCount ile aynı kural.
  */
-export default function ProductCard({ product, priority = false }: { product: ProductCardType; priority?: boolean }) {
+export default async function ProductCard({
+    product, priority = false, back = '/',
+}: {
+    product: ProductCardType;
+    priority?: boolean;
+    /** Aksiyon sonrası dönülecek adres. Liste sayfası kendi yolunu geçer. */
+    back?: string;
+}) {
+    const settings = await getSettings();
     const hasRange = product.hasVariants
         && product.minPrice !== null && product.maxPrice !== null && product.minPrice !== product.maxPrice;
 
@@ -72,7 +89,7 @@ export default function ProductCard({ product, priority = false }: { product: Pr
                     </div>
                 )}
 
-                <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+                <div className="mt-auto flex items-end justify-between gap-2 pt-3">
                     <div className="flex flex-wrap items-baseline gap-2">
                         {hasRange ? (
                             <span className="price text-base">
@@ -88,6 +105,18 @@ export default function ProductCard({ product, priority = false }: { product: Pr
                             </>
                         )}
                     </div>
+
+                    <ProductActions
+                        product={product}
+                        settings={settings}
+                        siteUrl={site.url}
+                        back={back}
+                        favoriteSlot={(
+                            <Suspense fallback={<FavoriteButton product={product} back={back} />}>
+                                <FavoriteState product={product} back={back} />
+                            </Suspense>
+                        )}
+                    />
                 </div>
             </div>
         </article>

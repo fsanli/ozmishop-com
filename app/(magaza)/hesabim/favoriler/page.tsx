@@ -29,7 +29,7 @@ export default async function FavoritesPage() {
                     action={<Link href={routes.group('cok-satanlar')} className="btn-secondary">Çok satanlara bak</Link>}
                 />
             ) : (
-                <ProductGrid products={items} priorityCount={4} />
+                <ProductGrid products={items} priorityCount={4} back={routes.favorites} />
             )}
         </AccountShell>
     );

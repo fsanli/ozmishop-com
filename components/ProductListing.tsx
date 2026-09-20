@@ -87,7 +87,7 @@ export default async function ProductListing({
                     />
                 ) : (
                     <>
-                        <ProductGrid products={items} priorityCount={4} />
+                        <ProductGrid products={items} priorityCount={4} back={basePath} />
                         <JsonLd data={itemListSchema(items, { page: pagination.page, pageSize: pagination.pageSize })} />
                     </>
                 )}

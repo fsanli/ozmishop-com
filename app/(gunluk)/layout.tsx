@@ -1,4 +1,5 @@
 import Footer from '@/components/chrome/Footer';
+import SupportDock from '@/components/chrome/SupportDock';
 import GunlukMasthead from '@/components/gunluk/GunlukMasthead';
 
 /**
@@ -15,6 +16,7 @@ export default function GunlukLayout({ children }: { children: React.ReactNode }
             <GunlukMasthead />
             <main id="icerik" className="flex-1">{children}</main>
             <Footer />
+            <SupportDock />
         </>
     );
 }

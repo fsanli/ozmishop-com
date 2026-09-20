@@ -2,7 +2,8 @@ import Container from '@/components/Container';
 import Logo from '@/components/Logo';
 import MobileMenu from '@/components/MobileMenu';
 import SearchBar from '@/components/SearchBar';
-import { getCategoryTree } from '@/lib/api';
+import { getCategoryTree, getSettings } from '@/lib/api';
+import { site } from '@/lib/site';
 import CategoryNav from './CategoryNav';
 import HeaderActions from './HeaderActions';
 
@@ -19,6 +20,9 @@ import HeaderActions from './HeaderActions';
  */
 export default async function Header({ variant = 'full' }: { variant?: 'full' | 'compact' | 'minimal' }) {
     const categories = variant === 'full' ? await getCategoryTree() : [];
+    // Arama açılırındaki aksiyon ikonları WhatsApp numarasını istiyor. Ayarlar
+    // önbellekli bir okuma; istek API'si DEĞİL, statik kabuk bozulmuyor.
+    const settings = await getSettings();
 
     return (
         <header className="sticky top-0 z-30 border-b border-slate-900/8 bg-paper/92 backdrop-blur-[14px]">
@@ -27,7 +31,9 @@ export default async function Header({ variant = 'full' }: { variant?: 'full' | 
 
                 <Logo className="shrink-0 text-[clamp(20px,2.4vw,25px)]" />
 
-                {variant !== 'minimal' && <SearchBar className="hidden flex-1 md:block" />}
+                {variant !== 'minimal' && (
+                    <SearchBar className="hidden flex-1 md:block" settings={settings} siteUrl={site.url} />
+                )}
 
                 <div className="ml-auto">
                     <HeaderActions />
@@ -36,7 +42,7 @@ export default async function Header({ variant = 'full' }: { variant?: 'full' | 
 
             {variant !== 'minimal' && (
                 <Container className="pb-3 md:hidden">
-                    <SearchBar />
+                    <SearchBar settings={settings} siteUrl={site.url} />
                 </Container>
             )}
 

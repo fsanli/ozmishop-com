@@ -11,11 +11,12 @@ import Reviews from './Reviews';
 import TechSpecs from './TechSpecs';
 import JsonLd from '@/components/JsonLd';
 import ProductGrid from '@/components/ProductGrid';
-import { getProduct, getReviews, getSitemapData } from '@/lib/api';
+import { getProduct, getReviews, getSettings, getSitemapData } from '@/lib/api';
 import { one, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, productSchema } from '@/lib/schema';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
+import { productWhatsappLink } from '@/lib/whatsapp';
 import ProductGallery from './ProductGallery';
 import ProductPurchasePanel from './ProductPurchasePanel';
 import ViewPing from '@/components/ViewPing';
@@ -76,6 +77,11 @@ export default async function ProductPage({
     // ağ isteği değil. aggregateRating yalnız gerçekten yorum varken basılır.
     const reviews = await getReviews(slug);
 
+    // WhatsApp bağlantısı SUNUCUDA kuruluyor: mesaj kalıbı ayarlardan geliyor
+    // ve satın alma paneli bir istemci bileşeni — ayarları oraya taşımak,
+    // her ürün sayfasına gereksiz bir istemci okuması eklerdi.
+    const whatsappUrl = productWhatsappLink(await getSettings(), product, site.url);
+
     const crumbs = [
         ...product.breadcrumb.map((item) => ({ name: item.name, href: routes.category(item.slug) })),
         { name: product.name, href: routes.product(product.slug) },
@@ -103,7 +109,7 @@ export default async function ProductPage({
                     )}
 
                     <div className="mt-6">
-                        <ProductPurchasePanel product={product} />
+                        <ProductPurchasePanel product={product} whatsappUrl={whatsappUrl} />
                     </div>
 
                     <PrivacyPanel className="mt-5" />

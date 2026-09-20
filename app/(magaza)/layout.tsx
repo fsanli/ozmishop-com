@@ -1,4 +1,5 @@
 import Footer from '@/components/chrome/Footer';
+import SupportDock from '@/components/chrome/SupportDock';
 import Header from '@/components/chrome/Header';
 import UtilityBar from '@/components/chrome/UtilityBar';
 
@@ -18,6 +19,7 @@ export default function MagazaLayout({ children }: { children: React.ReactNode }
             <Header variant="full" />
             <main id="icerik" className="flex-1">{children}</main>
             <Footer showRatingBadges />
+            <SupportDock />
         </>
     );
 }

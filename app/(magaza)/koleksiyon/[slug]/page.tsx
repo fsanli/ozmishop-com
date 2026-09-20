@@ -49,7 +49,7 @@ async function GroupProducts({ slug, searchParams: searchParamsPromise }: { slug
 
     return (
         <>
-            <ProductGrid products={items} priorityCount={4} />
+            <ProductGrid products={items} priorityCount={4} back={routes.group(slug)} />
             {pagination && pagination.totalPages > 1 && (
                 <nav aria-label="Sayfalama" className="mt-8 flex items-center justify-center gap-3">
                     {pagination.page > 1 ? (
