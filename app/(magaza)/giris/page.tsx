@@ -5,6 +5,7 @@ import Container from '@/components/Container';
 import SubmitButton from '@/components/form/SubmitButton';
 import { getCurrentCustomer } from '@/lib/session';
 import { one, type SearchParams } from '@/lib/listing';
+import PhoneField from '@/components/form/PhoneField';
 import { routes } from '@/lib/site';
 import { loginAction, registerAction } from './actions';
 
@@ -117,7 +118,7 @@ async function LoginPanel({ searchParams }: { searchParams: Promise<SearchParams
                 {isRegister && (
                     <label className="block">
                         <span className="field-label">Telefon</span>
-                        <input name="phone" required autoComplete="tel" placeholder="05XX XXX XX XX" className="field-input" />
+                        <PhoneField />
                     </label>
                 )}
 

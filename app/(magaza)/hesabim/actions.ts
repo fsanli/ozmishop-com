@@ -6,6 +6,7 @@ import {
     changePassword, createReturn, createReview, deleteAddress, hideOrderHistory,
     saveAddress, updateNotifications, updatePrivacy, updateProfile,
 } from '@/lib/account';
+import { normalisePhone, phoneError } from '@/lib/phone';
 import { routes } from '@/lib/site';
 
 /**
@@ -23,7 +24,7 @@ export async function saveAddressAction(formData: FormData) {
             title: value('title'),
             firstname: value('firstname'),
             lastname: value('lastname'),
-            phone: value('phone'),
+            phone: normalisePhone(value('phone')),
             city: value('city'),
             district: value('district'),
             neighbourhood: value('neighbourhood') || null,
@@ -139,7 +140,9 @@ export async function updateProfileAction(formData: FormData) {
     const value = (name: string) => String(formData.get(name) ?? '').trim();
 
     try {
-        await updateProfile({ firstname: value('firstname'), lastname: value('lastname'), phone: value('phone') });
+        const invalid = phoneError(value('phone'));
+        if (invalid) redirect(withError(routes.accountSecurity, invalid));
+        await updateProfile({ firstname: value('firstname'), lastname: value('lastname'), phone: normalisePhone(value('phone')) });
     } catch (error) {
         redirect(withError(routes.accountSecurity, (error as Error).message));
     }

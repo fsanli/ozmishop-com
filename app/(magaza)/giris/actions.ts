@@ -7,6 +7,7 @@ import { proxyHeaders } from '@/lib/bff';
 import {
     CART_COOKIE, CART_COUNT_COOKIE, CART_MAX_AGE, COOKIE_BASE, SESSION_COOKIE, SESSION_MAX_AGE,
 } from '@/lib/session';
+import { normalisePhone, phoneError } from '@/lib/phone';
 import { routes } from '@/lib/site';
 
 const API_BASE = (process.env.API_BASE_URL || 'http://localhost:4200').replace(/\/$/, '');
@@ -70,11 +71,18 @@ export async function loginAction(formData: FormData) {
 
 export async function registerAction(formData: FormData) {
     const next = String(formData.get('devam') || routes.account);
+    const phone = String(formData.get('phone') || '');
+
+    // Maske istemcide; GERÇEK KAPI burada. JavaScript kapalıyken alan hiç
+    // biçimlenmez, o yüzden doğrulama sunucuda tekrarlanmak zorunda.
+    const invalid = phoneError(phone);
+    if (invalid) redirect(`${routes.register}?hata=${encodeURIComponent(invalid)}&devam=${encodeURIComponent(next)}`);
+
     await authenticate('/auth/users/register', {
         firstname: String(formData.get('firstname') || '').trim(),
         lastname: String(formData.get('lastname') || '').trim(),
         email: String(formData.get('email') || '').trim(),
-        phone: String(formData.get('phone') || '').trim(),
+        phone: normalisePhone(phone),
         password: String(formData.get('password') || ''),
     }, routes.register, next);
 }

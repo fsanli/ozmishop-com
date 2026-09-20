@@ -67,6 +67,15 @@ export default async function ProductCard({
                     {product.isNew && product.discountPercent === 0 && <span className="badge badge-teal">Yeni</span>}
                 </div>
 
+                {/* Favori görselin ÜSTÜNDE: kart altındaki şeridi tamamen
+                    "Sepete ekle"ye bırakıyor. Stretched-link'in üstünde kalması
+                    için z-10 — ProductActions'takiyle aynı sebep. */}
+                <div className="absolute right-[10px] top-[10px] z-10">
+                    <Suspense fallback={<FavoriteButton product={product} back={back} />}>
+                        <FavoriteState product={product} back={back} />
+                    </Suspense>
+                </div>
+
                 {!product.inStock && (
                     <div className="absolute inset-0 flex items-center justify-center bg-paper/70">
                         <span className="badge badge-neutral bg-surface">Tükendi</span>
@@ -96,8 +105,7 @@ export default async function ProductCard({
                     </div>
                 )}
 
-                <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-                    <div className="flex flex-wrap items-baseline gap-2">
+                <div className="mt-auto flex flex-wrap items-baseline gap-2 pt-3">
                         {hasRange ? (
                             <span className="price text-base">
                                 {formatPrice(product.minPrice)}
@@ -110,21 +118,17 @@ export default async function ProductCard({
                                     <span className="price-old text-[12px]">{formatPrice(product.compareAtPrice)}</span>
                                 )}
                             </>
-                        )}
-                    </div>
-
-                    <ProductActions
-                        product={product}
-                        settings={settings}
-                        siteUrl={site.url}
-                        back={back}
-                        favoriteSlot={(
-                            <Suspense fallback={<FavoriteButton product={product} back={back} />}>
-                                <FavoriteState product={product} back={back} />
-                            </Suspense>
-                        )}
-                    />
+                    )}
                 </div>
+
+                <ProductActions
+                    product={product}
+                    settings={settings}
+                    siteUrl={site.url}
+                    back={back}
+                    variant="bar"
+                    className="mt-2.5"
+                />
             </div>
         </article>
     );

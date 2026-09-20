@@ -1,6 +1,5 @@
 'use server';
 
-import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { toggleFavorite } from '@/lib/account';
 import { addToCart } from '@/lib/cart';
@@ -20,24 +19,37 @@ import { routes } from '@/lib/site';
  */
 
 /**
- * Karttan sepete ekleme. Ürün sayfasındaki `addToCartAction`'dan tek farkı
- * SAYFADA KALMASI: listeyi gezerken her eklemede sepet sayfasına atılmak
- * gezinmeyi bitirir. `refresh()` başlıktaki sepet sayacını tazeler.
+ * Bayrağı adrese ekler: `CartDock` onu görüp toast basıyor ve masaüstünde
+ * sepet çekmecesini açıyor. Adres üzerinden gitmesinin sebebi, aksiyonun
+ * dönüş değerinin düz bir `<form action>`'da kaybolması — istemci bileşenine
+ * çevirmeden istemciye haber vermenin tek yolu bu.
+ */
+const withFlag = (path: string, key: string, value: string) => {
+    const [base, query = ''] = path.split('?');
+    const params = new URLSearchParams(query);
+    params.set(key, value);
+    return `${base}?${params.toString()}`;
+};
+
+/**
+ * Karttan sepete ekleme. SEPET SAYFASINA GİTMEZ: listeyi gezerken her
+ * eklemede başka bir sayfaya atılmak alışverişi bitirir. Kullanıcı yerinde
+ * kalır, toast görür, masaüstünde çekmece açılır.
  */
 export async function quickAddToCartAction(formData: FormData) {
     const productId = Number(formData.get('productId'));
     const back = String(formData.get('back') || '/');
 
     if (!Number.isFinite(productId) || productId <= 0) {
-        redirect(`${back}?hata=${encodeURIComponent('Ürün bulunamadı')}`);
+        redirect(withFlag(back, 'hata', 'Ürün bulunamadı'));
     }
 
     try {
         await addToCart(productId, 1);
     } catch (error) {
-        redirect(`${back}?hata=${encodeURIComponent((error as Error).message)}`);
+        redirect(withFlag(back, 'hata', (error as Error).message));
     }
-    refresh();
+    redirect(withFlag(back, 'sepet', 'eklendi'));
 }
 
 /**
@@ -55,6 +67,6 @@ export async function toggleFavoriteAction(formData: FormData) {
     const customer = await getCurrentCustomer();
     if (!customer) redirect(`${routes.login}?devam=${encodeURIComponent(back)}`);
 
-    await toggleFavorite(baseProductId);
-    refresh();
+    const { favorited } = await toggleFavorite(baseProductId);
+    redirect(withFlag(back, 'favori', favorited ? 'eklendi' : 'cikarildi'));
 }

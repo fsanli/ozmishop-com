@@ -44,3 +44,32 @@ herkese sayfaya istediği `<script src>`'i enjekte etme yetkisi vermek olurdu.
 
 WhatsApp balonu SOLDA: tawk.to kendi balonunu sağ alta sabitliyor ve
 yapılandırmayla taşınamıyor.
+
+## Sepete ekleme geri bildirimi
+
+Aksiyonlar `/sepet`e YÖNLENDİRMEZ. Sunucu aksiyonu bulunduğu adrese
+`?sepet=eklendi` (ya da `?favori=…`, `?hata=…`) ekleyerek döner;
+`components/cart/CartDock.tsx` bunu görüp toast basar ve masaüstünde sepet
+çekmecesini açar. Adres üzerinden gitmesinin sebebi, aksiyonun dönüş
+değerinin düz bir `<form action>`'da kaybolması.
+
+Çekmecenin açık olması URL'den TÜRETİLİR, state'te tutulmaz: effect içinde
+setState zincirleme render üretiyor ve React lint'i reddediyor.
+
+`hydrated` kontrolü kaldırılmamalı. `isDesktop`in sunucu anlık görüntüsü
+zorunlu olarak `false`; o ilk render'da temizlik effect'i çalışırsa bayrak
+çekmece açılmadan silinir ve çekmece masaüstünde de hiç görünmez.
+
+Çekmece içeriği `/api/sepet` vekilinden AÇILINCA çekilir. Yerleşimde sunucu
+bileşeni olarak render etmek, hiç açılmayacak bir panel için her gezinmede
+sepet isteği demekti.
+
+## Telefon alanı
+
+`lib/phone.ts` tek kaynak; maske, normalleştirme ve doğrulama oradan gelir ve
+aynı kural HEM istemcide (`PhoneField`) HEM sunucu aksiyonlarında uygulanır —
+JavaScript kapalıyken form yine gönderiliyor.
+
+Her şey tek bir `toLocal()`'dan türer. Biçimlendirme ve doğrulama ayrı ayrı
+rakam sayarsa tutarsız olurlar; `+90` soyulmazsa maskede numara sessizce
+bozulur.

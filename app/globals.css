@@ -289,3 +289,17 @@ h1, h2, h3, h4 {
      #8f858a  YALNIZCA yer tutucu .... text-slate-400
    Berry'nin -dot/-ink/-tint üçlüsü YOK: accent-500 / accent-500 / accent-200 odur.
    Asimetri lib/colors.ts'te soğurulur — aynı renge iki isim verilmez. */
+
+/* ---------------------------------------------------------------------------
+   Mobil satın alma çubuğu ile destek balonunun çakışması.
+
+   Ürün sayfası mobilde ekranın dibine sabit bir "Sepete ekle" çubuğu koyuyor;
+   WhatsApp balonu da aynı köşede. `:has()` ile balon YALNIZCA çubuğun olduğu
+   sayfada yukarı çıkıyor — bunu JavaScript'le yapmak, iki ayrı bileşenin
+   birbirinin varlığını bilmesini gerektirirdi.
+--------------------------------------------------------------------------- */
+@media (width < 64rem) {
+    body:has(.buy-bar) .support-dock {
+        bottom: calc(96px + 0.75rem);
+    }
+}

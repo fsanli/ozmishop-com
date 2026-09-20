@@ -1,7 +1,11 @@
 # ozmishop-com
 
 ozmishop.com vitrini. Next.js 16 (App Router) · React 19 · Tailwind 4.
-Üretim bağımlılığı yalnızca `next`, `react`, `react-dom` — hazır UI kütüphanesi kullanılmaz.
+Üretim bağımlılığı `next`, `react`, `react-dom` ve `sonner` — hazır UI
+kütüphanesi kullanılmaz. `sonner` bilinçli bir istisna: "sepete eklendi"
+geri bildirimi için toast gerekiyordu ve kendi toast altyapısını yazmak
+(kuyruk, animasyon, erişilebilirlik, ekran okuyucu duyurusu) ~5 KB'lık
+paketten daha fazla kod ve daha çok hata demekti.
 
 ## Hızlı başlangıç
 

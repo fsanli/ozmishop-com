@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { normalisePhone, phoneError } from '@/lib/phone';
 import { placeOrder } from '@/lib/cart';
 import { routes } from '@/lib/site';
 
@@ -21,10 +22,17 @@ export interface CheckoutState {
 export async function placeOrderAction(_prev: CheckoutState, formData: FormData): Promise<CheckoutState> {
     const value = (name: string) => String(formData.get(name) ?? '').trim();
 
+    // Yanlış telefon siparişten SONRA fark edilir ve kargo ulaşmaz; sunucuda
+    // da kontrol ediliyor çünkü maske JavaScript kapalıyken çalışmaz.
+    const phoneInvalid = phoneError(value('phone'));
+    if (phoneInvalid) return { error: phoneInvalid };
+
+    const phone = normalisePhone(value('phone'));
+
     const shippingAddress = {
         firstname: value('firstname'),
         lastname: value('lastname'),
-        phone: value('phone'),
+        phone,
         city: value('city'),
         district: value('district'),
         neighbourhood: value('neighbourhood') || null,
@@ -36,7 +44,7 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
     try {
         result = await placeOrder({
             email: value('email'),
-            phone: value('phone'),
+            phone,
             shippingAddress,
             // "Fatura adresim aynı" işaretliyse ayrı adres gönderilmez.
             billingAddress: null,

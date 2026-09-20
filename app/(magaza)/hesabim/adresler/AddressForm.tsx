@@ -1,4 +1,5 @@
 import SubmitButton from '@/components/form/SubmitButton';
+import PhoneField from '@/components/form/PhoneField';
 import { routes } from '@/lib/site';
 import Link from 'next/link';
 import type { Address } from '@/lib/types';
@@ -36,7 +37,7 @@ export default function AddressForm({ address }: { address?: Address }) {
 
                 <label>
                     <span className="field-label">Telefon</span>
-                    <input name="phone" required inputMode="tel" autoComplete="tel" defaultValue={address?.phone} className="field-input mt-1.5" />
+                    <PhoneField defaultValue={address?.phone ?? ''} className="field-input mt-1.5" />
                 </label>
                 <label>
                     <span className="field-label">Posta kodu <span className="text-slate-500">(opsiyonel)</span></span>

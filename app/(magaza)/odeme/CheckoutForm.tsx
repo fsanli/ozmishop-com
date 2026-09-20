@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import PhoneField from '@/components/form/PhoneField';
 import SubmitButton from '@/components/form/SubmitButton';
 import { formatPrice } from '@/lib/format';
 import type { Cart, InstallmentOption } from '@/lib/types';
@@ -66,7 +67,7 @@ export default function CheckoutForm({
                     <>
                         <div className="grid gap-3 sm:grid-cols-2">
                             {field('E-posta', <input name="email" type="email" required autoComplete="email" className="field-input" placeholder="ornek@eposta.com" />)}
-                            {field('Telefon', <input name="phone" required autoComplete="tel" className="field-input" placeholder="05XX XXX XX XX" />)}
+                            {field('Telefon', <PhoneField />)}
                         </div>
                         <p className="text-[12px] leading-relaxed text-slate-600">
                             Sipariş bilgileri bu adrese gönderilir. Konu satırı her zaman nötrdür.

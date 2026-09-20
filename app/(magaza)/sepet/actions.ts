@@ -28,8 +28,13 @@ export async function addToCartAction(formData: FormData) {
     } catch (error) {
         redirect(withError(back, (error as Error).message));
     }
-    // Yönlendirme zaten taze render tetikler; ayrıca refresh() gerekmez.
-    redirect(routes.cart);
+    // SEPET SAYFASINA GİTMEZ: kullanıcı ürün sayfasında kalır, toast görür ve
+    // masaüstünde sepet çekmecesi açılır (CartDock). Ürünü inceleyen birini
+    // başka bir sayfaya atmak, en pahalı yerde akışı bölüyordu.
+    const [base, query = ''] = back.split('?');
+    const params = new URLSearchParams(query);
+    params.set('sepet', 'eklendi');
+    redirect(`${base}?${params.toString()}`);
 }
 
 export async function setQuantityAction(formData: FormData) {

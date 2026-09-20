@@ -31,7 +31,7 @@ export default async function SupportDock() {
                     rel="noopener noreferrer"
                     aria-label="WhatsApp ile bize yazın"
                     title="WhatsApp ile bize yazın"
-                    className="fixed bottom-5 left-5 z-40 flex size-12 items-center justify-center rounded-full
+                    className="support-dock fixed bottom-5 left-5 z-40 flex size-12 items-center justify-center rounded-full
                                bg-[#25D366] text-white shadow-[0_6px_20px_rgba(37,211,102,0.4)]
                                transition hover:scale-105 hover:shadow-[0_8px_26px_rgba(37,211,102,0.5)]
                                focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366]"

@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import Footer from '@/components/chrome/Footer';
+import CartDock from '@/components/cart/CartDock';
 import SupportDock from '@/components/chrome/SupportDock';
 import Header from '@/components/chrome/Header';
 import UtilityBar from '@/components/chrome/UtilityBar';
@@ -20,6 +22,8 @@ export default function MagazaLayout({ children }: { children: React.ReactNode }
             <main id="icerik" className="flex-1">{children}</main>
             <Footer showRatingBadges />
             <SupportDock />
+            {/* Suspense: useSearchParams okuyor, yoksa tüm yerleşim istek zamanına düşer. */}
+            <Suspense fallback={null}><CartDock /></Suspense>
         </>
     );
 }

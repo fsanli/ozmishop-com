@@ -24,6 +24,12 @@ import { productWhatsappLink } from '@/lib/whatsapp';
  * (bkz. FavoriteState); sunucu tarafındaki çağıran onu Suspense içinde
  * geçiyor, istemci tarafındaki çağıran hiç geçmiyor ve durumsuz kalbi alıyor.
  *
+ * İKİ YERLEŞİM:
+ *   'icons'  üç küçük ikon yan yana — arama açılırı. Fiyat sütununun
+ *            genişliğini aşmamalı, o yüzden etiket yok.
+ *   'bar'    kart genişliğinde etiketli "Sepete ekle" + WhatsApp ikonu.
+ *            Favori BURADA DEĞİL: kartta görselin üstünde duruyor.
+ *
  * Tailwind v4 sınıf adını ÇALIŞMA ANINDA ÜRETEMEZ: ölçüler tam sınıf adı
  * taşıyan bir haritadan geliyor, `size-${n}` gibi bir şablon asla derlenmez.
  */
@@ -83,6 +89,7 @@ export default function ProductActions({
     siteUrl,
     back,
     size = 'md',
+    variant = 'icons',
     favoriteSlot,
     className = '',
 }: {
@@ -92,6 +99,7 @@ export default function ProductActions({
     /** Aksiyon sonrası dönülecek adres; hata mesajı da buraya yazılır. */
     back: string;
     size?: ActionSize;
+    variant?: 'icons' | 'bar';
     /**
      * Dolu/boş durumu bilen favori düğmesi. Verilmezse durumsuz olan çizilir —
      * arama açılırı gibi istemci bağlamlarında oturum okunamaz.
@@ -106,6 +114,46 @@ export default function ProductActions({
     // Varyantlı ürün doğrudan sepete eklenemez: hangi renk, hangi boy? Buton
     // kaybolmuyor, ürün sayfasına BAĞLANIYOR — kullanıcı seçimini orada yapar.
     const needsChoice = product.hasVariants || !product.defaultProductId;
+
+    if (variant === 'bar') {
+        const bar = 'flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[10px] '
+            + 'border border-slate-900/10 bg-surface text-[12.5px] font-bold text-slate-800 transition '
+            + 'hover:border-accent-500/45 hover:bg-accent-500 hover:text-white '
+            + 'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-500';
+
+        return (
+            <div className={`relative z-10 flex items-stretch gap-1.5 ${className}`}>
+                {!product.inStock ? (
+                    <span className={`${bar} pointer-events-none opacity-45`}>Tükendi</span>
+                ) : needsChoice ? (
+                    <Link href={routes.product(product.slug)} className={bar} title="Seçenek seçmek için ürüne git">
+                        <BagIcon className="size-[14px]" /> Seçenekler
+                    </Link>
+                ) : (
+                    <form action={quickAddToCartAction} className="flex flex-1">
+                        <input type="hidden" name="productId" value={product.defaultProductId ?? ''} />
+                        <input type="hidden" name="back" value={back} />
+                        <button type="submit" className={bar}>
+                            <BagIcon className="size-[14px]" /> Sepete ekle
+                        </button>
+                    </form>
+                )}
+
+                {whatsapp && (
+                    <a
+                        href={whatsapp}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] border border-teal-ink/20 bg-teal-tint text-teal-ink transition hover:border-teal-ink/45"
+                        aria-label={`${product.name} — WhatsApp ile satın al`}
+                        title="WhatsApp ile satın al"
+                    >
+                        <WhatsappIcon className="size-[15px]" />
+                    </a>
+                )}
+            </div>
+        );
+    }
 
     return (
         // relative z-10: kart ve açılır satırı stretched-link kullanıyor

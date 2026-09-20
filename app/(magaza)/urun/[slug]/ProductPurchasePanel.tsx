@@ -19,6 +19,12 @@ import type { ProductDetail, ProductVariant } from '@/lib/types';
  * "Sepete ekle" gerçek bir <form>: seçili varyantın id'si sunucu aksiyonuna
  * gider. Bekleme durumunu SubmitButton gösterir, başka istemci durumu yok.
  */
+/** Tailwind v4 `h-${n}` üretemez: iki ölçü de tam sınıf adı olarak duruyor. */
+const BUY_SIZES = {
+    lg: { box: 'min-h-[54px]' },
+    sm: { box: 'min-h-[48px]' },
+} as const;
+
 export default function ProductPurchasePanel({
     product, whatsappUrl,
 }: {
@@ -57,6 +63,40 @@ export default function ProductPurchasePanel({
     const price = selectedVariant?.price ?? product.price;
     const compareAt = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
     const discount = compareAt && price && compareAt > price ? Math.round((1 - price / compareAt) * 100) : 0;
+
+    /**
+     * Sepete ekleme formu. Masaüstünde panelin içinde, mobilde alt çubukta —
+     * AYNI alanlar, aynı aksiyon. İkisini ayrı yazmak, varyant değişince
+     * birinin eski id'yi göndermesi demek olurdu.
+     */
+    const buyForm = (size: 'lg' | 'sm') => (
+        <form action={addToCartAction} className="flex items-stretch gap-2.5">
+            <input type="hidden" name="productId" value={selectedVariant?.id ?? ''} />
+            <input type="hidden" name="back" value={`/urun/${product.slug}`} />
+
+            {/* Adet: gizli alan + iki düğme değil, düz bir sayı alanı.
+                Ürün sayfasında adet nadiren değişir; stepper sepette. */}
+            <label className={`flex items-center gap-1 rounded-[14px] border border-slate-900/13 px-2 ${BUY_SIZES[size].box}`}>
+                <span className="sr-only">Adet</span>
+                <input
+                    name="quantity"
+                    type="number"
+                    min={1}
+                    max={selectedVariant?.trackStock ? selectedVariant.stockQuantity : 50}
+                    defaultValue={1}
+                    className="w-12 bg-transparent text-center text-[14px] font-bold outline-none"
+                />
+            </label>
+
+            <SubmitButton
+                className={`btn-primary flex-1 justify-center rounded-[14px] text-base ${BUY_SIZES[size].box}`}
+                pendingLabel="Ekleniyor…"
+                disabled={!inStock || !selectedVariant}
+            >
+                {inStock ? 'Sepete ekle' : 'Tükendi'}
+            </SubmitButton>
+        </form>
+    );
 
     return (
         <div className="space-y-5">
@@ -146,32 +186,10 @@ export default function ProductPurchasePanel({
                 {selectedVariant && <span className="text-[12px] text-slate-600">SKU: {selectedVariant.sku}</span>}
             </div>
 
-            <form action={addToCartAction} className="flex flex-wrap items-stretch gap-2.5">
-                <input type="hidden" name="productId" value={selectedVariant?.id ?? ''} />
-                <input type="hidden" name="back" value={`/urun/${product.slug}`} />
-
-                {/* Adet: gizli alan + iki düğme değil, düz bir sayı alanı.
-                    Ürün sayfasında adet nadiren değişir; stepper sepette. */}
-                <label className="flex h-[54px] items-center gap-1 rounded-[14px] border border-slate-900/13 px-2">
-                    <span className="sr-only">Adet</span>
-                    <input
-                        name="quantity"
-                        type="number"
-                        min={1}
-                        max={selectedVariant?.trackStock ? selectedVariant.stockQuantity : 50}
-                        defaultValue={1}
-                        className="w-12 bg-transparent text-center text-[14px] font-bold outline-none"
-                    />
-                </label>
-
-                <SubmitButton
-                    className="btn-primary min-h-[54px] flex-1 justify-center rounded-[14px] text-base"
-                    pendingLabel="Ekleniyor…"
-                    disabled={!inStock || !selectedVariant}
-                >
-                    {inStock ? 'Sepete ekle' : 'Tükendi'}
-                </SubmitButton>
-            </form>
+            {/* Masaüstünde satın alma formu panelin içinde. Mobilde gizli:
+                orada aynı form ekranın dibindeki sabit çubukta duruyor —
+                iki CTA göstermek kullanıcıya hangisinin çalıştığını sordurur. */}
+            <div className="hidden lg:block">{buyForm('lg')}</div>
 
             {whatsappUrl && (
                 <a
@@ -188,6 +206,24 @@ export default function ProductPurchasePanel({
             {!selectedVariant && product.variantAxes.length > 0 && (
                 <p className="text-xs text-slate-500">Bu kombinasyon mevcut değil; lütfen başka bir seçim yapın.</p>
             )}
+
+            {/* MOBİL SATIN ALMA ÇUBUĞU.
+                Ürün sayfası uzun (galeri, künye, yorumlar); kullanıcı aşağıdayken
+                sepete eklemek için başa dönmek zorunda kalmamalı.
+                `buy-bar` sınıfı globals.css'te WhatsApp balonunu yukarı itiyor —
+                yoksa balon çubuğun altında kalırdı. */}
+            <div className="buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-slate-900/10 bg-surface/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-[14px] lg:hidden">
+                <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                    <span className="price text-[17px]">{formatPrice(price)}</span>
+                    {selectedVariant?.name && (
+                        <span className="truncate text-[12px] text-slate-600">{selectedVariant.name}</span>
+                    )}
+                </div>
+                {buyForm('sm')}
+            </div>
+
+            {/* Sabit çubuğun altında kalan içerik için pay. */}
+            <div aria-hidden className="h-[96px] lg:hidden" />
 
             <ul className="space-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500">
                 <li>Gizli paketleme — kargo etiketinde içerik bilgisi yer almaz.</li>

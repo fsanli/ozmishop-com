@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import PhoneField from '@/components/form/PhoneField';
 import SubmitButton from '@/components/form/SubmitButton';
 import { formatDate } from '@/lib/format';
 import { one, type SearchParams } from '@/lib/listing';
@@ -54,8 +55,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
                     </label>
                     <label className="sm:col-span-2">
                         <span className="field-label">Telefon</span>
-                        <input name="phone" required inputMode="tel" maxLength={20} autoComplete="tel"
-                            defaultValue={customer.phone ?? ''} className="field-input" />
+                        <PhoneField defaultValue={customer.phone ?? ''} />
                     </label>
                 </div>
 
