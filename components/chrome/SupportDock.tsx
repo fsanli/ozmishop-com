@@ -18,7 +18,11 @@ import { supportWhatsappLink } from '@/lib/whatsapp';
 export default async function SupportDock() {
     const settings = await getSettings();
     const whatsapp = supportWhatsappLink(settings);
-    const tawk = tawkSrc(settings['iletisim.tawkto_kimlik']);
+    // Anahtar kapalıysa kimlik kayıtlı kalır ama betik HİÇ yüklenmez: kapatıp
+    // açmak için tawk.to panelinden kimliği yeniden bulmak gerekmiyor.
+    const tawk = settings['iletisim.canli_destek_aktif'] === false
+        ? null
+        : tawkSrc(settings['iletisim.tawkto_kimlik']);
 
     if (!whatsapp && !tawk) return null;
 

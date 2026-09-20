@@ -636,6 +636,7 @@ export interface SiteSettings {
     'iletisim.whatsapp_mesaji'?: string;
     'iletisim.whatsapp_destek_mesaji'?: string;
     'iletisim.whatsapp_destek_aktif'?: boolean;
+    'iletisim.canli_destek_aktif'?: boolean;
     'iletisim.tawkto_kimlik'?: string;
     'magaza.kdv_orani'?: number;
     'magaza.yas_kapisi_metni'?: string;

@@ -212,7 +212,7 @@ export default function ProductPurchasePanel({
                 sepete eklemek için başa dönmek zorunda kalmamalı.
                 `buy-bar` sınıfı globals.css'te WhatsApp balonunu yukarı itiyor —
                 yoksa balon çubuğun altında kalırdı. */}
-            <div className="buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-slate-900/10 bg-surface/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-[14px] lg:hidden">
+            <div className="buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-slate-900/10 bg-surface/95 px-4 pb-[max(8px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-[14px] lg:hidden">
                 <div className="mb-1.5 flex items-baseline justify-between gap-2">
                     <span className="price text-[17px]">{formatPrice(price)}</span>
                     {selectedVariant?.name && (
