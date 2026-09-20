@@ -96,7 +96,11 @@ export default function ProductActions({
     product: ActionProduct;
     settings: SiteSettings;
     siteUrl: string;
-    /** Aksiyon sonrası dönülecek adres; hata mesajı da buraya yazılır. */
+    /**
+     * Misafir favoriye basınca girişten SONRA dönülecek adres. Sepete ekleme
+     * artık hiç yönlendirmiyor (çerez + refresh), bu yüzden yalnız favori
+     * yolunda kullanılıyor.
+     */
     back: string;
     size?: ActionSize;
     variant?: 'icons' | 'bar';
@@ -132,7 +136,6 @@ export default function ProductActions({
                 ) : (
                     <form action={quickAddToCartAction} className="flex flex-1">
                         <input type="hidden" name="productId" value={product.defaultProductId ?? ''} />
-                        <input type="hidden" name="back" value={back} />
                         <button type="submit" className={bar}>
                             <BagIcon className="size-[14px]" /> Sepete ekle
                         </button>
@@ -178,7 +181,6 @@ export default function ProductActions({
             ) : (
                 <form action={quickAddToCartAction}>
                     <input type="hidden" name="productId" value={product.defaultProductId ?? ''} />
-                    <input type="hidden" name="back" value={back} />
                     <button type="submit" className={button} aria-label={`${product.name} — sepete ekle`} title="Sepete ekle">
                         <BagIcon className={icon} />
                     </button>

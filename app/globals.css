@@ -269,7 +269,11 @@ h1, h2, h3, h4 {
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
-::selection { background: #f7dfe6; }
+/* Metin rengi AÇIKÇA veriliyor. Yalnız arka plan verilince seçilen metin
+   kendi rengini koruyor: koyu bloklardaki açık metin (#f6f1f3) açık pembe
+   seçim zemininde görünmez oluyordu — anasayfa hero'sundaki sayılar ve
+   footer bunun kurbanıydı. */
+::selection { background: #f7dfe6; color: #2c2429; }
 :focus-visible { @apply outline-2 outline-offset-2 outline-accent-500; }
 
 /* KONTRAST NOTU
@@ -304,9 +308,35 @@ h1, h2, h3, h4 {
     --buy-bar-h: 100px;
 }
 
+/* ---------------------------------------------------------------------------
+   YÜZEN ÖĞELERİN YÜKSELTİLMESİ — tek ve genişletilebilir yer.
+
+   Bazı sayfalarda ekranın dibinde sabit bir çubuk var (şimdilik yalnız ürün
+   sayfasındaki satın alma çubuğu). Köşedeki balonlar onun altında kalıyor:
+   bizim WhatsApp balonumuz ve tawk.to'nun IFRAME'i.
+
+   `:has()` sayfadaki işaretçi sınıfına bakıyor; JavaScript gerekmiyor ve iki
+   ayrı bileşenin birbirinin varlığını bilmesi gerekmiyor.
+
+   YENİ BİR SAYFA EKLEMEK: o sayfadaki sabit öğeye bir işaretçi sınıfı verin
+   (`.buy-bar` gibi) ve aşağıdaki `body:has(...)` listesine ekleyin. Başka
+   hiçbir yere dokunmak gerekmez.
+
+   tawk.to SEÇİCİLERİ ÜÇÜNCÜ PARTİYE AİT. Kendi DOM'unu değiştirirse burası
+   güncellenmeli; bu yüzden birkaç sürümün seçicisi birlikte yazıldı ve
+   `!important` kullanıldı — tawk.to konumu satır içi stille veriyor.
+--------------------------------------------------------------------------- */
 @media (width < 64rem) {
     body:has(.buy-bar) .support-dock {
         bottom: calc(var(--buy-bar-h) + 0.75rem);
+    }
+
+    /* tawk.to balonu: satın alma çubuğunun üstüne. */
+    body:has(.buy-bar) iframe[title="chat widget"],
+    body:has(.buy-bar) #tawkchat-minified-wrapper,
+    body:has(.buy-bar) #tawkchat-container,
+    body:has(.buy-bar) .widget-visible iframe {
+        bottom: calc(var(--buy-bar-h) - 0.5rem) !important;
     }
 
     /* Sabit çubuğun altında kalan içerik için pay.

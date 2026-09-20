@@ -2,11 +2,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Toaster, toast } from 'sonner';
 import { BagIcon, XIcon } from '@/components/icons';
 import { formatPrice } from '@/lib/format';
+import { FLASH_COOKIE } from '@/lib/flash';
 import { routes } from '@/lib/site';
 import type { Cart } from '@/lib/types';
 
@@ -16,15 +16,14 @@ import type { Cart } from '@/lib/types';
  * Eskiden "sepete ekle" kullanıcıyı /sepet sayfasına atıyordu; alışverişi
  * bölen en pahalı davranış buydu. Artık sayfada kalınıyor.
  *
- * DURUM URL'DEN TÜRETİLİYOR, state'te tutulmuyor. İki sebep:
- *   1. Sunucu aksiyonu `?sepet=eklendi` ile geri dönüyor; istemcinin ayrıca
- *      haberleşmesi gerekmiyor.
- *   2. Effect içinde setState çağırmak zincirleme render üretiyor ve React
- *      lint'i haklı olarak reddediyor. URL zaten bu bilginin doğru yeri.
+ * BAYRAK ÇEREZDEN GELİR, adresten değil. Aksiyon `redirect()` ile dönseydi
+ * tarayıcı gezinme yapar ve SAYFA BAŞA KAYARDI — mobilde ürünü inceleyip
+ * "Sepete ekle"ye basan kullanıcı tepeye fırlıyordu. Şimdi aksiyon çerezi
+ * yazıp `refresh()` çağırıyor; `CartFlash` yeni değeri prop olarak veriyor
+ * ve kullanıcı baktığı yerde kalıyor.
  *
- * JavaScript kapalıyken: aksiyon yine çalışır, sayfa `?sepet=eklendi` ile
- * yeniden yüklenir, yalnızca toast ve çekmece görünmez — başlıktaki sepet
- * sayacı yine de güncellenir.
+ * JavaScript kapalıyken: aksiyon yine çalışır ve sepet sayacı güncellenir,
+ * yalnızca toast ve çekmece görünmez.
  */
 
 /** Çekmece yalnızca masaüstünde; mobilde alt çubuk ve toast var. */
@@ -34,66 +33,46 @@ const subscribeDesktop = (callback: () => void) => {
     return () => query.removeEventListener('change', callback);
 };
 
-/**
- * "Hidrasyon bitti mi" — sunucuda false, istemcide true.
- *
- * Buna İHTİYAÇ VAR çünkü `isDesktop`in sunucu anlık görüntüsü zorunlu olarak
- * `false`. O ilk render'da temizlik effect'i çalışırsa `?sepet=eklendi`yi
- * çekmece daha açılmadan siler ve çekmece MASAÜSTÜNDE DE hiç görünmez.
- * (Bu hata gerçekten oluştu; DOM taramasında yakalandı.)
- */
-const subscribeNever = () => () => {};
-
-export default function CartDock() {
-    const params = useSearchParams();
-    const pathname = usePathname();
-    const router = useRouter();
-
-    const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+export default function CartDock({ flash }: { flash: string | null }) {
     const isDesktop = useSyncExternalStore(
         subscribeDesktop,
         () => window.matchMedia('(min-width: 1024px)').matches,
         () => false, // sunucuda çekmece hiç çizilmez
     );
 
-    const added = params.get('sepet') === 'eklendi';
-    const favourite = params.get('favori');
-    const error = params.get('hata');
-    const open = added && isDesktop;
+    // "sepet:eklendi" / "hata:Stok yetersiz" — ilk iki nokta üst üsteden böl;
+    // hata mesajı iki nokta içerebilir, o yüzden split(':') kullanılmıyor.
+    const raw = flash ?? '';
+    const cut = raw.indexOf(':');
+    const kind = cut < 0 ? raw : raw.slice(0, cut);
+    const detail = cut < 0 ? '' : raw.slice(cut + 1);
+    const added = kind === 'sepet';
+
+    /* Çekmece kapandığında bayrak hâlâ prop'ta duruyor (çerez silinse de
+       sunucu yeniden render edilmedi). Kapanışı ayrı tutuyoruz; yeni bir
+       bayrak gelince render sırasında sıfırlanıyor — React'in belgelediği
+       kalıp, effect içinde setState değil. */
+    const [dismissed, setDismissed] = useState<string | null>(null);
+    if (dismissed !== null && dismissed !== flash) setDismissed(null);
+
+    const open = added && isDesktop && dismissed !== flash;
 
     const [cart, setCart] = useState<Cart | null>(null);
 
-    // Bildirimler. YALNIZCA yan etki — setState yok, zincirleme render yok.
+    /*
+     * Bildirim + çerez temizliği. YALNIZCA yan etki, setState yok.
+     * Çerez silinmezse sonraki gezinmede toast tekrar çıkardı.
+     */
     useEffect(() => {
-        if (added) toast.success('Ürün sepete eklendi');
-    }, [added]);
+        if (!flash) return;
+        if (kind === 'sepet') toast.success('Ürün sepete eklendi');
+        else if (kind === 'favori') {
+            if (detail === 'eklendi') toast.success('Favorilere eklendi');
+            else toast('Favorilerden çıkarıldı');
+        } else if (kind === 'hata') toast.error(detail || 'İşlem tamamlanamadı');
 
-    useEffect(() => {
-        if (favourite === 'eklendi') toast.success('Favorilere eklendi');
-        if (favourite === 'cikarildi') toast('Favorilerden çıkarıldı');
-    }, [favourite]);
-
-    useEffect(() => {
-        if (error) toast.error(error);
-    }, [error]);
-
-    /** Bayrakları adresten siler; kalırsa yenilemede toast tekrar çıkar. */
-    const clearFlags = () => {
-        const clean = new URLSearchParams(params);
-        ['sepet', 'favori', 'hata'].forEach((key) => clean.delete(key));
-        const query = clean.toString();
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-    };
-
-    // Çekmece açıkken temizlik BEKLETİLİR: açık olması `?sepet=eklendi`ye bağlı.
-    // `hydrated` kontrolü şart — bkz. subscribeNever.
-    useEffect(() => {
-        if (!hydrated || open || (!added && !favourite && !error)) return;
-        const clean = new URLSearchParams(params);
-        ['sepet', 'favori', 'hata'].forEach((key) => clean.delete(key));
-        const query = clean.toString();
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-    }, [hydrated, added, favourite, error, open, params, pathname, router]);
+        document.cookie = `${FLASH_COOKIE}=; path=/; max-age=0`;
+    }, [flash, kind, detail]);
 
     // İçerik AÇILINCA çekilir: hiç açılmayacak bir panel için her gezinmede
     // sepet isteği atmak israf olurdu.
@@ -129,7 +108,7 @@ export default function CartDock() {
                     <button
                         type="button"
                         aria-label="Sepeti kapat"
-                        onClick={clearFlags}
+                        onClick={() => setDismissed(flash)}
                         className="fixed inset-0 z-50 cursor-default bg-ink-block/35 backdrop-blur-[2px]"
                     />
                     <aside
@@ -141,7 +120,7 @@ export default function CartDock() {
                             <BagIcon className="size-[18px] text-slate-700" />
                             <h2 className="text-[15px] font-bold">Sepetim</h2>
                             {cart && <span className="text-[12.5px] text-slate-600">{cart.itemCount} ürün</span>}
-                            <button type="button" onClick={clearFlags} aria-label="Kapat" className="ml-auto text-slate-500 transition hover:text-accent-500">
+                            <button type="button" onClick={() => setDismissed(flash)} aria-label="Kapat" className="ml-auto text-slate-500 transition hover:text-accent-500">
                                 <XIcon className="size-[18px]" />
                             </button>
                         </header>
@@ -181,8 +160,8 @@ export default function CartDock() {
                                     <span className="price text-[17px]">{formatPrice(cart.totals.subtotal)}</span>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Link href={routes.cart} onClick={clearFlags} className="btn-secondary flex-1 justify-center">Sepete git</Link>
-                                    <Link href={routes.checkout} onClick={clearFlags} className="btn-primary flex-1 justify-center">Ödemeye geç</Link>
+                                    <Link href={routes.cart} onClick={() => setDismissed(flash)} className="btn-secondary flex-1 justify-center">Sepete git</Link>
+                                    <Link href={routes.checkout} onClick={() => setDismissed(flash)} className="btn-primary flex-1 justify-center">Ödemeye geç</Link>
                                 </div>
                             </footer>
                         )}

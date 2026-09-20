@@ -1,8 +1,11 @@
 'use server';
 
+import { refresh } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { toggleFavorite } from '@/lib/account';
 import { addToCart } from '@/lib/cart';
+import { FLASH_COOKIE, FLASH_MAX_AGE } from '@/lib/flash';
 import { getCurrentCustomer } from '@/lib/session';
 import { routes } from '@/lib/site';
 
@@ -19,16 +22,25 @@ import { routes } from '@/lib/site';
  */
 
 /**
- * Bayrağı adrese ekler: `CartDock` onu görüp toast basıyor ve masaüstünde
- * sepet çekmecesini açıyor. Adres üzerinden gitmesinin sebebi, aksiyonun
- * dönüş değerinin düz bir `<form action>`'da kaybolması — istemci bileşenine
- * çevirmeden istemciye haber vermenin tek yolu bu.
+ * "Az önce ne oldu" bayrağını çereze yazar; `CartDock` onu görüp toast basıyor
+ * ve masaüstünde sepet çekmecesini açıyor.
+ *
+ * ADRES PARAMETRESİ DEĞİL, ÇEREZ. Aksiyon `redirect()` ile dönseydi tarayıcı
+ * gezinme yapar ve sayfa BAŞA KAYARDI — mobilde ürünü inceleyip "Sepete
+ * ekle"ye basan kullanıcı tepeye fırlıyordu. Çerez + `refresh()` ile gezinme
+ * hiç olmuyor, kullanıcı baktığı yerde kalıyor.
+ *
+ * httpOnly DEĞİL: toast'ı bastıktan sonra istemci kendisi siliyor, yoksa
+ * sonraki gezinmede tekrar çıkardı.
  */
-const withFlag = (path: string, key: string, value: string) => {
-    const [base, query = ''] = path.split('?');
-    const params = new URLSearchParams(query);
-    params.set(key, value);
-    return `${base}?${params.toString()}`;
+const flash = async (value: string) => {
+    (await cookies()).set(FLASH_COOKIE, value, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: FLASH_MAX_AGE,
+    });
 };
 
 /**
@@ -38,18 +50,22 @@ const withFlag = (path: string, key: string, value: string) => {
  */
 export async function quickAddToCartAction(formData: FormData) {
     const productId = Number(formData.get('productId'));
-    const back = String(formData.get('back') || '/');
 
     if (!Number.isFinite(productId) || productId <= 0) {
-        redirect(withFlag(back, 'hata', 'Ürün bulunamadı'));
+        await flash('hata:Ürün bulunamadı');
+        refresh();
+        return;
     }
 
     try {
         await addToCart(productId, 1);
     } catch (error) {
-        redirect(withFlag(back, 'hata', (error as Error).message));
+        await flash(`hata:${(error as Error).message}`);
+        refresh();
+        return;
     }
-    redirect(withFlag(back, 'sepet', 'eklendi'));
+    await flash('sepet:eklendi');
+    refresh();
 }
 
 /**
@@ -68,5 +84,6 @@ export async function toggleFavoriteAction(formData: FormData) {
     if (!customer) redirect(`${routes.login}?devam=${encodeURIComponent(back)}`);
 
     const { favorited } = await toggleFavorite(baseProductId);
-    redirect(withFlag(back, 'favori', favorited ? 'eklendi' : 'cikarildi'));
+    await flash(favorited ? 'favori:eklendi' : 'favori:cikarildi');
+    refresh();
 }

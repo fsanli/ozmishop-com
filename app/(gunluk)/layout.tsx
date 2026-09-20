@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Footer from '@/components/chrome/Footer';
-import CartDock from '@/components/cart/CartDock';
+import CartFlash from '@/components/cart/CartFlash';
 import SupportDock from '@/components/chrome/SupportDock';
 import GunlukMasthead from '@/components/gunluk/GunlukMasthead';
 
@@ -19,8 +19,8 @@ export default function GunlukLayout({ children }: { children: React.ReactNode }
             <main id="icerik" className="flex-1">{children}</main>
             <Footer />
             <SupportDock />
-            {/* Suspense: useSearchParams okuyor, yoksa tüm yerleşim istek zamanına düşer. */}
-            <Suspense fallback={null}><CartDock /></Suspense>
+            {/* Suspense: cookies() okuyor, yoksa tüm yerleşim istek zamanına düşer. */}
+            <Suspense fallback={null}><CartFlash /></Suspense>
         </>
     );
 }

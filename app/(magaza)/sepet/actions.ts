@@ -1,10 +1,12 @@
 'use server';
 
 import { refresh } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
     addToCart, applyCartCoupon, removeCartCoupon, removeCartItem, setCartQuantity,
 } from '@/lib/cart';
+import { FLASH_COOKIE, FLASH_MAX_AGE } from '@/lib/flash';
 import { routes } from '@/lib/site';
 
 /**
@@ -28,13 +30,17 @@ export async function addToCartAction(formData: FormData) {
     } catch (error) {
         redirect(withError(back, (error as Error).message));
     }
-    // SEPET SAYFASINA GİTMEZ: kullanıcı ürün sayfasında kalır, toast görür ve
-    // masaüstünde sepet çekmecesi açılır (CartDock). Ürünü inceleyen birini
-    // başka bir sayfaya atmak, en pahalı yerde akışı bölüyordu.
-    const [base, query = ''] = back.split('?');
-    const params = new URLSearchParams(query);
-    params.set('sepet', 'eklendi');
-    redirect(`${base}?${params.toString()}`);
+    // NE SEPET SAYFASINA GİDER NE DE SAYFAYI KAYDIRIR: bayrak çereze yazılıp
+    // `refresh()` çağrılıyor, gezinme hiç olmuyor. Kullanıcı baktığı yerde
+    // kalıyor, toast görüyor, masaüstünde çekmece açılıyor.
+    (await cookies()).set(FLASH_COOKIE, 'sepet:eklendi', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: FLASH_MAX_AGE,
+    });
+    refresh();
 }
 
 export async function setQuantityAction(formData: FormData) {

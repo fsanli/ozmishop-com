@@ -5,7 +5,8 @@ import { WhatsappIcon } from '@/components/icons';
 import { addToCartAction } from '@/app/(magaza)/sepet/actions';
 
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { formatPrice } from '@/lib/format';
 import type { ProductDetail, ProductVariant } from '@/lib/types';
 
@@ -19,6 +20,13 @@ import type { ProductDetail, ProductVariant } from '@/lib/types';
  * "Sepete ekle" gerçek bir <form>: seçili varyantın id'si sunucu aksiyonuna
  * gider. Bekleme durumunu SubmitButton gösterir, başka istemci durumu yok.
  */
+/**
+ * Portal'ın DOM'a ihtiyacı var; sunucuda `false`, istemcide `true`.
+ * `useState`+effect yerine harici depo: effect içinde setState zincirleme
+ * render üretiyor ve React lint'i reddediyor.
+ */
+const subscribeNever = () => () => {};
+
 /** Tailwind v4 `h-${n}` üretemez: iki ölçü de tam sınıf adı olarak duruyor. */
 const BUY_SIZES = {
     lg: { box: 'min-h-[54px]' },
@@ -36,6 +44,7 @@ export default function ProductPurchasePanel({
      */
     whatsappUrl: string | null;
 }) {
+    const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
     const defaultVariant = product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
 
     const [selection, setSelection] = useState<Record<number, number>>(() =>
@@ -207,12 +216,21 @@ export default function ProductPurchasePanel({
                 <p className="text-xs text-slate-500">Bu kombinasyon mevcut değil; lütfen başka bir seçim yapın.</p>
             )}
 
-            {/* MOBİL SATIN ALMA ÇUBUĞU.
+            {/* MOBİL SATIN ALMA ÇUBUĞU — document.body'ye PORTAL.
                 Ürün sayfası uzun (galeri, künye, yorumlar); kullanıcı aşağıdayken
                 sepete eklemek için başa dönmek zorunda kalmamalı.
-                `buy-bar` sınıfı globals.css'te WhatsApp balonunu yukarı itiyor —
-                yoksa balon çubuğun altında kalırdı. */}
-            <div className="buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-slate-900/10 bg-surface/95 px-4 pb-[max(8px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-[14px] lg:hidden">
+
+                NEDEN PORTAL: `position: fixed` bir atada `transform`, `filter`,
+                `backdrop-filter` ya da `contain` varsa VİEWPORT'a değil o ataya
+                göre konumlanır ve çubuk ekranın dibine oturmaz. Sayfada böyle
+                bir ata bulamadım ama boşluk canlıda görüldü; body'ye taşımak
+                bu sebep sınıfının TAMAMINI ortadan kaldırıyor. MobileMenu
+                aynı sorun için aynı çözümü kullanıyor.
+
+                `buy-bar` sınıfı globals.css'te WhatsApp ve tawk.to balonlarını
+                yukarı itiyor — yoksa çubuğun altında kalırlardı. */}
+            {mounted && createPortal((
+                <div className="buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-slate-900/10 bg-surface/95 px-4 pb-[max(8px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-[14px] lg:hidden">
                 <div className="mb-1.5 flex items-baseline justify-between gap-2">
                     <span className="price text-[17px]">{formatPrice(price)}</span>
                     {selectedVariant?.name && (
@@ -220,7 +238,8 @@ export default function ProductPurchasePanel({
                     )}
                 </div>
                 {buyForm('sm')}
-            </div>
+                </div>
+            ), document.body)}
 
 
             <ul className="space-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500">
