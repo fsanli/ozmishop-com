@@ -2,8 +2,8 @@ import { cacheLife, cacheTag } from 'next/cache';
 import Link from 'next/link';
 import Container from '@/components/Container';
 import Logo from '@/components/Logo';
-import { getPages } from '@/lib/api';
-import { FOOTER_HELP_SLUGS, routes, site } from '@/lib/site';
+import { getPagesGrouped } from '@/lib/api';
+import { routes, site } from '@/lib/site';
 
 /**
  * Alt bilgi. Önbelleklenir: içeriğin tamamı panelden yönetilen veriden gelir ve
@@ -16,13 +16,27 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
     cacheTag('pages');
     cacheLife('days');
 
-    const pages = await getPages();
-    const help = FOOTER_HELP_SLUGS
-        .map((slug) => pages.find((page) => page.slug === slug))
-        .filter((page): page is NonNullable<typeof page> => Boolean(page));
-    const corporate = pages.filter((page) => !FOOTER_HELP_SLUGS.includes(page.slug));
+    /*
+     * Kolonlar SAYFA GRUBUNDAN üretiliyor, koddaki sabit slug listesinden
+     * değil. Eskiden yeni bir sözleşme eklemek `FOOTER_HELP_SLUGS`'a satır
+     * eklemek demekti — editör yeni sayfasının hangi kolona düşeceğini
+     * seçemiyordu. Artık panelden seçiyor.
+     */
+    /* `groups ?? []`: `use cache` girdisi dağıtımdan SAĞ ÇIKABİLİYOR. API'ye
+       `groups` eklendiğinde eski şekilli bir önbellek kaydı footer'ı çökertti
+       (derlemede yakalandı). Alan yoksa yalnız "Alışveriş" kolonu çizilir;
+       eksik bir kolon, çöken bir sayfadan iyidir. */
+    const { items: pages, groups = [] } = await getPagesGrouped();
+    const columns = groups
+        .map((group) => ({
+            heading: group.label,
+            links: pages
+                .filter((page) => page.group === group.key)
+                .map((page) => ({ href: routes.page(page.slug), label: page.title })),
+        }))
+        .filter((column) => column.links.length > 0);
 
-    const columns = [
+    const allColumns = [
         {
             heading: 'Alışveriş',
             links: [
@@ -33,9 +47,8 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
                 { href: routes.journal, label: 'Günlük' },
             ],
         },
-        { heading: 'Yardım', links: help.map((page) => ({ href: routes.page(page.slug), label: page.title })) },
-        { heading: 'Kurumsal', links: corporate.map((page) => ({ href: routes.page(page.slug), label: page.title })) },
-    ].filter((column) => column.links.length > 0);
+        ...columns,
+    ];
 
     return (
         <footer className="mt-[clamp(40px,6vw,88px)] bg-ink-block text-on-dark">
@@ -51,7 +64,7 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
                     )}
                 </div>
 
-                {columns.map((column) => (
+                {allColumns.map((column) => (
                     <div key={column.heading}>
                         <h2 className="text-[12px] font-bold uppercase tracking-[0.05em] text-on-dark/45">{column.heading}</h2>
                         <ul className="mt-3.5 space-y-2">

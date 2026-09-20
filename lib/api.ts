@@ -17,7 +17,7 @@ import type {
     ProductGroup,
     ProductListing,
     SitemapData,
-    Suggestions,
+    Suggestions, PageGroup,
 } from './types';
 
 /**
@@ -235,6 +235,19 @@ export async function getPages(): Promise<ContentPage[]> {
     cacheLife('days');
     const data = await request<{ items: ContentPage[] }>('/pages');
     return data.items;
+}
+
+/**
+ * Sayfalar + grup etiketleri. Etiketler API'den geliyor: footer kolonları ve
+ * sayfa kenar çubuğu aynı sırayı kullanıyor ve vitrin ikinci bir liste
+ * tutmuyor. Eskiden footer sabit bir slug listesinden (FOOTER_HELP_SLUGS)
+ * besleniyordu; yeni bir sayfa eklemek kod değiştirmek demekti.
+ */
+export async function getPagesGrouped(): Promise<{ items: ContentPage[]; groups: PageGroup[] }> {
+    'use cache';
+    cacheTag('pages');
+    cacheLife('days');
+    return request<{ items: ContentPage[]; groups: PageGroup[] }>('/pages');
 }
 
 export async function getPage(slug: string): Promise<ContentPage | null> {

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/Breadcrumb';
+import Container from '@/components/Container';
+import PageSidebar from '@/components/page/PageSidebar';
 import { getPage, getPages } from '@/lib/api';
 import { redirectIfMoved } from '@/lib/redirects';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
@@ -38,10 +40,17 @@ export default async function ContentPageView({ params }: { params: Promise<{ sl
     }
 
     return (
-        <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
+        <Container className="py-[clamp(18px,3vw,30px)]">
             <Breadcrumb items={[{ name: page.title, href: routes.page(page.slug) }]} />
-            <h1 className="heading-1 mb-5">{page.title}</h1>
-            <div className="card prose-content p-5 sm:p-8" dangerouslySetInnerHTML={{ __html: page.content ?? '' }} />
-        </div>
+
+            <div className="mt-4 flex flex-wrap items-start gap-[clamp(16px,2.6vw,40px)] lg:flex-nowrap">
+                <PageSidebar current={page.slug} />
+
+                <div className="min-w-0 flex-1">
+                    <h1 className="heading-1 mb-5">{page.title}</h1>
+                    <div className="card prose-content p-5 sm:p-8" dangerouslySetInnerHTML={{ __html: page.content ?? '' }} />
+                </div>
+            </div>
+        </Container>
     );
 }

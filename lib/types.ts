@@ -262,7 +262,15 @@ export interface ContentPage {
     metaTitle: string | null;
     metaDescription: string | null;
     isIndexable: boolean;
+    /** Footer kolonu ve sayfa kenar çubuğu buna göre gruplanır. */
+    group: string;
     updatedAt: string;
+}
+
+/** API'nin döndürdüğü grup etiketleri; vitrin kendi listesini tutmaz. */
+export interface PageGroup {
+    key: string;
+    label: string;
 }
 
 export interface Suggestions {

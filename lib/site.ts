@@ -67,15 +67,6 @@ export const routes = {
  */
 export const PANIC_EXIT_URL = 'https://www.google.com/search?q=hava+durumu';
 
-/** Footer'da "Yardım" sütununa düşecek kurumsal sayfalar; kalanı "Kurumsal". */
-export const FOOTER_HELP_SLUGS = [
-    'kargo-ve-teslimat',
-    'iade-ve-degisim',
-    'siparis-takibi',
-    'sikca-sorulan-sorular',
-    'iletisim',
-];
-
 /** Panelden gelen link adresini güvenli hale getirir: yalnızca site içi yollar. */
 export function safeLink(url: string | null | undefined): string | null {
     if (!url) return null;
