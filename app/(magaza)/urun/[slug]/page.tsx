@@ -19,6 +19,7 @@ import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import { productWhatsappLink } from '@/lib/whatsapp';
 import ProductGallery from './ProductGallery';
 import ProductPurchasePanel from './ProductPurchasePanel';
+import { VariantSelectionProvider } from './VariantSelection';
 import ViewPing from '@/components/ViewPing';
 
 /**
@@ -91,32 +92,48 @@ export default async function ProductPage({
         <Container className="pt-[clamp(18px,3vw,30px)]">
             <Breadcrumb items={crumbs} />
 
-            <div className="mt-4 flex flex-wrap items-start gap-[clamp(16px,2.6vw,40px)]">
-                <div className="min-w-0 flex-[1_1_380px]">
-                    <ProductGallery images={product.images} name={product.name} />
-                </div>
-
-                <div className="min-w-0 flex-[1_1_380px]">
-                    <Link
-                        href={routes.brand(product.brand.slug)}
-                        className="brand-line tracking-[0.06em] text-accent-500 transition-colors hover:text-accent-600"
-                    >
-                        {product.brand.name}
-                    </Link>
-                    <h1 className="heading-1 mt-2">{product.name}</h1>
-                    {product.shortDescription && (
-                        <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-slate-600">{product.shortDescription}</p>
-                    )}
-
-                    <div className="mt-6">
-                        <ProductPurchasePanel product={product} whatsappUrl={whatsappUrl} />
+            {/* Varyant seçimi hem satın alma panelini hem teknik künyeyi ilgilendiriyor:
+                ikisini saran sağlayıcıda duruyor. Sağlayıcıya yalnızca seçim için
+                gereken alanlar gidiyor, tam varyant listesi değil. */}
+            <VariantSelectionProvider
+                hasAxes={product.variantAxes.length > 0}
+                variants={product.variants.map((variant) => ({
+                    id: variant.id,
+                    isDefault: variant.isDefault,
+                    options: variant.options.map((option) => ({
+                        variantKeyId: option.variantKeyId,
+                        variantValueId: option.variantValueId,
+                    })),
+                }))}
+            >
+                <div className="mt-4 flex flex-wrap items-start gap-[clamp(16px,2.6vw,40px)]">
+                    <div className="min-w-0 flex-[1_1_380px]">
+                        <ProductGallery images={product.images} name={product.name} />
                     </div>
 
-                    <PrivacyPanel className="mt-5" />
-                </div>
-            </div>
+                    <div className="min-w-0 flex-[1_1_380px]">
+                        <Link
+                            href={routes.brand(product.brand.slug)}
+                            className="brand-line tracking-[0.06em] text-accent-500 transition-colors hover:text-accent-600"
+                        >
+                            {product.brand.name}
+                        </Link>
+                        <h1 className="heading-1 mt-2">{product.name}</h1>
+                        {product.shortDescription && (
+                            <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-slate-600">{product.shortDescription}</p>
+                        )}
 
-            <TechSpecs sheet={product.specSheet} />
+                        <div className="mt-6">
+                            <ProductPurchasePanel product={product} whatsappUrl={whatsappUrl} />
+                        </div>
+
+                        <PrivacyPanel className="mt-5" />
+                    </div>
+                </div>
+
+                <TechSpecs sheet={product.specSheet} />
+            </VariantSelectionProvider>
+
             <ProductNotes product={product} />
 
             <section className="flex flex-wrap items-start gap-[clamp(18px,3vw,44px)] pt-[clamp(30px,4vw,54px)]">

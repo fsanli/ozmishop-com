@@ -5,10 +5,11 @@ import { WhatsappIcon } from '@/components/icons';
 import { addToCartAction } from '@/app/(magaza)/sepet/actions';
 
 import Image from 'next/image';
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { formatPrice } from '@/lib/format';
 import type { ProductDetail, ProductVariant } from '@/lib/types';
+import { useVariantSelection } from './VariantSelection';
 
 /**
  * Varyant seçici ve satın alma paneli.
@@ -45,18 +46,11 @@ export default function ProductPurchasePanel({
     whatsappUrl: string | null;
 }) {
     const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
-    const defaultVariant = product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
 
-    const [selection, setSelection] = useState<Record<number, number>>(() =>
-        Object.fromEntries((defaultVariant?.options ?? []).map((option) => [option.variantKeyId, option.variantValueId])),
-    );
-
-    const selectedVariant: ProductVariant | undefined = useMemo(() => {
-        if (!product.variantAxes.length) return defaultVariant;
-        return product.variants.find((variant) =>
-            variant.options.every((option) => selection[option.variantKeyId] === option.variantValueId),
-        );
-    }, [product, selection, defaultVariant]);
+    // Seçim burada DEĞİL, sayfanın sağlayıcısında duruyor: teknik künye de
+    // varyanta göre değiştiği için ikisinin ortak bir kaynağa bakması gerekiyor.
+    const { selection, select, selectedVariantId } = useVariantSelection();
+    const selectedVariant: ProductVariant | undefined = product.variants.find((variant) => variant.id === selectedVariantId);
 
     /** Bir değer, diğer eksenlerdeki mevcut seçimlerle birlikte var olan bir varyanta denk geliyor mu? */
     const isAvailable = (axisId: number, valueId: number) =>
@@ -140,7 +134,7 @@ export default function ProductPurchasePanel({
                                     <button
                                         key={value.id}
                                         type="button"
-                                        onClick={() => setSelection((current) => ({ ...current, [axis.id]: value.id }))}
+                                        onClick={() => select(axis.id, value.id)}
                                         title={available ? value.name : `${value.name} — bu kombinasyon yok`}
                                         aria-label={value.name}
                                         aria-pressed={active}
@@ -158,7 +152,7 @@ export default function ProductPurchasePanel({
                                 <button
                                     key={value.id}
                                     type="button"
-                                    onClick={() => setSelection((current) => ({ ...current, [axis.id]: value.id }))}
+                                    onClick={() => select(axis.id, value.id)}
                                     aria-pressed={active}
                                     className={`rounded-lg border px-3 py-1.5 text-sm transition ${
                                         active

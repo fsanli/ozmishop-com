@@ -1,5 +1,8 @@
+'use client';
+
 import { CATEGORY_COLOR } from '@/lib/colors';
 import type { SpecSheet } from '@/lib/types';
+import { useVariantSelection } from './VariantSelection';
 
 /**
  * Teknik künye. İki blok:
@@ -8,8 +11,15 @@ import type { SpecSheet } from '@/lib/types';
  *
  * Künye boşsa hiç render EDİLMEZ: tasarımın sözü "alan gelene kadar ilgili parça
  * gizlenir, layout bozulmaz".
+ *
+ * Bazı ölçüler varyanta göre değişir ("Küçük" 12 cm, "Büyük" 15 cm). O yüzden
+ * istemci bileşeni: seçili varyantın künyesi gösterilir, `byVariant` yoksa
+ * (ürünlerin çoğu) tek künye herkes için geçerlidir ve hiçbir şey değişmez.
  */
-export default function TechSpecs({ sheet }: { sheet: SpecSheet | undefined }) {
+export default function TechSpecs({ sheet: full }: { sheet: SpecSheet | undefined }) {
+    const { selectedVariantId } = useVariantSelection();
+    const sheet = (selectedVariantId !== null && full?.byVariant?.[selectedVariantId]) || full;
+
     if (!sheet || (sheet.keyMetrics.length === 0 && sheet.groups.length === 0)) return null;
 
     return (

@@ -183,7 +183,8 @@ export interface SpecFacet {
 }
 
 /** Ürün detaydaki teknik künye: ölçüm kartları + renk kodlu gruplar. */
-export interface SpecSheet {
+/** Künyenin çizilen kısmı. Varyant başına ayrı ayrı üretilebilir. */
+export interface SpecSheetContent {
     keyMetrics: {
         name: string;
         value: string;
@@ -195,7 +196,16 @@ export interface SpecSheet {
         percent: number | null;
     }[];
     groups: { id: number; name: string; slug: string; colorKey: ColorKey; rows: { name: string; value: string }[] }[];
+}
+
+export interface SpecSheet extends SpecSheetContent {
     badges: { kind: SpecBadgeKind; label: string }[];
+    /**
+     * Varyanta göre değişen başlık varsa varyant id'si → o varyantın TAM künyesi.
+     * Yoksa alan hiç gelmez ve üstteki künye herkes için geçerlidir. Üst seviye
+     * künye varsayılan varyantınkidir; seçim yapılmadan görünen de odur.
+     */
+    byVariant?: Record<number, SpecSheetContent>;
 }
 
 export interface ProductListing {
