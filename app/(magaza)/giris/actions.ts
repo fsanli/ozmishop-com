@@ -77,6 +77,10 @@ export async function registerAction(formData: FormData) {
     // biçimlenmez, o yüzden doğrulama sunucuda tekrarlanmak zorunda.
     const invalid = phoneError(phone);
     if (invalid) redirect(`${routes.register}?hata=${encodeURIComponent(invalid)}&devam=${encodeURIComponent(next)}`);
+    // JavaScript kapalıyken `required` çalışmaz: iki zorunlu onay sunucuda da denetlenir.
+    if (formData.get('uyelik') !== 'on' || formData.get('yas') !== 'on') {
+        redirect(`${routes.register}?hata=${encodeURIComponent('Üyelik sözleşmesini kabul etmen ve 18 yaşından büyük olduğunu onaylaman gerekiyor.')}&devam=${encodeURIComponent(next)}`);
+    }
 
     await authenticate('/auth/users/register', {
         firstname: String(formData.get('firstname') || '').trim(),
@@ -84,7 +88,53 @@ export async function registerAction(formData: FormData) {
         email: String(formData.get('email') || '').trim(),
         phone: normalisePhone(phone),
         password: String(formData.get('password') || ''),
+        // Onay KANITI API'de IP ve sürümle yazılır.
+        consents: { membership: true, ageConfirmed: true, marketing: formData.get('ticariIleti') === 'on' },
     }, routes.register, next);
+}
+
+/** Hata gövdesini okuyup fırlatan sade POST; jeton dönmeyen uçlar için. */
+async function postJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+    const response = await fetch(`${API_BASE}${path}`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(await proxyHeaders()) },
+        body: JSON.stringify(body),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.message || 'İşlem tamamlanamadı');
+    return result as T;
+}
+
+/**
+ * "Şifremi unuttum". Cevap adres kayıtlı olsa da olmasa da AYNI: ekran hangi
+ * adresin müşteri olduğunu ele vermemeli. Yalnız biçim hatası gösterilir.
+ */
+export async function forgotPasswordAction(formData: FormData) {
+    const email = String(formData.get('email') || '').trim();
+    try {
+        await postJson('/auth/users/password/forgot', { email });
+    } catch (error) {
+        redirect(fail(routes.forgotPassword, (error as Error).message));
+    }
+    redirect(`${routes.forgotPassword}&gonderildi=1`);
+}
+
+export async function resetPasswordAction(formData: FormData) {
+    const token = String(formData.get('t') || '');
+    const password = String(formData.get('password') || '');
+    const repeat = String(formData.get('passwordRepeat') || '');
+    const back = (message: string) => `${routes.resetPassword}?${new URLSearchParams({ t: token, hata: message })}`;
+
+    if (password !== repeat) redirect(back('Parolalar birbirini tutmuyor.'));
+    try {
+        await postJson('/auth/users/password/reset', { token, password });
+    } catch (error) {
+        redirect(back((error as Error).message));
+    }
+    // Oturum AÇILMAZ: yeni parolayla bir kez giriş yapmak, bağlantının yanlış
+    // ellere geçtiği durumda bile hesabı doğrudan teslim etmemek demek.
+    redirect(`${routes.login}?parola=yenilendi`);
 }
 
 export async function logoutAction() {

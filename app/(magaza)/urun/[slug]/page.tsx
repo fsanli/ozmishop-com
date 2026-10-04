@@ -16,7 +16,7 @@ import { one, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, productSchema } from '@/lib/schema';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
-import { productWhatsappLink } from '@/lib/whatsapp';
+import { pickWhatsappSettings } from '@/lib/whatsapp';
 import ProductGallery from './ProductGallery';
 import ProductPurchasePanel from './ProductPurchasePanel';
 import { VariantSelectionProvider } from './VariantSelection';
@@ -78,10 +78,10 @@ export default async function ProductPage({
     // ağ isteği değil. aggregateRating yalnız gerçekten yorum varken basılır.
     const reviews = await getReviews(slug);
 
-    // WhatsApp bağlantısı SUNUCUDA kuruluyor: mesaj kalıbı ayarlardan geliyor
-    // ve satın alma paneli bir istemci bileşeni — ayarları oraya taşımak,
-    // her ürün sayfasına gereksiz bir istemci okuması eklerdi.
-    const whatsappUrl = productWhatsappLink(await getSettings(), product, site.url);
+    // WhatsApp bağlantısı İSTEMCİDE, seçili varyantla kuruluyor (beden/SKU/fiyat
+    // mesaja girsin). Panele tüm ayarlar değil, yalnız numara ve kalıp gidiyor.
+    const settings = await getSettings();
+    const whatsapp = pickWhatsappSettings(settings);
 
     const crumbs = [
         ...product.breadcrumb.map((item) => ({ name: item.name, href: routes.category(item.slug) })),
@@ -124,7 +124,13 @@ export default async function ProductPage({
                         )}
 
                         <div className="mt-6">
-                            <ProductPurchasePanel product={product} whatsappUrl={whatsappUrl} />
+                            <ProductPurchasePanel
+                                product={product}
+                                whatsapp={whatsapp}
+                                siteUrl={site.url}
+                                returnDays={Number(settings['icerik.iade_suresi_gun']) || 14}
+                                shippingLine={settings['kargo.sureler']}
+                            />
                         </div>
 
                         <PrivacyPanel className="mt-5" />

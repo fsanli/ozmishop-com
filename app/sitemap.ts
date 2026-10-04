@@ -1,17 +1,20 @@
 import type { MetadataRoute } from 'next';
 import { getSitemapData } from '@/lib/api';
-import { routes, site } from '@/lib/site';
+import { isIndexable, routes, site } from '@/lib/site';
 
 /**
  * lastModified değerleri gerçek updatedAt'ten gelir; uydurma tarih Google'ın
  * sitemap sinyaline olan güvenini düşürür.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+    // İndekslenmeyen ortamda (dev/önizleme) adres listesi yayınlanmaz.
+    if (!isIndexable()) return [];
     const data = await getSitemapData();
 
     return [
         { url: site.url, changeFrequency: 'daily', priority: 1 },
         { url: `${site.url}${routes.brands}`, changeFrequency: 'weekly', priority: 0.6 },
+        { url: `${site.url}${routes.categories}`, changeFrequency: 'weekly', priority: 0.6 },
         ...data.categories.map((category) => ({
             url: `${site.url}${routes.category(category.slug)}`,
             lastModified: new Date(category.updatedAt),

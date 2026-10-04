@@ -4,15 +4,28 @@ import { getSettings } from '@/lib/api';
 import { routes } from '@/lib/site';
 import { subscribeAction } from '@/app/(gunluk)/gunluk/actions';
 
+type NewsletterState = 'ok' | 'hata' | 'izin';
+
+/** Adresteki `?bulten=` değerini bilinen durumlardan birine çevirir. */
+export const newsletterState = (value: string | undefined): NewsletterState | undefined => (
+    value === 'ok' || value === 'hata' || value === 'izin' ? value : undefined
+);
+
+const DEFAULT_STATEMENT = 'Günlük bülteninin ayda bir e-postayla gönderilmesine ve bu amaçla e-posta adresimin işlenmesine izin veriyorum. İstediğim zaman tek tıkla ayrılabilirim.';
+
 /**
  * Bülten bloğu. İstemci bileşeni değil: düz `<form action={…}>`, sonuç adrese
  * `?bulten=ok` olarak yazılır. Tasarımın vaadi metinde birebir korunuyor —
  * "nötr konu satırı" iddiası ürün kararı, kopya süsü değil.
+ *
+ * ÇİFT ONAY: kayıt bir izin kutusu ister ve onay e-postasındaki bağlantıya
+ * basılana kadar açılmaz. Kutunun metni ayardan gelir ve kayıtla birlikte
+ * kanıt olarak saklanır.
  */
 export default async function NewsletterBlock({
     state, source = 'gunluk', returnTo = routes.journal,
 }: {
-    state?: 'ok' | 'hata';
+    state?: NewsletterState;
     /** Hangi yerleşimden geldiği — ölçüm için. */
     source?: string;
     returnTo?: string;
@@ -22,6 +35,8 @@ export default async function NewsletterBlock({
     const settings = await getSettings();
     const promise = settings['icerik.bulten_vaadi']
         ?? 'E-postanın konu satırı her zaman nötrdür: “Günlük — Eylül”. Ürün adı ya da görsel içermez.';
+    const statement = settings['icerik.bulten_onay_metni']?.trim() || DEFAULT_STATEMENT;
+    const kvkkSlug = settings['gizlilik.kvkk_sayfa_slug'] || 'kvkk-aydinlatma-metni';
 
     return (
         <Container narrow as="section" className="pb-[clamp(32px,5vw,60px)] pt-[clamp(28px,4vw,48px)]">
@@ -52,9 +67,22 @@ export default async function NewsletterBlock({
                         Kaydol
                     </SubmitButton>
 
+                    <label className="flex w-full items-start gap-2.5 text-[12.5px] leading-relaxed text-on-dark/70">
+                        <input type="checkbox" name="izin" required className="field-checkbox mt-0.5 shrink-0 accent-accent-500" />
+                        <span>
+                            {statement}{' '}
+                            <a href={routes.page(kvkkSlug)} target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-on-dark">KVKK Aydınlatma Metni</a>
+                        </span>
+                    </label>
+
                     {state === 'ok' && (
                         <p role="status" className="w-full text-[13px] font-semibold text-on-dark-teal">
-                            Kaydın alındı. İlk yazıyı ayın başında göndeririz.
+                            Onay e-postası gönderdik. İçindeki bağlantıya basınca kaydın tamamlanır.
+                        </p>
+                    )}
+                    {state === 'izin' && (
+                        <p role="alert" className="w-full text-[13px] font-semibold text-on-dark-rose">
+                            Kaydolmak için izin kutusunu işaretlemelisin.
                         </p>
                     )}
                     {state === 'hata' && (

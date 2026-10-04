@@ -45,7 +45,24 @@ const accept = () => {
     listeners.forEach((listener) => listener());
 };
 
-export default function AgeGate() {
+/**
+ * 18 yaş onayı verildi mi — çerez bandı kapı kapanmadan çıkmasın diye.
+ * Sunucuda `false`: bant sunucu HTML'ine hiç basılmaz.
+ */
+export function useAgeAccepted(): boolean {
+    return useSyncExternalStore(subscribe, isAccepted, () => false);
+}
+
+const DEFAULT_TEXT = 'Bu site yetişkinlere yönelik ürünler içerir. Devam edebilmek için 18 yaşından büyük olduğunu onaylaman gerekir.';
+
+export default function AgeGate({
+    text, privacyHref, cookieHref,
+}: {
+    /** `magaza.yas_kapisi_metni` — panelden; boşsa varsayılan. */
+    text?: string | null;
+    privacyHref: string;
+    cookieHref: string;
+}) {
     // Sunucuda "onaylanmış" varsayılır: HTML'e kapı basılmaz, yalnızca istemcide belirir.
     const accepted = useSyncExternalStore(subscribe, isAccepted, () => true);
 
@@ -78,8 +95,7 @@ export default function AgeGate() {
                         18 yaşından<br />büyük müsün?
                     </h2>
                     <p className="mt-3.5 text-[14px] leading-relaxed text-slate-600">
-                        Bu site yetişkinlere yönelik ürünler içerir. Devam edebilmek için 18 yaşından büyük
-                        olduğunu onaylaman gerekir. Tüm siparişler{' '}
+                        {text?.trim() || DEFAULT_TEXT} Tüm siparişler{' '}
                         <strong className="font-bold text-slate-900">gizli paketleme</strong> ile gönderilir.
                     </p>
 
@@ -100,9 +116,13 @@ export default function AgeGate() {
                         </a>
                     </div>
 
+                    {/* "Devam ederek kabul edersin" YOK: örtük kabul geçerli bir
+                        çerez onayı değil. Çerez tercihi kapıdan sonra ayrı sorulur. */}
                     <p className="mt-4 text-[12px] leading-relaxed text-slate-600">
-                        Onayın bu cihazda 30 gün saklanır. Devam ederek Gizlilik politikası ve Çerez
-                        politikasını kabul etmiş olursun. Site RTA etiketlidir.
+                        Onayın bu cihazda 30 gün saklanır. Site RTA etiketlidir.{' '}
+                        <a href={privacyHref} className="underline underline-offset-2">Gizlilik Politikası</a>
+                        {' · '}
+                        <a href={cookieHref} className="underline underline-offset-2">Çerez Politikası</a>
                     </p>
                 </div>
             </div>

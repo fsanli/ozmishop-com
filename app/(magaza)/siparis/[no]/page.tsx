@@ -6,6 +6,7 @@ import PrivacyPanel from '@/components/privacy/PrivacyPanel';
 import { CheckIcon } from '@/components/icons';
 import { getOrder } from '@/lib/cart';
 import { formatPrice } from '@/lib/format';
+import TrackingLine from '@/components/order/TrackingLine';
 import TransferPanel from '@/components/order/TransferPanel';
 import { routes } from '@/lib/site';
 import type { OrderStatus } from '@/lib/types';
@@ -46,15 +47,20 @@ async function OrderContent({
     }
 
     const reached = STEPS.findIndex((item) => item.status === order.status);
-    const failed = order.status === 'cancelled' || order.paymentStatus === 'failed';
-    // Havale özeti API'den geliyor; "ödeme bekleniyor" rozetini de o belirliyor.
-    const awaitingTransfer = order.transfer ? order.transfer.remaining > 0 : false;
+    // Durum metni API'nin TEK gösterim durumundan (`paymentState`): iptal edilmiş
+    // ve hiç ödenmemiş havale eskiden "ödeme bekleniyor" görünüyordu.
+    const closed = order.status === 'cancelled' || order.status === 'refunded';
+    const failed = order.paymentState === 'failed';
+    const awaitingTransfer = !closed && ['awaiting_payment', 'partially_paid'].includes(order.paymentState);
+    const showTransfer = Boolean(order.transfer) && (!order.transfer!.closed || order.transfer!.paid > 0 || order.transfer!.refunded > 0);
 
     return (
         <div className="flex flex-wrap items-start gap-[clamp(18px,3vw,44px)]">
             <div className="min-w-0 flex-[999_1_360px]">
                 {failed ? (
                     <span className="badge badge-accent">Ödeme tamamlanamadı</span>
+                ) : closed ? (
+                    <span className="badge badge-neutral">{order.status === 'refunded' ? 'İade edildi' : 'Sipariş iptal edildi'}</span>
                 ) : (
                     <span className="badge badge-teal">
                         <CheckIcon className="size-3" />
@@ -63,14 +69,20 @@ async function OrderContent({
                 )}
 
                 <h1 className="heading-1 mt-4">
-                    {failed ? 'Ödeme alınamadı' : `Teşekkürler,`}
-                    {!failed && <><br />{order.shippingAddress.firstname}.</>}
+                    {failed ? 'Ödeme alınamadı' : closed ? 'Sipariş kapandı' : `Teşekkürler,`}
+                    {!failed && !closed && <><br />{order.shippingAddress.firstname}.</>}
                 </h1>
 
                 <p className="mt-4 max-w-[58ch] text-[15px] leading-relaxed text-slate-600">
                     {failed ? (
                         <>Sipariş <strong className="font-bold text-slate-900">{order.orderNumber}</strong> için ödeme tamamlanamadı
                         ve ürünler stoğa geri verildi. Sepetini yeniden oluşturup tekrar deneyebilirsin.</>
+                    ) : closed ? (
+                        <>Sipariş <strong className="font-bold text-slate-900">{order.orderNumber}</strong>{' '}
+                        {order.status === 'refunded' ? 'iade edildi' : 'iptal edildi'}.
+                        {order.paymentState === 'refund_due' && ' Ödemen, yaptığın yönteme iade edilecek.'}
+                        {order.paymentState === 'refunded' && ' Ödemen iade edildi.'}
+                        {' '}Sorun olduğunu düşünüyorsan bize yazabilirsin.</>
                     ) : (
                         <>Sipariş numaran <strong className="font-bold text-slate-900">{order.orderNumber}</strong>.
                         Bilgilendirme e-postası <strong className="font-bold text-slate-900">{order.email}</strong> adresine
@@ -78,11 +90,11 @@ async function OrderContent({
                     )}
                 </p>
 
-                {order.transfer && !failed && (
-                    <TransferPanel settlement={order.transfer} orderNumber={order.orderNumber} className="mt-5" />
+                {showTransfer && !failed && (
+                    <TransferPanel settlement={order.transfer!} orderNumber={order.orderNumber} className="mt-5" />
                 )}
 
-                {!failed && (
+                {!failed && !closed && (
                     <div className="card mt-5 px-[22px] py-1.5">
                         {STEPS.map((item, index) => {
                             const done = index <= reached;
@@ -96,11 +108,7 @@ async function OrderContent({
                                         {index + 1}
                                     </span>
                                     <span className={`text-[14px] ${done ? 'font-bold' : 'text-slate-600'}`}>{item.label}</span>
-                                    {item.status === 'shipped' && order.shipping.trackingNumber && (
-                                        <span className="ml-auto text-[12.5px] text-slate-600">
-                                            {order.shipping.carrier} · {order.shipping.trackingNumber}
-                                        </span>
-                                    )}
+                                    {item.status === 'shipped' && <TrackingLine shipping={order.shipping} className="ml-auto" />}
                                 </div>
                             );
                         })}
@@ -124,6 +132,14 @@ async function OrderContent({
                         <span className="price text-[18px]">{formatPrice(order.totals.grandTotal)}</span>
                     </div>
                 </div>
+
+                {/* Kabul edilen belgelerin kalıcı kopyası (e-postayla da gitti). */}
+                <p className="mt-4 text-[13px] text-slate-600">
+                    Onayladığın belgeler:{' '}
+                    <Link href={`/belge/${order.orderNumber}/on-bilgilendirme${e ? `?e=${encodeURIComponent(e)}` : ''}`} className="link">Ön bilgilendirme formu</Link>
+                    {' · '}
+                    <Link href={`/belge/${order.orderNumber}/mesafeli-satis${e ? `?e=${encodeURIComponent(e)}` : ''}`} className="link">Mesafeli satış sözleşmesi</Link>
+                </p>
 
                 <div className="mt-5 flex flex-wrap gap-2.5">
                     <Link href={routes.accountOrders} className="btn-accent">Siparişlerime git</Link>

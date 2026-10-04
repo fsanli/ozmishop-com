@@ -4,6 +4,7 @@ import { formatPrice } from '@/lib/format';
 import { routes } from '@/lib/site';
 import type { Order } from '@/lib/types';
 import { createReturnAction } from '../actions';
+import FieldLabel from '@/components/form/FieldLabel';
 
 /** İade sebepleri — serbest metin yerine liste; panelin triyajı buna dayanıyor. */
 const REASONS = [
@@ -28,7 +29,7 @@ export default function ReturnForm({ order }: { order: Order }) {
             <h3 className="heading-3 mt-1.5">İade talebi oluştur</h3>
 
             <fieldset className="mt-4">
-                <legend className="field-label">İade edilecek ürünler</legend>
+                <legend><FieldLabel required>İade edilecek ürünler</FieldLabel></legend>
                 <ul className="mt-1.5 space-y-1.5">
                     {order.items.map((item) => (
                         <li key={item.id}>
@@ -48,7 +49,7 @@ export default function ReturnForm({ order }: { order: Order }) {
             </fieldset>
 
             <label className="mt-4 block">
-                <span className="field-label">İade sebebi</span>
+                <FieldLabel required>İade sebebi</FieldLabel>
                 <select name="reason" required defaultValue="" className="field-input">
                     <option value="" disabled>Seçiniz</option>
                     {REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
@@ -56,7 +57,7 @@ export default function ReturnForm({ order }: { order: Order }) {
             </label>
 
             <label className="mt-3 block">
-                <span className="field-label">Eklemek istediğin not <span className="text-slate-500">(opsiyonel)</span></span>
+                <FieldLabel>Eklemek istediğin not</FieldLabel>
                 <textarea name="note" rows={3} maxLength={500} className="field-input resize-y" />
             </label>
 

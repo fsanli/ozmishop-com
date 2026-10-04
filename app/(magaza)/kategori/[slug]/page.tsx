@@ -111,8 +111,8 @@ export default async function CategoryPage({
                     <span className="dot bg-on-dark-berry" />
                     Emin değil misin?
                 </span>
-                <p className="min-w-0 flex-1 text-[13px] text-on-dark/60">
-                    Dört soruda sana uygun üç ürünü çıkaralım.
+                <p className="min-w-0 flex-[1_1_14rem] text-[13px] text-on-dark/60">
+                    Birkaç soruda sana uygun üç ürünü çıkaralım.
                 </p>
                 <Link href={routes.guide} className="btn-primary btn-sm shrink-0">Başlangıç rehberi</Link>
             </div>

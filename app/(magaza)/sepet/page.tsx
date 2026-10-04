@@ -50,7 +50,10 @@ function QuantityStepper({ itemId, quantity, max }: { itemId: number; quantity: 
 async function CartContent({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const [cart, params, settings] = await Promise.all([getCart(), searchParams, getSettings()]);
     // Ekstre adı `/ayarlar`dan: unvan değişirse verilen söz tek yerde güncellenir.
-    const statementName = settings['gizlilik.notr_ekstre_adi'] ?? 'OZM DIŞ TİC.';
+    // Doğrulanıp girilmemişse (boş) ekstre sözü hiç verilmez.
+    const statementName = settings['gizlilik.notr_ekstre_adi']?.trim();
+    // Kupon sistemi kapalıyken (`kupon.aktif`, varsayılan) alan HİÇ çizilmez.
+    const couponsOn = settings['kupon.aktif'] === true;
     const error = one(params.hata);
 
     if (cart.items.length === 0) {
@@ -170,12 +173,13 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
                         </Link>
 
                         <p className="mt-3 text-[12px] leading-relaxed text-slate-600">
-                            Üye olmadan da tamamlayabilirsin. Ekstrende <strong className="font-bold text-slate-900">{statementName}</strong> yazar.
+                            Üye olmadan da tamamlayabilirsin.
+                            {statementName && <> Ekstrende <strong className="font-bold text-slate-900">{statementName}</strong> yazar.</>}
                         </p>
 
-                        <div className="hr" />
+                        {couponsOn && <div className="hr" />}
 
-                        {cart.coupon?.valid ? (
+                        {!couponsOn ? null : cart.coupon?.valid ? (
                             <form action={removeCouponAction} className="flex items-center justify-between gap-3">
                                 <span className="text-[13px]">
                                     <strong className="font-bold">{cart.coupon.code}</strong> uygulandı

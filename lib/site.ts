@@ -28,6 +28,7 @@ export const routes = {
     category: (slug: string) => `/kategori/${slug}`,
     brand: (slug: string) => `/marka/${slug}`,
     brands: '/markalar',
+    categories: '/kategoriler',
     group: (slug: string) => `/koleksiyon/${slug}`,
     search: (q: string) => `/arama?q=${encodeURIComponent(q)}`,
     searchPage: '/arama',
@@ -41,6 +42,8 @@ export const routes = {
     // --- v2: hesap ---
     login: '/giris',
     register: '/giris?ekran=kayit',
+    forgotPassword: '/giris?ekran=sifre-unuttum',
+    resetPassword: '/sifre-yenile',
     account: '/hesabim',
     accountOrders: '/hesabim/siparisler',
     accountOrder: (no: string) => `/hesabim/siparisler/${no}`,
@@ -55,6 +58,8 @@ export const routes = {
 
     // --- v2: içerik ---
     journal: '/gunluk',
+    newsletterConfirm: '/bulten/onay',
+    newsletterLeave: '/bulten/ayril',
     post: (slug: string) => `/gunluk/${slug}`,
     /** Konu filtresi indeks üzerinde çalışır; ayrı bir konu rotası yok. */
     topic: (slug: string) => `/gunluk?konu=${encodeURIComponent(slug)}`,
@@ -78,4 +83,18 @@ export function safeLink(url: string | null | undefined): string | null {
 export function isCanonicalHost(host: string | null | undefined): boolean {
     if (!host) return false;
     return site.canonicalHosts.includes(host.split(':')[0] as (typeof site.canonicalHosts)[number]);
+}
+
+/**
+ * Bu dağıtım arama motoruna açık mı: kanonik alan adı VE `SITE_INDEXABLE`
+ * kapatılmamış. robots.txt, sitemap, layout robots metası ve `X-Robots-Tag`
+ * başlığı HEPSİ buradan okur.
+ *
+ * Yalnız robots.txt yetmiyordu: dev.ozmishop.com taramaya kapalıydı ama her
+ * sayfa `index, follow` metası basıyordu. Dışarıdan bağlantı alan bir dev
+ * sayfası taranmadan da indekse girebilir; `Disallow` Google'ın noindex'i
+ * okumasını bile engeller. Asıl kapı HTTP başlığı (next.config.ts).
+ */
+export function isIndexable(): boolean {
+    return isCanonicalHost(new URL(site.url).host) && process.env.SITE_INDEXABLE !== 'false';
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import TrackingLine from '@/components/order/TrackingLine';
 import TransferPanel from '@/components/order/TransferPanel';
 import PrivacyPanel from '@/components/privacy/PrivacyPanel';
 import { getMyOrder } from '@/lib/account';
@@ -68,6 +69,12 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ n
 
             {/* İptal/iade edilmiş siparişte takip şeridi yanıltıcı olur. */}
             {!cancelled && <TrackingStrip reached={reached} order={order} />}
+            {order.shipping.trackingNumber && <TrackingLine shipping={order.shipping} className="mb-4" />}
+            {cancelled && order.paymentState === 'refund_due' && (
+                <p className="card mb-4 p-4 text-[13.5px] leading-relaxed text-slate-700">
+                    Siparişin {order.status === 'refunded' ? 'iade edildi' : 'iptal edildi'}. Ödemen, ödemeyi yaptığın yönteme iade edilecek.
+                </p>
+            )}
 
             <div className="flex flex-wrap items-start gap-[clamp(14px,2vw,26px)]">
                 <div className="flex min-w-0 flex-[999_1_320px] flex-col gap-2.5">
@@ -133,7 +140,9 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ n
 
                     {/* Havale özeti: kalan tutar en çok sorulan şey, adresin
                         üstünde dursun. Kart siparişinde alan hiç gelmiyor. */}
-                    {order.transfer && <TransferPanel settlement={order.transfer} orderNumber={order.orderNumber} />}
+                    {order.transfer && (!order.transfer.closed || order.transfer.paid > 0 || order.transfer.refunded > 0) && (
+                        <TransferPanel settlement={order.transfer} orderNumber={order.orderNumber} />
+                    )}
 
                     <section className="card overflow-hidden">
                         <h3 className="border-b border-slate-900/6 px-4 py-3 text-[12.5px] font-bold">Teslimat</h3>
@@ -144,6 +153,14 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ n
                             {order.shippingAddress.district} / {order.shippingAddress.city}<br />
                             {order.shippingAddress.phone}
                         </address>
+                    </section>
+
+                    <section className="card overflow-hidden">
+                        <h3 className="border-b border-slate-900/6 px-4 py-3 text-[12.5px] font-bold">Sözleşmelerin</h3>
+                        <ul className="space-y-1.5 px-4 py-3.5 text-[13px]">
+                            <li><Link href={`/belge/${order.orderNumber}/on-bilgilendirme`} className="link">Ön bilgilendirme formu</Link></li>
+                            <li><Link href={`/belge/${order.orderNumber}/mesafeli-satis`} className="link">Mesafeli satış sözleşmesi</Link></li>
+                        </ul>
                     </section>
 
                     <PrivacyPanel />

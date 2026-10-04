@@ -108,19 +108,36 @@
    gelir; sabit liste dört ayrı dosya indirtir.
    latin-ext Türkçe karakterler (ş ğ ı İ ö ü ç) için ZORUNLU. */
 
-html { scroll-behavior: smooth; }
+/* KATMANLAR — öğe kuralları `base`, bileşen sınıfları `components` içinde.
+   Tailwind v4 yardımcı sınıfları `@layer utilities`'te; KATMANSIZ CSS ise her
+   katmanı özgüllükten bağımsız ezer. Bu sınıflar bir süre katmansız durdu ve
+   yanlarına yazılan her yardımcı sınıf sessizce yok sayıldı: koyu bloktaki
+   `heading-1 text-on-dark` siyah kaldı, kartların renkli kenar şeridi gri
+   göründü, fiyat filtresinin sıkı ölçüleri hiç uygulanmadı.
+   YENİ BİR BİLEŞEN SINIFI EKLERKEN onu da `@layer components` içine yazın. */
+@layer base {
+    html { scroll-behavior: smooth; }
 
-body {
-    @apply bg-paper font-sans text-[15px] text-slate-900 antialiased;
+    body {
+        @apply bg-paper font-sans text-[15px] text-slate-900 antialiased;
+    }
+
+    /* Başlıklar Sora, gövde Manrope */
+    h1, h2, h3, h4 {
+        font-family: var(--font-display);
+        @apply font-semibold tracking-tight;
+        line-height: 1.1;
+    }
+
+    /* Metin rengi AÇIKÇA veriliyor. Yalnız arka plan verilince seçilen metin
+       kendi rengini koruyor: koyu bloklardaki açık metin (#f6f1f3) açık pembe
+       seçim zemininde görünmez oluyordu — anasayfa hero'sundaki sayılar ve
+       footer bunun kurbanıydı. */
+    ::selection { background: #f7dfe6; color: #2c2429; }
+    :focus-visible { @apply outline-2 outline-offset-2 outline-accent-500; }
 }
 
-/* Başlıklar Sora, gövde Manrope */
-h1, h2, h3, h4 {
-    font-family: var(--font-display);
-    @apply font-semibold tracking-tight;
-    line-height: 1.1;
-}
-
+@layer components {
 /* --------------------------------------------------------------------------
    BUTONLAR
    Tailwind v4'te özel bir sınıf başka bir özel sınıfı @apply EDEMEZ.
@@ -131,7 +148,7 @@ h1, h2, h3, h4 {
 .btn-soft,
 .btn-danger {
     @apply inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)]
-           px-5 py-3 text-sm font-bold tracking-tight transition
+           px-5 py-3 text-center text-sm font-bold tracking-tight transition
            focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2
            focus-visible:outline-accent-500 disabled:cursor-not-allowed disabled:opacity-45;
 }
@@ -234,13 +251,10 @@ h1, h2, h3, h4 {
 .text-muted { @apply text-slate-600; }
 .link { @apply font-semibold text-accent-500 underline-offset-4 transition hover:text-accent-600; }
 
-/* RENK YOK — bilerek. `.price` derlenmiş CSS'te renk yardımcılarından SONRA
-   geliyor ve aynı özgüllükte, yani `text-slate-900` taşısaydı yanına yazılan
-   her renk sınıfını sessizce ezerdi. Üç yerde tam olarak bu oldu: koyu hero'daki
-   sayılar ve marka sayfasındaki istatistikler görünmez oldu, puan defterindeki
-   +/- renk kodu kayboldu.
-   Gövde zaten `text-slate-900`; açık zeminde görünüm değişmiyor, koyu blokta
-   artık ezilebiliyor. */
+/* RENK YOK — bilerek. Gövde zaten `text-slate-900`; renk taşımayan bir fiyat
+   bulunduğu zeminin rengini alıyor (koyu hero'daki sayılar, puan defterindeki
+   +/- renk kodu). Katmanlara geçmeden önce buraya yazılan renk yanındaki her
+   renk sınıfını ezmişti. */
 .price { font-family: var(--font-display); @apply font-semibold tracking-[-0.03em]; }
 .price-lg { font-family: var(--font-display); @apply text-2xl font-semibold tracking-[-0.04em] sm:text-4xl; }
 .price-old { @apply text-sm text-slate-500 line-through; }
@@ -275,13 +289,7 @@ h1, h2, h3, h4 {
 
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
-
-/* Metin rengi AÇIKÇA veriliyor. Yalnız arka plan verilince seçilen metin
-   kendi rengini koruyor: koyu bloklardaki açık metin (#f6f1f3) açık pembe
-   seçim zemininde görünmez oluyordu — anasayfa hero'sundaki sayılar ve
-   footer bunun kurbanıydı. */
-::selection { background: #f7dfe6; color: #2c2429; }
-:focus-visible { @apply outline-2 outline-offset-2 outline-accent-500; }
+} /* @layer components */
 
 /* KONTRAST NOTU
    slate-400 (#8f858a) yalnızca görsel yer tutucu metinlerinde kullanılır.

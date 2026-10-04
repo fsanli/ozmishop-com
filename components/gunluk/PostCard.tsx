@@ -4,6 +4,7 @@ import { CATEGORY_COLOR } from '@/lib/colors';
 import { formatDate } from '@/lib/format';
 import { routes } from '@/lib/site';
 import type { JournalPost } from '@/lib/types';
+import PostCoverFallback from './PostCoverFallback';
 
 /**
  * Yazı kartı. Tasarımda kart tıklanabilir bir blok; burada stretched link
@@ -26,9 +27,7 @@ export default function PostCard({ post, priority = false }: { post: JournalPost
                         priority={priority}
                     />
                 ) : (
-                    <span className="absolute inset-0 grid place-items-center text-[11px] font-medium text-slate-400">
-                        Yazı görseli
-                    </span>
+                    <PostCoverFallback colors={colors} topic={post.topic?.name} size="sm" />
                 )}
                 <span className={`absolute bottom-0 left-0 h-[3px] w-12 ${colors.dot}`} aria-hidden />
             </div>

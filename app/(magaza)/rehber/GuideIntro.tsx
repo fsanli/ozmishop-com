@@ -23,11 +23,16 @@ const BASICS: [string, ColorKey, string, string][] = [
     ['04', 'amber', 'Boyut', 'İlk üründe küçük olan daha iyidir. Ürün sayfalarında uzunluk ve genişlik santimetre olarak yazar.'],
 ];
 
-const PROMISES: [ColorKey, string][] = [
-    ['rose', 'Dört soru, tek seçim — atlanabilir.'],
+/**
+ * Soru sayısı ve iade süresi sabit YAZILMAZ: "dört soru" beşinci soru
+ * eklenince, "14 gün koşulsuz iade" ise iade politikasıyla çelişiyordu
+ * (hijyen ambalajı açılmış ürün iade edilemiyor; süre ayardan gelir).
+ */
+const promises = (questionCount: number, returnDays: number): [ColorKey, string][] => [
+    ['rose', `${questionCount} soru, tek seçim — atlanabilir.`],
     ['plum', 'Cevaplar kaydedilmez, e-posta istenmez.'],
     ['amber', 'Öneriler stoktan ve fiyat sırasına göre değil, uygunluğa göre.'],
-    ['teal', 'Beğenmezsen 14 gün koşulsuz iade.'],
+    ['teal', `Ambalajı açılmamış üründe ${returnDays} gün içinde iade hakkı.`],
 ];
 
 export default async function GuideIntro({ questions }: { questions: GuideQuestion[] }) {
@@ -35,6 +40,7 @@ export default async function GuideIntro({ questions }: { questions: GuideQuesti
     const headline = settings['icerik.rehber_giris_baslik'] ?? 'İlk kez alıyorsan.';
     const body = settings['icerik.rehber_giris_metni']
         ?? 'Hiçbiri kişisel değil, hiçbir cevap kaydedilmiyor. Sonunda üç ürünlük kısa bir liste ve her biri için neden önerdiğimizin açıklaması var.';
+    const returnDays = Number(settings['icerik.iade_suresi_gun']) || 14;
 
     return (
         <>
@@ -68,7 +74,7 @@ export default async function GuideIntro({ questions }: { questions: GuideQuesti
                         </div>
 
                         <ul className="min-w-0 flex-[1_1_250px] rounded-[20px] bg-on-dark/6 px-5 py-2">
-                            {PROMISES.map(([color, text]) => (
+                            {promises(questions.length, returnDays).map(([color, text]) => (
                                 <li key={text} className="flex items-start gap-3 border-b border-on-dark/9 py-3.5 last:border-0">
                                     <span className={`dot-lg dot mt-1.5 ${CATEGORY_COLOR[color].onDarkDot}`} />
                                     <span className="text-[13.5px] leading-snug text-on-dark/85">{text}</span>

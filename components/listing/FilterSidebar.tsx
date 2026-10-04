@@ -150,7 +150,9 @@ export default function FilterSidebar({
             )))}
 
             {group('fiyat', 'Fiyat', (
-                <form action={basePath} className="flex items-center gap-1.5">
+                // İki satır: üstte min–max, altta tam genişlikte "Uygula". Dördü tek
+                // satırdayken 230px'lik kenar çubuğunda her kutuya ~37px kalıyordu.
+                <form action={basePath} className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
                     {Object.entries(searchParams).flatMap(([key, value]) => {
                         if (key === 'min' || key === 'max' || key === 'sayfa') return [];
                         const list = Array.isArray(value) ? value : [value];
@@ -160,16 +162,16 @@ export default function FilterSidebar({
                     })}
                     <input
                         name="min" inputMode="numeric" aria-label="En düşük fiyat"
-                        defaultValue={state.minPrice ?? ''} placeholder={String(Math.floor(facets.price.min))}
-                        className="field-input px-2.5 py-1.5 text-[12.5px]"
+                        defaultValue={state.minPrice ?? ''} placeholder={`₺${Math.floor(facets.price.min)}`}
+                        className="field-input min-w-0 px-3 py-2.5 text-[13px]"
                     />
                     <span className="text-slate-500">–</span>
                     <input
                         name="max" inputMode="numeric" aria-label="En yüksek fiyat"
-                        defaultValue={state.maxPrice ?? ''} placeholder={String(Math.ceil(facets.price.max))}
-                        className="field-input px-2.5 py-1.5 text-[12.5px]"
+                        defaultValue={state.maxPrice ?? ''} placeholder={`₺${Math.ceil(facets.price.max)}`}
+                        className="field-input min-w-0 px-3 py-2.5 text-[13px]"
                     />
-                    <button type="submit" className="btn-soft btn-sm">Uygula</button>
+                    <button type="submit" className="btn-soft btn-sm col-span-3 mt-1 justify-center">Uygula</button>
                 </form>
             ))}
         </div>

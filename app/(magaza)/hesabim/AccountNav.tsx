@@ -9,7 +9,7 @@ export const SECTIONS = [
     { href: routes.accountOrders, label: 'Siparişlerim', color: 'berry' },
     { href: routes.addresses, label: 'Adreslerim', color: 'plum' },
     { href: routes.favorites, label: 'Favorilerim', color: 'rose' },
-    { href: routes.accountPoints, label: 'Kuponlarım', color: 'amber' },
+    { href: routes.accountPoints, label: 'Puanlarım', color: 'amber' },
     { href: routes.accountReviews, label: 'Yorumlarım', color: 'teal' },
     { href: routes.accountReturns, label: 'İade taleplerim', color: 'plum' },
     { href: routes.accountNotifications, label: 'Bildirim tercihleri', color: 'teal' },
@@ -18,15 +18,16 @@ export const SECTIONS = [
 ] as const;
 
 export default async function AccountNav({ active }: { active: string }) {
-    // Puan sistemi kapalıyken menü "puanlarım" dememeli: olmayan bir programı
-    // varmış gibi göstermek, en çok destek çağrısı üreten şey.
+    // Puan sistemi kapalıyken bölüm menüde HİÇ yok: olmayan bir programı varmış
+    // gibi göstermek en çok destek çağrısı üreten şey. Kuponlar da gizli
+    // (`kupon.aktif`), bu yüzden bölümün adı yalnız "Puanlarım".
     const settings = await getSettings();
     const pointsOn = settings['puan.aktif'] === true;
 
     return (
         <nav className="card card-xl p-3" aria-label="Hesabım">
             <ul className="space-y-0.5">
-                {SECTIONS.map((section) => {
+                {SECTIONS.filter((section) => section.href !== routes.accountPoints || pointsOn).map((section) => {
                     const isActive = active === section.href;
                     return (
                         <li key={section.href}>
@@ -38,7 +39,7 @@ export default async function AccountNav({ active }: { active: string }) {
                                 }`}
                             >
                                 <span className={`dot ${isActive ? 'bg-on-dark' : CATEGORY_COLOR[section.color].dot}`} />
-                                {section.href === routes.accountPoints && pointsOn ? 'Kupon / puanlarım' : section.label}
+                                {section.label}
                             </Link>
                         </li>
                     );

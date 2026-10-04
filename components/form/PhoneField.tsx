@@ -3,6 +3,16 @@
 import { useState } from 'react';
 import { formatPhone, phoneError, PHONE_PLACEHOLDER } from '@/lib/phone';
 
+/** Biçimli metinde `count`. rakamın hemen sonrası. */
+function positionAfterDigits(text: string, count: number): number {
+    if (count <= 0) return 0;
+    let seen = 0;
+    for (let index = 0; index < text.length; index += 1) {
+        if (/\d/.test(text[index]) && ++seen === count) return index + 1;
+    }
+    return text.length;
+}
+
 /**
  * Maskeli telefon alanı: 0(555) 111 22 33
  *
@@ -54,8 +64,21 @@ export default function PhoneField({
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? `${name}-hata` : undefined}
                 onChange={(event) => {
-                    setValue(formatPhone(event.target.value));
+                    const input = event.target;
+                    const raw = input.value;
+                    const caret = input.selectionStart ?? raw.length;
+                    const next = formatPhone(raw);
+                    setValue(next);
                     if (touched) setTouched(false);
+
+                    // Ortadan düzeltmede imleç sona zıplamasın: maske ayırıcı
+                    // ekleyip sildiği için karakter konumu değil, imleçten ÖNCEKİ
+                    // rakam sayısı korunur. Sonda yazarken tarayıcı zaten doğru yerde.
+                    if (caret < raw.length) {
+                        const digitsBefore = formatPhone(raw.slice(0, caret)).replace(/\D/g, '').length;
+                        const position = positionAfterDigits(next, digitsBefore);
+                        requestAnimationFrame(() => input.setSelectionRange(position, position));
+                    }
                 }}
                 onBlur={() => setTouched(true)}
                 className={`${className} ${error ? 'border-accent-500' : ''}`}

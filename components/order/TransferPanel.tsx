@@ -34,6 +34,22 @@ const STATE_COPY = {
         tone: 'badge-teal',
         title: 'Fazla tutarı iade edeceğiz',
     },
+    // Kapalı sipariş (iptal/iade): artık para BEKLENMİYOR, banka bilgisi yok.
+    iptal: {
+        badge: 'Sipariş iptal edildi',
+        tone: 'badge-neutral',
+        title: 'Havale / EFT',
+    },
+    iade_bekliyor: {
+        badge: 'İade edilecek',
+        tone: 'badge-amber',
+        title: 'Ödemen iade edilecek',
+    },
+    iade_edildi: {
+        badge: 'İade edildi',
+        tone: 'badge-teal',
+        title: 'Ödemen iade edildi',
+    },
 } as const;
 
 /** IBAN'ı dörtlü gruplara ayırır: elle kopyalayan biri için okunabilirlik. */
@@ -48,8 +64,9 @@ export default function TransferPanel({
     orderNumber: string;
     className?: string;
 }) {
-    const copy = STATE_COPY[settlement.state];
-    const settled = settlement.state === 'tam' || settlement.state === 'fazla';
+    const copy = STATE_COPY[settlement.state] ?? STATE_COPY.bekliyor;
+    const settled = ['tam', 'fazla', 'iade_edildi'].includes(settlement.state);
+    const { bank } = settlement;
 
     return (
         <section className={`card p-[18px_20px] ${className}`}>
@@ -88,34 +105,51 @@ export default function TransferPanel({
                 )}
             </dl>
 
+            {settlement.refunded > 0 && (
+                <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-4 text-[13.5px]">
+                    <dt className="text-slate-600">İade edilen</dt>
+                    <dd className="text-right font-medium tabular-nums text-slate-900">{formatPrice(settlement.refunded)}</dd>
+                </dl>
+            )}
+
             {settlement.state === 'fazla' && (
                 <p className="mt-3 text-[13px] leading-relaxed text-slate-600">
                     Fazla gönderdiğin tutarı aynı hesaba geri aktaracağız. Siparişin bundan etkilenmiyor.
                 </p>
             )}
+            {settlement.state === 'iptal' && (
+                <p className="mt-3 text-[13px] leading-relaxed text-slate-600">
+                    Bu sipariş iptal edildi; ödeme göndermene gerek yok.
+                </p>
+            )}
+            {settlement.state === 'iade_bekliyor' && (
+                <p className="mt-3 text-[13px] leading-relaxed text-slate-600">
+                    Sipariş iptal edildi. Gönderdiğin {formatPrice(settlement.paid)} ödemeyi yaptığın hesaba iade edeceğiz.
+                </p>
+            )}
 
             {/* Banka bilgileri yalnızca hâlâ ödeme bekleniyorsa; tamamlanmış bir
                 ödemede IBAN göstermek "bir daha mı göndereceğim?" sorusu yaratır. */}
-            {settlement.remaining > 0 && (
+            {bank && settlement.remaining > 0 && (
                 <>
                     <div className="mt-4 rounded-[12px] bg-paper p-[14px_16px]">
                         <dl className="grid gap-1.5 text-[13.5px]">
-                            {settlement.bank.accountName && (
+                            {bank.accountName && (
                                 <div className="flex justify-between gap-3">
                                     <dt className="text-slate-600">Hesap sahibi</dt>
-                                    <dd className="text-right font-medium text-slate-900">{settlement.bank.accountName}</dd>
+                                    <dd className="text-right font-medium text-slate-900">{bank.accountName}</dd>
                                 </div>
                             )}
-                            {settlement.bank.bankName && (
+                            {bank.bankName && (
                                 <div className="flex justify-between gap-3">
                                     <dt className="text-slate-600">Banka</dt>
-                                    <dd className="text-right font-medium text-slate-900">{settlement.bank.bankName}</dd>
+                                    <dd className="text-right font-medium text-slate-900">{bank.bankName}</dd>
                                 </div>
                             )}
-                            {settlement.bank.iban && (
+                            {bank.iban && (
                                 <div className="flex justify-between gap-3">
                                     <dt className="text-slate-600">IBAN</dt>
-                                    <dd className="text-right font-bold tabular-nums text-slate-900">{groupIban(settlement.bank.iban)}</dd>
+                                    <dd className="text-right font-bold tabular-nums text-slate-900">{groupIban(bank.iban)}</dd>
                                 </div>
                             )}
                             <div className="mt-1 flex justify-between gap-3 border-t border-line pt-2">
@@ -127,10 +161,10 @@ export default function TransferPanel({
 
                     <p className="mt-3 text-[13px] leading-relaxed text-slate-600">
                         Açıklamada sipariş numarası olmayan ödemeleri siparişinle eşleştirmemiz gecikebilir.
-                        {settlement.bank.dueDays ? ` Ödeme için ${settlement.bank.dueDays} günün var.` : ''}
+                        {bank.dueDays ? ` Ödeme için ${bank.dueDays} günün var.` : ''}
                     </p>
 
-                    {!settlement.bank.iban && (
+                    {!bank.iban && (
                         // Ayar boşsa sessizce boş bir kutu göstermek yerine ne
                         // yapması gerektiğini söyle: müşteri parayı nereye
                         // göndereceğini bilmiyor.
@@ -141,8 +175,8 @@ export default function TransferPanel({
                 </>
             )}
 
-            {settlement.bank.note && settlement.remaining > 0 && (
-                <p className="mt-2 text-[12.5px] leading-relaxed text-slate-600">{settlement.bank.note}</p>
+            {bank?.note && settlement.remaining > 0 && (
+                <p className="mt-2 text-[12.5px] leading-relaxed text-slate-600">{bank.note}</p>
             )}
         </section>
     );

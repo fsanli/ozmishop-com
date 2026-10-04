@@ -1,8 +1,12 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { proxyHeaders } from './bff';
-import { CART_COOKIE, CART_COUNT_COOKIE, CART_MAX_AGE, COOKIE_BASE } from './session';
-import type { Cart, InstallmentOption, Order } from './types';
+import {
+    CART_COOKIE, CART_COUNT_COOKIE, CART_MAX_AGE, COOKIE_BASE, SESSION_COOKIE,
+} from './session';
+import type {
+    Cart, InstallmentOption, Order, OrderDocument,
+} from './types';
 
 const API_BASE = (process.env.API_BASE_URL || 'http://localhost:4200').replace(/\/$/, '');
 
@@ -137,6 +141,26 @@ export async function placeOrder(payload: Record<string, unknown>): Promise<{
     jar.set(CART_COUNT_COOKIE, '0', { ...COOKIE_BASE, httpOnly: false, maxAge: CART_MAX_AGE });
 
     return body;
+}
+
+/**
+ * Siparişte kabul edilmiş belge (ön bilgilendirme / mesafeli satış). Misafir
+ * e-postayla, üye oturumuyla erişir — sipariş sayfasıyla aynı kural.
+ */
+export async function getOrderDocument(orderNumber: string, kind: string, email?: string): Promise<OrderDocument | null> {
+    const jar = await cookies();
+    const session = jar.get(SESSION_COOKIE)?.value;
+    const query = email ? `?email=${encodeURIComponent(email)}` : '';
+    const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderNumber)}/documents/${encodeURIComponent(kind)}${query}`, {
+        cache: 'no-store',
+        headers: {
+            Accept: 'application/json',
+            ...(await proxyHeaders()),
+            ...(session ? { Authorization: `Bearer ${session}` } : {}),
+        },
+    });
+    if (!response.ok) return null;
+    return response.json();
 }
 
 /** Sipariş onayı. Misafir siparişinde e-posta doğrulaması zorunlu. */

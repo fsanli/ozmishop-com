@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import EmptyState from '@/components/EmptyState';
 import { getMyAddresses } from '@/lib/account';
+import { getLocations } from '@/lib/api';
 import { CATEGORY_COLOR, type ColorKey } from '@/lib/colors';
 import { one, type SearchParams } from '@/lib/listing';
 import { routes } from '@/lib/site';
@@ -15,7 +16,7 @@ export const metadata: Metadata = { title: 'Adreslerim', robots: { index: false,
 const EDGE: ColorKey[] = ['plum', 'teal', 'amber', 'rose'];
 
 export default async function AddressesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-    const [{ items }, params] = await Promise.all([getMyAddresses(), searchParams]);
+    const [{ items }, params, locations] = await Promise.all([getMyAddresses(), searchParams, getLocations()]);
 
     const error = one(params.hata);
     const editingId = Number(one(params.duzenle)) || null;
@@ -37,7 +38,7 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
                 </p>
             )}
 
-            {showForm && items.length > 0 && <AddressForm address={editing} />}
+            {showForm && items.length > 0 && <AddressForm address={editing} locations={locations} />}
 
             {items.length === 0 ? (
                 <>
@@ -48,7 +49,7 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
                         description="Bir adres eklersen ödeme adımında tek tıkla seçebilirsin. Paket üzerinde ürün bilgisi yer almaz."
                     />
                     <div className="mt-4">
-                        <AddressForm />
+                        <AddressForm locations={locations} />
                     </div>
                 </>
             ) : (

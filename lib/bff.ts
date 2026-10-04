@@ -24,7 +24,12 @@ export async function proxyHeaders(): Promise<Record<string, string>> {
         || incoming.get('x-real-ip')
         || '';
 
-    return forwarded
-        ? { 'x-bff-secret': SECRET, 'x-forwarded-for': forwarded }
-        : { 'x-bff-secret': SECRET };
+    // Tarayıcı bilgisi ayrı başlıkla: API bunu onay kaydına (KVKK/sözleşme
+    // kanıtı) yazıyor ve yalnız anahtarlı çağrıcıdan kabul ediyor.
+    const userAgent = incoming.get('user-agent')?.slice(0, 400);
+    return {
+        'x-bff-secret': SECRET,
+        ...(forwarded ? { 'x-forwarded-for': forwarded } : {}),
+        ...(userAgent ? { 'x-client-user-agent': userAgent } : {}),
+    };
 }

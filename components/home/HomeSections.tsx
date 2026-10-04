@@ -1,4 +1,5 @@
-import type { HomeSection } from '@/lib/types';
+import { getGroupByCode } from '@/lib/api';
+import type { HomeSection, ProductCard, ProductGroup } from '@/lib/types';
 import BannerBlock from './BannerBlock';
 import BrandStrip from './BrandStrip';
 import CategoryGrid from './CategoryGrid';
@@ -8,11 +9,47 @@ import ProductGroupSection from './ProductGroupSection';
 import SectionShell from './SectionShell';
 import TrustStrip, { type TrustItem } from './TrustStrip';
 
+type GroupSettings = { groupCode?: string; limit?: number; skipShown?: boolean };
+
+/**
+ * Ürün grubu bloklarının ürünleri, SAYFADAKİ SIRAYLA. Gruplar paralel çekilir
+ * (her biri kendi önbelleğiyle); "tekrarlama" açık blokta üstteki bölümlerde
+ * zaten görünen ürünler ayıklanır ve yerlerine grubun sıradakiler gelir — bu
+ * yüzden o bloklar biraz fazla ister.
+ */
+async function resolveGroups(sections: HomeSection[]) {
+    const blocks = sections
+        .filter((section) => section.type === 'product_group')
+        .map((section) => {
+            const settings = section.settings as GroupSettings;
+            const limit = settings.limit ?? 8;
+            return {
+                id: section.id,
+                code: section.group?.code ?? settings.groupCode,
+                limit,
+                skipShown: settings.skipShown === true,
+                fetchLimit: settings.skipShown ? Math.min(24, limit * 2) : limit,
+            };
+        });
+    const groups = await Promise.all(blocks.map((block) => (block.code ? getGroupByCode(block.code, block.fetchLimit) : null)));
+
+    const shown = new Set<number>();
+    const resolved = new Map<number, { group: ProductGroup | null; products: ProductCard[] }>();
+    blocks.forEach((block, index) => {
+        const group = groups[index];
+        const items = (group?.items ?? []).filter((product) => !block.skipShown || !shown.has(product.id)).slice(0, block.limit);
+        items.forEach((product) => shown.add(product.id));
+        resolved.set(block.id, { group, products: items });
+    });
+    return resolved;
+}
+
 /**
  * Panelden yönetilen anasayfa düzeni. Bilinmeyen bir tip `null` döner: panel yeni
  * bir bölüm tipi eklediğinde eski storefront çökmez, o bloğu atlar.
  */
-export default function HomeSections({ sections }: { sections: HomeSection[] }) {
+export default async function HomeSections({ sections }: { sections: HomeSection[] }) {
+    const groups = await resolveGroups(sections);
     return (
         <>
             {sections.map((section, index) => {
@@ -52,12 +89,13 @@ export default function HomeSections({ sections }: { sections: HomeSection[] }) 
                         return <BrandStrip key={section.id} brands={section.brands ?? []} title={section.title} />;
 
                     case 'product_group': {
-                        const code = section.group?.code ?? settings.groupCode;
-                        if (!code) return null;
+                        const resolved = groups.get(section.id);
+                        if (!resolved) return null;
                         return (
                             <ProductGroupSection
                                 key={section.id}
-                                code={code}
+                                group={resolved.group}
+                                products={resolved.products}
                                 title={section.title}
                                 subtitle={section.subtitle}
                                 limit={settings.limit ?? 8}

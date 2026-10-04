@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import FieldLabel from '@/components/form/FieldLabel';
 
 /**
  * Yıldız puanı girişi — beş radyo düğmesi, istemci bileşeni YOK.
@@ -16,7 +17,7 @@ const LABELS: Record<number, string> = {
 export default function RatingInput({ name = 'rating', idPrefix }: { name?: string; idPrefix: string }) {
     return (
         <fieldset>
-            <legend className="field-label">Puanın</legend>
+            <legend><FieldLabel required>Puanın</FieldLabel></legend>
             {/* Radyo ve etiket KARDEŞ olmak zorunda: dolum kuralı `~` ile yürüyor. */}
             <div className="rating-stars mt-1.5">
                 {/* Fragment: araya bir <div> girerse kardeşlik bozulur ve `~` çalışmaz. */}

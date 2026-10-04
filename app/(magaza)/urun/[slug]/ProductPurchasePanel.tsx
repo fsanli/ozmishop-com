@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { formatPrice } from '@/lib/format';
+import { productWhatsappLink, type WhatsappSettings } from '@/lib/whatsapp';
 import type { ProductDetail, ProductVariant } from '@/lib/types';
 import { useVariantSelection } from './VariantSelection';
 
@@ -35,15 +36,16 @@ const BUY_SIZES = {
 } as const;
 
 export default function ProductPurchasePanel({
-    product, whatsappUrl,
+    product, whatsapp, siteUrl, returnDays, shippingLine,
 }: {
     product: ProductDetail;
-    /**
-     * Sunucuda kurulur (mesaj kalıbı ve numara ayarlardan). `null` ise numara
-     * tanımsız demektir ve buton HİÇ çizilmez — tıklanınca bir şey yapmayan
-     * bir buton, butonsuzluktan kötü.
-     */
-    whatsappUrl: string | null;
+    /** Numara ve mesaj kalıbı (ayarlardan); bağlantı seçili varyantla burada kurulur. */
+    whatsapp: WhatsappSettings;
+    siteUrl: string;
+    /** `icerik.iade_suresi_gun` — iade süresi tek yerden okunur. */
+    returnDays: number;
+    /** `kargo.sureler` — API'de ayarlardan kurulan kargo cümlesi; boşsa satır yok. */
+    shippingLine?: string;
 }) {
     const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
 
@@ -66,6 +68,16 @@ export default function ProductPurchasePanel({
     const price = selectedVariant?.price ?? product.price;
     const compareAt = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
     const discount = compareAt && price && compareAt > price ? Math.round((1 - price / compareAt) * 100) : 0;
+
+    // Numara tanımsızsa `null` ve buton HİÇ çizilmez — tıklanınca bir şey
+    // yapmayan bir buton, butonsuzluktan kötü. Varyant yalnızca seçim eksenli
+    // üründe mesaja girer; tek varyantlı üründe "Seçim:" satırı gürültü olurdu.
+    const whatsappUrl = productWhatsappLink(
+        whatsapp,
+        product,
+        siteUrl,
+        product.variantAxes.length > 0 ? selectedVariant : null,
+    );
 
     /**
      * Sepete ekleme formu. Masaüstünde panelin içinde, mobilde alt çubukta —
@@ -238,8 +250,8 @@ export default function ProductPurchasePanel({
 
             <ul className="space-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500">
                 <li>Gizli paketleme — kargo etiketinde içerik bilgisi yer almaz.</li>
-                <li>Aynı gün kargo — 16:00’ya kadar verilen siparişlerde.</li>
-                <li>Ambalajı açılmamış ürünlerde 14 gün iade.</li>
+                {shippingLine && <li>{shippingLine}</li>}
+                <li>Ambalajı açılmamış ürünlerde {returnDays} gün içinde iade hakkı.</li>
             </ul>
         </div>
     );

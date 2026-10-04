@@ -18,7 +18,7 @@ import GuideResult from './GuideResult';
  */
 export const metadata: Metadata = {
     title: 'Başlangıç rehberi — ilk kez alıyorsan',
-    description: 'Dört soru, üç ürün önerisi ve her biri için neden onu seçtiğimizin açıklaması. Cevaplar kaydedilmez.',
+    description: 'Birkaç soru, üç ürün önerisi ve her biri için neden onu seçtiğimizin açıklaması. Cevaplar kaydedilmez.',
     alternates: { canonical: `${site.url}${routes.guide}` },
 };
 

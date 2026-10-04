@@ -10,6 +10,7 @@ import type { MyReview } from '@/lib/types';
 import AccountShell from '../AccountShell';
 import { createReviewAction } from '../actions';
 import RatingInput from './RatingInput';
+import FieldLabel from '@/components/form/FieldLabel';
 
 export const metadata: Metadata = { title: 'Yorumlarım', robots: { index: false, follow: false } };
 
@@ -68,12 +69,12 @@ export default async function MyReviewsPage({ searchParams }: { searchParams: Pr
                     <div className="mt-4"><RatingInput idPrefix="yeni" /></div>
 
                     <label className="mt-4 block">
-                        <span className="field-label">Başlık <span className="text-slate-500">(opsiyonel)</span></span>
+                        <FieldLabel>Başlık</FieldLabel>
                         <input name="title" maxLength={120} placeholder="Tek cümleyle özetle" className="field-input" />
                     </label>
 
                     <label className="mt-3 block">
-                        <span className="field-label">Deneyimin</span>
+                        <FieldLabel required>Deneyimin</FieldLabel>
                         <textarea
                             name="body" required minLength={10} maxLength={2000} rows={5}
                             placeholder="Sessizliği, malzemesi, şarj süresi… Sana yardımcı olan neydi?"
@@ -82,7 +83,7 @@ export default async function MyReviewsPage({ searchParams }: { searchParams: Pr
                     </label>
 
                     <label className="mt-3 block">
-                        <span className="field-label">Yayındaki imzan <span className="text-slate-500">(opsiyonel)</span></span>
+                        <FieldLabel>Yayındaki imzan</FieldLabel>
                         <input name="pseudonym" maxLength={60} placeholder="Boş bırakırsan “Ad S.” biçiminde görünür" className="field-input" />
                         <span className="mt-1.5 block text-[12px] text-slate-600">
                             Gerçek adın, e-postan ve sipariş numaran hiçbir koşulda yayınlanmaz.

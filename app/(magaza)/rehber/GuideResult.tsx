@@ -13,11 +13,11 @@ import type { GuideResult as Result } from '@/lib/types';
  * `/ayarlar`dan geliyor (iade süresi, gönderici adı) — iki yerde farklı gün
  * sayısı yazmasın.
  */
-const tipsFor = (returnDays: number, senderName: string): [ColorKey, string, string][] => [
+const tipsFor = (returnDays: number, senderName: string | undefined): [ColorKey, string, string][] => [
     ['teal', 'Yanında kayganlaştırıcı almalı mıyım?',
         'Silikon ürünlerde yalnızca su bazlı kayganlaştırıcı kullanılır; ürün künyesinde bu bilgi ayrı bir satır olarak yazar.'],
     ['berry', 'Kargo kutusunda ne yazıyor?',
-        `Kutu düz kahverengi, üzerinde yalnızca adres etiketi var. Gönderici olarak “${senderName}” görünür; kargo görevlisi içeriği görmez.`],
+        `Kutu düz kahverengi, üzerinde yalnızca adres etiketi var. Gönderici olarak ${senderName ? `“${senderName}”` : 'yalnızca şirket unvanı'} görünür; kargo görevlisi içeriği görmez.`],
     ['plum', 'Beğenmezsem iade edebilir miyim?',
         `Hijyen ürünlerinde iade, ambalajın açılmamış olması koşuluna bağlıdır ve süre ${returnDays} gündür. Kutuyu açmadan önce ürün sayfasındaki ölçülere bakmanı öneririz.`],
     ['amber', 'Şarj adaptörü kutudan çıkıyor mu?',
@@ -28,8 +28,11 @@ export default async function GuideResult({ result }: { result: Result }) {
     const settings = await getSettings();
     const tips = tipsFor(
         settings['icerik.iade_suresi_gun'] ?? 14,
-        settings['gizlilik.gonderici_adi'] ?? 'OZM Lojistik',
+        settings['gizlilik.gonderici_adi']?.trim(),
     );
+
+    const answersText = result.answers.map((answer) => answer.label.toLocaleLowerCase('tr')).join(', ');
+    const exactShown = result.picks.filter((pick) => pick.isExact).length;
 
     if (result.picks.length === 0) {
         return (
@@ -55,11 +58,13 @@ export default async function GuideResult({ result }: { result: Result }) {
             <Container narrow as="section" className="pt-[clamp(20px,3vw,40px)]">
                 <span className="kicker text-accent-500">Sonuç</span>
                 <h1 className="mt-3.5 max-w-[20ch] font-display text-[clamp(28px,4.6vw,52px)] font-semibold leading-[1.12] tracking-[-0.045em]">
-                    Sana {result.picks.length === 1 ? 'bir ürün' : `${result.picks.length} ürün`} ayırdık
+                    {result.matchLevel === 'exact'
+                        ? `Sana ${result.picks.length === 1 ? 'bir ürün' : `${result.picks.length} ürün`} ayırdık`
+                        : `Sana en yakın ${result.picks.length === 1 ? 'öneri' : `${result.picks.length} öneri`}`}
                 </h1>
                 <p className="mt-3.5 max-w-[58ch] text-[15px] leading-[1.7] text-slate-600">
-                    Cevaplarına göre: {result.answers.map((answer) => answer.label.toLocaleLowerCase('tr')).join(', ')}.
-                    {' '}Bu {result.picks.length === 1 ? 'ürün' : 'ürünler'} o koşulları karşılıyor.
+                    Cevaplarına göre: {answersText}.
+                    {' '}{matchSentence(result)}
                 </p>
 
                 <div className="mt-[18px] flex flex-wrap gap-2">
@@ -84,13 +89,15 @@ export default async function GuideResult({ result }: { result: Result }) {
             <Container narrow as="section" className="pt-[clamp(18px,2.6vw,30px)]">
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,275px),1fr))] gap-[clamp(12px,1.8vw,20px)]">
                     {result.picks.map((pick, index) => (
-                        <PickCard key={pick.id} pick={pick} highlight={index === 0} priority={index < 2} />
+                        <PickCard key={pick.id} pick={pick} highlight={index === 0 && pick.isExact} priority={index < 2} />
                     ))}
                 </div>
-                {result.totalMatched > result.picks.length && (
+                {/* Yalnız kurallar vitrin listesine birebir çevrilebiliyorsa: farklı bir
+                    küme gösteren "hepsini gör" bağlantısı vermektense hiç verme. */}
+                {result.listingHref && result.exactCount > exactShown && (
                     <p className="mt-4 text-[13px] text-slate-600">
-                        Bu koşullara uyan toplam {result.totalMatched} ürün var.{' '}
-                        <Link href={routes.home} className="link">Hepsini gör</Link>
+                        Bu koşullara uyan toplam {result.exactCount} ürün var.{' '}
+                        <Link href={result.listingHref} className="link">Hepsini gör</Link>
                     </p>
                 )}
             </Container>
@@ -134,6 +141,22 @@ export default async function GuideResult({ result }: { result: Result }) {
     );
 }
 
+/**
+ * Sonucun ne kadar tam olduğunu dürüstçe söyler. Tam eşleşme yetmediğinde
+ * kartlar "en yakın öneri" olarak işaretlenir ve hangi cevabın esnetildiği
+ * yazılır — eşleşmeyen ürünü eşleşiyormuş gibi sunmak güveni bozar.
+ */
+function matchSentence(result: Result): string {
+    const loosened = result.relaxed.map((label) => `“${label.toLocaleLowerCase('tr')}”`).join(', ');
+    if (result.matchLevel === 'exact') {
+        return result.picks.length === 1 ? 'Bu ürün o koşulları karşılıyor.' : 'Bu ürünler o koşulları karşılıyor.';
+    }
+    if (result.matchLevel === 'close') {
+        return `${result.exactCount} ürün hepsini karşılıyor; kalan önerilerde ${loosened} koşulu esnetildi.`;
+    }
+    return `Hepsini birlikte karşılayan ürün yok; ${loosened} koşulu esnetilerek en yakınlarını seçtik.`;
+}
+
 function PickCard({
     pick, highlight, priority,
 }: {
@@ -143,10 +166,12 @@ function PickCard({
 }) {
     return (
         <article className={`card flex flex-col overflow-hidden ${highlight ? 'border-accent-500' : ''}`}>
-            {pick.rankLabel && (
+            {pick.rankLabel ? (
                 <div className={`px-[18px] py-3 text-[12px] font-bold ${highlight ? 'bg-accent-500 text-white' : 'bg-slate-100 text-slate-700'}`}>
                     {pick.rankLabel}
                 </div>
+            ) : !pick.isExact && (
+                <div className="bg-amber-tint px-[18px] py-3 text-[12px] font-bold text-amber-ink">En yakın öneri</div>
             )}
 
             <div className="relative aspect-[4/3] border-b border-slate-900/6 bg-paper">

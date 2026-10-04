@@ -1,4 +1,5 @@
 import Script from 'next/script';
+import ConsentGate from '@/components/consent/ConsentGate';
 import { WhatsappIcon } from '@/components/icons';
 import { getSettings } from '@/lib/api';
 import { supportWhatsappLink } from '@/lib/whatsapp';
@@ -45,9 +46,12 @@ export default async function SupportDock() {
             )}
 
             {tawk && (
-                // afterInteractive: canlı destek LCP'den sonra yüklensin.
-                // Sayfanın kendisi bu betiği beklememeli.
-                <Script id="tawkto" src={tawk} strategy="afterInteractive" />
+                // Canlı destek İŞLEVSEL çerez kurar ve veriyi yurt dışına taşır:
+                // çerez onayı verilmeden betik HİÇ yüklenmez.
+                // afterInteractive: LCP'den sonra; sayfa bu betiği beklememeli.
+                <ConsentGate fallback="support">
+                    <Script id="tawkto" src={tawk} strategy="afterInteractive" />
+                </ConsentGate>
             )}
         </>
     );

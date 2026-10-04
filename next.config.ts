@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { isIndexable } from './lib/site';
 
 const r2Host = process.env.R2_PUBLIC_HOSTNAME || '';
 
@@ -89,6 +90,14 @@ const nextConfig: NextConfig = {
                     { key: 'Rating', value: 'RTA-5042-1996-1400-1577-RTA' },
                 ],
             },
+            /*
+             * İndekslenmeyen ortam (dev.ozmishop.com, önizleme): TÜM yanıtlara
+             * noindex. Sayfa metası sayfa sayfa ezilebiliyor; başlık ezilemez ve
+             * Google iki sinyal çeliştiğinde kısıtlayıcı olanı uygular.
+             */
+            ...(isIndexable()
+                ? []
+                : [{ source: '/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }]),
         ];
     },
 };

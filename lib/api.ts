@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from 'next/cache';
+import type { Locations } from './locations';
 import type {
     BrandSummary,
     Category,
@@ -18,6 +19,7 @@ import type {
     ProductListing,
     SitemapData,
     Suggestions, PageGroup,
+    LegalStatus,
 } from './types';
 
 /**
@@ -329,6 +331,31 @@ export async function getMenu(code: string): Promise<MenuTree> {
     return request<MenuTree>(`/menus/${code}`);
 }
 
+// --- Yasal belgeler ----------------------------------------------------------
+/**
+ * Hangi yasal belge yayında. Ödeme ve kayıt formu buna bakar (taslak bandı,
+ * bağlantılar). Belge yayınlanınca `pages`, zorunluluk ayarı ise ancak
+ * dağıtımla değişir.
+ */
+export async function getLegalStatus(): Promise<LegalStatus> {
+    'use cache';
+    cacheTag('pages', 'settings');
+    cacheLife('days');
+    return request<LegalStatus>('/legal/documents');
+}
+
+// --- İl / ilçe ---------------------------------------------------------------
+/**
+ * Adres seçicinin listesi (81 il, 973 ilçe). Neredeyse hiç değişmiyor:
+ * `max` ömürle önbelleklenir, değişirse `locations` etiketi düşer.
+ */
+export async function getLocations(): Promise<Locations> {
+    'use cache';
+    cacheTag('locations');
+    cacheLife('max');
+    return request<Locations>('/locations');
+}
+
 // --- Başlangıç rehberi --------------------------------------------------------
 /** Sorular panelden yönetiliyor; `guide` etiketiyle önbelleklenir. */
 export async function getGuideQuestions(): Promise<GuideQuestion[]> {
@@ -392,15 +419,6 @@ export async function recordPostView(slug: string): Promise<void> {
  * Bülten kaydı. Hata mesajı çağırana AYNEN döner: API zaten "zaten kayıtlısınız"
  * demiyor (bilgi sızdırmamak için), yani buradan sızacak bir şey yok.
  */
-export async function subscribeNewsletter(email: string, source = 'gunluk'): Promise<void> {
-    await request('/newsletter', {
-        method: 'POST',
-        body: JSON.stringify({ email, source }),
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-    });
-}
-
 export async function recordProductView(slug: string): Promise<void> {
     await request('/events/product-view', {
         method: 'POST',

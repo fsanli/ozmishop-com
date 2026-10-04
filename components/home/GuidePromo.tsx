@@ -28,7 +28,10 @@ export default async function GuidePromo({
 
     return (
         <Container as="section" className="pt-[clamp(30px,4vw,54px)]">
-            <div className="block-dark-soft grid gap-[clamp(20px,3vw,44px)] p-[clamp(24px,4vw,52px)] lg:grid-cols-2">
+            {/* grid-cols-1 = minmax(0,1fr). Sütun tanımı verilmeyince örtük sütun
+                `auto` oluyor ve `truncate`lı ipucunun TAM genişliğine kadar büyüyordu;
+                mobilde buton ekranın dışına taşıyordu. */}
+            <div className="block-dark-soft grid grid-cols-1 gap-[clamp(20px,3vw,44px)] p-[clamp(24px,4vw,52px)] lg:grid-cols-2">
                 <div>
                     <span className="kicker text-on-dark-berry">Başlangıç rehberi</span>
                     <h2 className="heading-2 mt-3 text-on-dark">{headline || 'İlk kez alıyorsan, doğru yerdesin.'}</h2>

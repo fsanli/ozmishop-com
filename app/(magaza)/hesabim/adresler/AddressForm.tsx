@@ -1,5 +1,8 @@
 import SubmitButton from '@/components/form/SubmitButton';
 import PhoneField from '@/components/form/PhoneField';
+import CityDistrictFields from '@/components/form/CityDistrictFields';
+import FieldLabel, { RequiredNote } from '@/components/form/FieldLabel';
+import type { Locations } from '@/lib/locations';
 import { routes } from '@/lib/site';
 import Link from 'next/link';
 import type { Address } from '@/lib/types';
@@ -9,8 +12,11 @@ import { saveAddressAction } from '../actions';
  * Adres formu. İstemci bileşeni DEĞİL: alanlar `defaultValue` ile dolar,
  * gönderim Server Action'a gider. Düzenleme "?duzenle=3" ile açılır — yani
  * form durumu adreste yaşar, tarayıcı geri tuşu da doğru çalışır.
+ *
+ * Zorunlu: ad, soyad, telefon, il, ilçe, açık adres. İl/ilçe aranabilir
+ * listeden seçilir (yalnız o parça istemci bileşeni).
  */
-export default function AddressForm({ address }: { address?: Address }) {
+export default function AddressForm({ address, locations }: { address?: Address; locations: Locations }) {
     const editing = Boolean(address);
 
     return (
@@ -18,50 +24,44 @@ export default function AddressForm({ address }: { address?: Address }) {
             {editing && <input type="hidden" name="id" value={address!.id} />}
 
             <h3 className="heading-3">{editing ? 'Adresi düzenle' : 'Yeni adres'}</h3>
+            <RequiredNote className="mt-1.5" />
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="sm:col-span-2">
-                    <span className="field-label">Adres başlığı</span>
-                    <input name="title" required maxLength={40} defaultValue={address?.title}
-                        placeholder="Ev, İş…" className="field-input mt-1.5" />
+                <label>
+                    <FieldLabel required>Ad</FieldLabel>
+                    <input name="firstname" required autoComplete="given-name" defaultValue={address?.firstname} className="field-input" />
+                </label>
+                <label>
+                    <FieldLabel required>Soyad</FieldLabel>
+                    <input name="lastname" required autoComplete="family-name" defaultValue={address?.lastname} className="field-input" />
                 </label>
 
                 <label>
-                    <span className="field-label">Ad</span>
-                    <input name="firstname" required autoComplete="given-name" defaultValue={address?.firstname} className="field-input mt-1.5" />
+                    <FieldLabel required>Telefon</FieldLabel>
+                    <PhoneField defaultValue={address?.phone ?? ''} className="field-input" />
                 </label>
                 <label>
-                    <span className="field-label">Soyad</span>
-                    <input name="lastname" required autoComplete="family-name" defaultValue={address?.lastname} className="field-input mt-1.5" />
-                </label>
-
-                <label>
-                    <span className="field-label">Telefon</span>
-                    <PhoneField defaultValue={address?.phone ?? ''} className="field-input mt-1.5" />
-                </label>
-                <label>
-                    <span className="field-label">Posta kodu <span className="text-slate-500">(opsiyonel)</span></span>
-                    <input name="postalCode" inputMode="numeric" autoComplete="postal-code" defaultValue={address?.postalCode ?? ''} className="field-input mt-1.5" />
+                    <FieldLabel>Adres başlığı</FieldLabel>
+                    <input name="title" maxLength={40} defaultValue={address?.title}
+                        placeholder="Ev, İş… (boşsa ilçe / il)" className="field-input" />
                 </label>
 
+                <CityDistrictFields locations={locations} defaultCity={address?.city} defaultDistrict={address?.district} />
+
                 <label>
-                    <span className="field-label">İl</span>
-                    <input name="city" required autoComplete="address-level1" defaultValue={address?.city} className="field-input mt-1.5" />
+                    <FieldLabel>Mahalle</FieldLabel>
+                    <input name="neighbourhood" autoComplete="address-level3" defaultValue={address?.neighbourhood ?? ''} className="field-input" />
                 </label>
                 <label>
-                    <span className="field-label">İlçe</span>
-                    <input name="district" required autoComplete="address-level2" defaultValue={address?.district} className="field-input mt-1.5" />
+                    <FieldLabel>Posta kodu</FieldLabel>
+                    <input name="postalCode" inputMode="numeric" autoComplete="postal-code" defaultValue={address?.postalCode ?? ''} className="field-input" />
                 </label>
 
                 <label className="sm:col-span-2">
-                    <span className="field-label">Mahalle <span className="text-slate-500">(opsiyonel)</span></span>
-                    <input name="neighbourhood" autoComplete="address-level3" defaultValue={address?.neighbourhood ?? ''} className="field-input mt-1.5" />
-                </label>
-
-                <label className="sm:col-span-2">
-                    <span className="field-label">Açık adres</span>
-                    <textarea name="addressLine" required rows={3} autoComplete="street-address"
-                        defaultValue={address?.addressLine} className="field-input mt-1.5 resize-y" />
+                    <FieldLabel required>Açık adres</FieldLabel>
+                    <textarea name="addressLine" required minLength={5} rows={3} autoComplete="street-address"
+                        placeholder="Sokak, bina ve daire numarası"
+                        defaultValue={address?.addressLine} className="field-input resize-y" />
                 </label>
             </div>
 

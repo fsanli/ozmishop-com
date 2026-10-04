@@ -1,30 +1,30 @@
-import { getGroupByCode } from '@/lib/api';
 import { routes } from '@/lib/site';
+import type { ProductCard as ProductCardData, ProductGroup } from '@/lib/types';
 import ProductCard from '../ProductCard';
 import SectionShell from './SectionShell';
 
 /**
- * Ürün grubu bloğu. Veri /home ile birlikte GELMEZ; ayrı ve kendi `group:{code}`
- * etiketiyle önbelleklenir — böylece panelde tek bir grup değişince yalnızca o blok
- * tazelenir, anasayfanın geri kalanı önbellekte kalır.
+ * Ürün grubu bloğu. Ürünler `HomeSections`'ta çekilir (grup başına ayrı
+ * `group:{code}` önbelleği) ve önceki bölümlerde görünenler istenirse ayıklanır;
+ * bu bileşen yalnız çizer.
  */
-export default async function ProductGroupSection({
-    code,
+export default function ProductGroupSection({
+    group,
+    products,
     title,
     subtitle,
     limit = 8,
     layout = 'carousel',
     priority = false,
 }: {
-    code: string;
+    group: ProductGroup | null;
+    products: ProductCardData[];
     title?: string | null;
     subtitle?: string | null;
     limit?: number;
     layout?: 'carousel' | 'grid';
     priority?: boolean;
 }) {
-    const group = await getGroupByCode(code, limit);
-    const products = group?.items ?? [];
     if (!products.length) return null;
 
     return (

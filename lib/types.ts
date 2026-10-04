@@ -274,7 +274,40 @@ export interface ContentPage {
     isIndexable: boolean;
     /** Footer kolonu ve sayfa kenar çubuğu buna göre gruplanır. */
     group: string;
+    /** Yasal metin anahtarı (api/legal/documents.js); diğer sayfalarda null. */
+    legalKey?: string | null;
+    /** Yayımlanmamış yasal metin (yayın öncesi TASLAK bandıyla gösterilir). */
+    isDraft?: boolean;
     updatedAt: string;
+}
+
+/** Yasal belgelerin yayın durumu (API `GET /legal/documents`). */
+export interface LegalDocumentStatus {
+    key: 'on_bilgilendirme' | 'mesafeli_satis' | 'uyelik' | 'kvkk' | 'gizlilik' | 'cerez';
+    slug: string;
+    title: string;
+    exists: boolean;
+    isPublished: boolean;
+    version: number | null;
+    versionId: number | null;
+}
+
+export interface LegalStatus {
+    /** Açıkken yayımlanmamış zorunlu belgeyle sipariş/kayıt reddedilir. */
+    enforced: boolean;
+    documents: LegalDocumentStatus[];
+}
+
+/** Siparişte kabul edilmiş belgenin kalıcı kopyası. */
+export interface OrderDocument {
+    kind: 'on_bilgilendirme' | 'mesafeli_satis';
+    title: string;
+    isDraft: boolean;
+    version: number | null;
+    acceptedAt: string;
+    html: string;
+    orderNumber: string;
+    placedAt: string;
 }
 
 /** API'nin döndürdüğü grup etiketleri; vitrin kendi listesini tutmaz. */
@@ -378,23 +411,37 @@ export type OrderStatus =
     | 'payment_pending' | 'confirmed' | 'preparing' | 'shipped'
     | 'delivered' | 'cancelled' | 'refunded';
 
+/**
+ * Siparişin tek GÖSTERİM ödeme durumu (API türetir). Ekran yalnız etiketler;
+ * "kalan > 0 ise bekliyor" gibi kendi türetmesini yapmaz — iptal edilmiş
+ * havale siparişi böyle "ödeme bekleniyor" görünüyordu.
+ */
+export type PaymentState =
+    | 'awaiting_payment' | 'partially_paid' | 'paid' | 'overpaid'
+    | 'refund_due' | 'partially_refunded' | 'refunded' | 'not_collected' | 'failed';
+
 export interface Order {
     orderNumber: string;
     status: OrderStatus;
-    paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
+    paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded' | 'voided';
+    paymentState: PaymentState;
     paymentMethod: 'card' | 'transfer';
     email: string;
     phone: string;
     placedAt: string;
-    totals: { subtotal: number; discount: number; shipping: number; grandTotal: number };
+    totals: { subtotal: number; discount: number; shipping: number; grandTotal: number; refunded: number };
     couponCode: string | null;
     shippingAddress: OrderAddress;
     billingAddress: OrderAddress | null;
     shipping: {
         name: string | null;
         carrier: string | null;
+        /** Firma kodu (`public/carriers/` logosu için); listede olmayan firmada null. */
+        carrierCode: string | null;
         trackingNumber: string | null;
+        /** Firmanın takip sayfası; şablonu olmayan firmada null (o zaman `carrierWebsite`). */
         trackingUrl: string | null;
+        carrierWebsite: string | null;
         shippedAt: string | null;
         deliveredAt: string | null;
     };
@@ -413,8 +460,8 @@ export interface Order {
         quantity: number;
         lineTotal: number;
     }[];
-    history: { status: OrderStatus; note: string | null; createdAt: string }[];
-    allowedTransitions: OrderStatus[];
+    /** Yalnız durum ve tarih — yönetici notları müşteriye dönmez. */
+    history: { status: OrderStatus; createdAt: string }[];
     /**
      * Yalnızca havale/EFT siparişlerinde dolu. Kart siparişinde alan hiç gelmez,
      * yani `transfer &&` kontrolü ödeme yöntemini ayrıca sormayı gereksiz kılar.
@@ -424,19 +471,27 @@ export interface Order {
 
 /** Havale bakiyesi. Yönetici panelinin gördüğü hesabın müşteriye açık kısmı. */
 export interface TransferSettlement {
-    state: 'bekliyor' | 'eksik' | 'tam' | 'fazla';
+    /**
+     * Açık sipariş: bekliyor · eksik · tam · fazla.
+     * Kapalı (iptal/iade): iptal (hiç para gelmedi) · iade_bekliyor · iade_edildi.
+     */
+    state: 'bekliyor' | 'eksik' | 'tam' | 'fazla' | 'iptal' | 'iade_bekliyor' | 'iade_edildi';
+    closed: boolean;
     paid: number;
     remaining: number;
     overpaid: number;
+    refunded: number;
     grandTotal: number;
+    dueAt: string | null;
     receipts: { amount: number; receivedAt: string }[];
+    /** Kapalı siparişte null: iptal edilmiş siparişe para gönderilmesin. */
     bank: {
         accountName: string;
         bankName: string;
         iban: string;
         note: string;
         dueDays: number | null;
-    };
+    } | null;
 }
 
 export interface InstallmentOption {
@@ -638,7 +693,17 @@ export interface GuideResult {
         rankLabel: string | null;
         why: string;
         isPinned: boolean;
+        /** false: tam eşleşme yetmediği için koşul esnetilerek eklenen "en yakın" öneri. */
+        isExact: boolean;
     })[];
+    /** exact: hepsi tam eşleşme · close: bir kısmı en yakın öneri · none: hiçbiri tam değil. */
+    matchLevel: 'exact' | 'close' | 'none';
+    /** Tüm cevapları birlikte karşılayan ürün sayısı. */
+    exactCount: number;
+    /** Esnetilen cevapların etiketleri. */
+    relaxed: string[];
+    /** "Hepsini gör": kurallar vitrin listesine çevrilebiliyorsa (`/kategori/…?ozellik=…`). */
+    listingHref: string | null;
     totalMatched: number;
 }
 
@@ -651,6 +716,14 @@ export interface GuideResult {
  */
 export interface SiteSettings {
     'puan.aktif'?: boolean;
+    'kupon.aktif'?: boolean;
+    /**
+     * HESAPLANMIŞ (API `publicMap`): yöntem şu an seçilebilir mi. Havalede
+     * anahtar + üç banka alanı + geçerli IBAN; kartta sağlayıcı anahtarları.
+     * Vitrin anahtarı ve alanları kendisi yorumlamaz.
+     */
+    'odeme.havale_kullanilabilir'?: boolean;
+    'odeme.kart_kullanilabilir'?: boolean;
     'iletisim.whatsapp_numarasi'?: string;
     'iletisim.whatsapp_mesaji'?: string;
     'iletisim.whatsapp_destek_mesaji'?: string;
@@ -659,8 +732,24 @@ export interface SiteSettings {
     'iletisim.tawkto_kimlik'?: string;
     'magaza.kdv_orani'?: number;
     'magaza.yas_kapisi_metni'?: string;
+    // Satıcı künyesi (022) — sözleşme, iletişim, footer ve ödeme ekranı.
+    'sirket.unvan'?: string;
+    'sirket.adres'?: string;
+    'sirket.telefon'?: string;
+    'sirket.eposta'?: string;
+    'sirket.kep'?: string;
+    'sirket.mersis'?: string;
+    'sirket.vkn'?: string;
+    'sirket.vergi_dairesi'?: string;
     'kargo.ucretsiz_esigi'?: number;
     'kargo.hazirlik_suresi'?: string;
+    /** SS:DD; boşsa "aynı gün kargo" sözü verilmez. */
+    'kargo.kesim_saati'?: string;
+    'kargo.teslim_suresi'?: string;
+    /** API'de hesaplanır: kısa söz ("Aynı gün kargo" / "1-3 iş günü içinde kargoda"); boşsa gösterilmez. */
+    'kargo.vaat'?: string;
+    /** API'de hesaplanır: kargoya verilme + tahmini teslim cümlesi. */
+    'kargo.sureler'?: string;
     'gizlilik.notr_ekstre_adi'?: string;
     'gizlilik.gonderici_adi'?: string;
     'gizlilik.notr_eposta_konusu'?: string;
@@ -671,6 +760,8 @@ export interface SiteSettings {
     'icerik.rehber_giris_baslik'?: string;
     'icerik.rehber_giris_metni'?: string;
     'icerik.bulten_vaadi'?: string;
+    /** Bülten formundaki izin kutusunun metni; kayıtla birlikte kanıt olarak saklanır. */
+    'icerik.bulten_onay_metni'?: string;
     'icerik.iade_suresi_gun'?: number;
 }
 

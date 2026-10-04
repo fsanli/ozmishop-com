@@ -29,18 +29,25 @@ export function toLocal(value: string): string {
     return d ? `0${d.slice(0, PHONE_DIGITS - 1)}` : '';
 }
 
-/** Görünen biçim: 0(555) 111 22 33 — yarım girdide de kırılmaz. */
+/**
+ * Görünen biçim: 0(555) 111 22 33 — yarım girdide de kırılmaz.
+ *
+ * Ayırıcılar YALNIZCA arkalarından rakam gelince eklenir. `)` alan kodu dolar
+ * dolmaz eklendiğinde geri silme kilitleniyordu: `0(542)`'de backspace `)`'yi
+ * siliyor, rakamlar aynı kaldığı için maske onu hemen geri koyuyordu.
+ */
 export function formatPhone(value: string): string {
     const local = toLocal(value);
-    if (!local) return '';
+    // Tek başına "0": `toLocal` baştaki sıfırı soyduğu için boş dönüyor; ilk
+    // tuşa basınca hiçbir şey görünmemesin.
+    if (!local) return String(value ?? '').replace(/\D/g, '').startsWith('0') ? '0' : '';
 
     const rest = local.slice(1);
     const [a, b, c, e] = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6, 8), rest.slice(8, 10)];
 
     let out = '0';
     if (a) out += `(${a}`;
-    if (a.length === 3) out += ')';
-    if (b) out += ` ${b}`;
+    if (b) out += `) ${b}`;
     if (c) out += ` ${c}`;
     if (e) out += ` ${e}`;
     return out;

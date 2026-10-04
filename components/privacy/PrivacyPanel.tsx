@@ -6,8 +6,9 @@ import { getSettings } from '@/lib/api';
  * onayında aynı sözleri verir — tasarımın ayırt edici bloğu.
  *
  * Değerler `/ayarlar`dan okunur: şirket unvanı ya da gönderici adı değişirse
- * verilen söz beş ayrı dosyada yalan olmasın. Ayar silinirse varsayılan basılır,
- * blok hiçbir koşulda boş görünmez.
+ * verilen söz beş ayrı dosyada yalan olmasın. Ad girilmemişse SABİT bir ad
+ * uydurulmaz: söz genel kalır ("şirket unvanı"). Sabit varsayılan, panelde
+ * doğrulanmış addan farklı bir adı müşteriye vaat ediyordu (P1-04).
  */
 export default async function PrivacyPanel({ className = '' }: { className?: string }) {
     const settings = await getSettings();
@@ -16,12 +17,12 @@ export default async function PrivacyPanel({ className = '' }: { className?: str
         {
             dot: 'bg-on-dark-berry',
             label: 'Kargo etiketi nötr',
-            value: `Gönderici “${settings['gizlilik.gonderici_adi'] ?? 'OZM Lojistik'}”`,
+            value: settings['gizlilik.gonderici_adi']?.trim() ? `Gönderici “${settings['gizlilik.gonderici_adi'].trim()}”` : 'Gönderici olarak yalnızca şirket unvanı',
         },
         {
             dot: 'bg-on-dark-plum',
             label: 'Ekstrede ürün adı geçmez',
-            value: settings['gizlilik.notr_ekstre_adi'] ?? 'OZM DIŞ TİC. LTD.',
+            value: settings['gizlilik.notr_ekstre_adi']?.trim() || 'Yalnızca şirket unvanı',
         },
         {
             dot: 'bg-on-dark-amber',

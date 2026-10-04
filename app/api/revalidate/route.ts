@@ -16,7 +16,7 @@ const SECRET = process.env.REVALIDATE_SECRET || '';
 // Bu dizi ozmishop-api'deki api/services/cache.js → TAGS ile BAYT BAYT AYNI olmak
 // zorunda: orada validateTags() bilinmeyen etiketi reddeder, burada eksik etiket
 // sessizce bayat içerik yayınlar. Bir tarafa etiket eklerken diğerini de aç.
-const ROOT_TAGS = ['home', 'products', 'categories', 'brands', 'groups', 'banners', 'pages', 'specs', 'posts', 'topics', 'guide', 'settings'];
+const ROOT_TAGS = ['home', 'products', 'categories', 'brands', 'groups', 'banners', 'pages', 'specs', 'posts', 'topics', 'guide', 'settings', 'locations'];
 
 function isAuthorized(request: NextRequest): boolean {
     const provided = request.headers.get('x-revalidate-secret') || '';

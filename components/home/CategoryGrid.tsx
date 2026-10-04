@@ -19,18 +19,21 @@ export default function CategoryGrid({
     title?: string | null;
     subtitle?: string | null;
 }) {
-    if (!categories.length) return null;
+    // API zaten süzüyor; burada da süzülür ki eski bir önbellek yanıtı
+    // "0 ürün" kartı basmasın.
+    const visible = categories.filter((category) => category.activeProductCount > 0);
+    if (!visible.length) return null;
 
     return (
         <SectionShell
             kicker="Kategoriler"
             title={title || 'Ne aradığını biliyorsan'}
             subtitle={subtitle}
-            actionHref={routes.home}
+            actionHref={routes.categories}
             actionLabel="Tüm kategoriler"
         >
             <div className="grid gap-[clamp(10px,1.6vw,16px)] [grid-template-columns:repeat(auto-fill,minmax(min(50%-6px,200px),1fr))]">
-                {categories.map((category) => {
+                {visible.map((category) => {
                     const colors = colorsOf(category);
                     return (
                         <Link

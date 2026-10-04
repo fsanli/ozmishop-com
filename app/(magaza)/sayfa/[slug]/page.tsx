@@ -26,7 +26,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title: page.metaTitle || page.title,
         description: page.metaDescription || site.description,
         alternates: { canonical: routes.page(page.slug) },
-        robots: page.isIndexable ? undefined : { index: false, follow: true },
+        // Taslak yasal metin (yayın öncesi okunabilir) ASLA indekslenmez.
+        robots: page.isIndexable && !page.isDraft ? undefined : { index: false, follow: true },
     };
 }
 
@@ -48,6 +49,11 @@ export default async function ContentPageView({ params }: { params: Promise<{ sl
 
                 <div className="min-w-0 flex-1">
                     <h1 className="heading-1 mb-5">{page.title}</h1>
+                    {page.isDraft && (
+                        <p role="note" className="mb-4 rounded-[var(--radius-md)] bg-amber-tint px-4 py-3 text-[13.5px] font-semibold text-amber-ink">
+                            Bu metin taslaktır ve hukuk onayı beklemektedir; yayımlanmış sürüm değildir.
+                        </p>
+                    )}
                     <div className="card prose-content p-5 sm:p-8" dangerouslySetInnerHTML={{ __html: page.content ?? '' }} />
                 </div>
             </div>

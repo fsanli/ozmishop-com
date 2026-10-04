@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import Container from '@/components/Container';
 import EmptyState from '@/components/EmptyState';
 import JsonLd from '@/components/JsonLd';
-import NewsletterBlock from '@/components/gunluk/NewsletterBlock';
+import NewsletterBlock, { newsletterState } from '@/components/gunluk/NewsletterBlock';
 import PostCard from '@/components/gunluk/PostCard';
 import { getJournal, getJournalTopics } from '@/lib/api';
 import { CATEGORY_COLOR } from '@/lib/colors';
@@ -14,6 +14,7 @@ import { one, type SearchParams } from '@/lib/listing';
 import { journalSchema } from '@/lib/schema';
 import { routes, site } from '@/lib/site';
 import type { JournalPost } from '@/lib/types';
+import PostCoverFallback from '@/components/gunluk/PostCoverFallback';
 
 export const metadata: Metadata = {
     title: 'Günlük — malzeme, hijyen ve güvenlik yazıları',
@@ -57,7 +58,7 @@ async function JournalBody({ searchParams }: { searchParams: Promise<SearchParam
                     description="Yeni yazılar ayda birkaç kez yayımlanır. Bülten kaydı yaparsan ilkini kaçırmazsın."
                     action={<Link href={routes.journal} className="btn-secondary">Tüm yazılar</Link>}
                 />
-                <NewsletterBlock state={newsletter === 'ok' ? 'ok' : newsletter === 'hata' ? 'hata' : undefined} />
+                <NewsletterBlock state={newsletterState(newsletter)} />
             </Container>
         );
     }
@@ -127,7 +128,7 @@ async function JournalBody({ searchParams }: { searchParams: Promise<SearchParam
                 )}
             </Container>
 
-            <NewsletterBlock state={newsletter === 'ok' ? 'ok' : newsletter === 'hata' ? 'hata' : undefined} />
+            <NewsletterBlock state={newsletterState(newsletter)} />
         </>
     );
 }
@@ -162,9 +163,7 @@ function FeaturedCard({ post }: { post: JournalPost }) {
                         priority
                     />
                 ) : (
-                    <span className="absolute inset-0 grid place-items-center text-[11.5px] font-medium text-slate-400">
-                        Kapak görseli
-                    </span>
+                    <PostCoverFallback colors={colors} topic={post.topic?.name} />
                 )}
                 <span className={`absolute bottom-0 left-0 h-[3px] w-[60px] ${colors.dot}`} aria-hidden />
             </div>

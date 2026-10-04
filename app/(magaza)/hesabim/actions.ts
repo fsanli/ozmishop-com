@@ -1,12 +1,14 @@
 'use server';
 
 import { refresh } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
     changePassword, createReturn, createReview, deleteAddress, hideOrderHistory,
     saveAddress, updateNotifications, updatePrivacy, updateProfile,
 } from '@/lib/account';
 import { normalisePhone, phoneError } from '@/lib/phone';
+import { COOKIE_BASE, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/session';
 import { routes } from '@/lib/site';
 
 /**
@@ -15,9 +17,23 @@ import { routes } from '@/lib/site';
  */
 const withError = (path: string, message: string) => `${path}?hata=${encodeURIComponent(message)}`;
 
+/** Zorunlu adres alanları — formdaki yıldızlarla AYNI liste. */
+const REQUIRED_ADDRESS_FIELDS: [string, string][] = [
+    ['firstname', 'Ad'], ['lastname', 'Soyad'], ['city', 'İl'], ['district', 'İlçe'], ['addressLine', 'Açık adres'],
+];
+
 export async function saveAddressAction(formData: FormData) {
     const value = (name: string) => String(formData.get(name) ?? '').trim();
     const id = Number(formData.get('id')) || null;
+    // Hata sonrası form KAPANMASIN: yeni adres formu ya da düzenlenen adres açık kalır.
+    const back = `${routes.addresses}?${id ? `duzenle=${id}` : 'yeni=1'}`;
+    const fail = (message: string) => redirect(`${back}&hata=${encodeURIComponent(message)}`);
+
+    // JavaScript kapalıyken `required` da maske de yok: sunucu yine denetler.
+    const missing = REQUIRED_ADDRESS_FIELDS.filter(([name]) => !value(name)).map(([, label]) => label);
+    if (missing.length) fail(`Zorunlu alanlar eksik: ${missing.join(', ')}.`);
+    const phoneInvalid = phoneError(value('phone'));
+    if (phoneInvalid) fail(phoneInvalid);
 
     try {
         await saveAddress(id, {
@@ -33,7 +49,7 @@ export async function saveAddressAction(formData: FormData) {
             isDefaultShipping: formData.get('isDefaultShipping') === 'on',
         });
     } catch (error) {
-        redirect(withError(routes.addresses, (error as Error).message));
+        fail((error as Error).message);
     }
     redirect(routes.addresses);
 }
@@ -158,11 +174,15 @@ export async function changePasswordAction(formData: FormData) {
         redirect(withError(routes.accountSecurity, 'Yeni parolalar birbirini tutmuyor.'));
     }
 
+    let token: string | undefined;
     try {
-        await changePassword(current, next);
+        ({ token } = await changePassword(current, next));
     } catch (error) {
         redirect(withError(routes.accountSecurity, (error as Error).message));
     }
+    // API parola değişince eski jetonları geçersiz sayıyor (çalınmış oturum
+    // kapansın); bu oturum yeni jetonla sürer.
+    if (token) (await cookies()).set(SESSION_COOKIE, token, { ...COOKIE_BASE, maxAge: SESSION_MAX_AGE });
     redirect(`${routes.accountSecurity}?kaydedildi=parola`);
 }
 

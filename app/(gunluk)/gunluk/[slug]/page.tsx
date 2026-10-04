@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import Container from '@/components/Container';
 import JsonLd from '@/components/JsonLd';
-import NewsletterBlock from '@/components/gunluk/NewsletterBlock';
+import NewsletterBlock, { newsletterState } from '@/components/gunluk/NewsletterBlock';
 import { getPost, getSitemapData } from '@/lib/api';
 import { CATEGORY_COLOR } from '@/lib/colors';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -14,6 +14,7 @@ import { breadcrumbSchema, postSchema } from '@/lib/schema';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import ViewPing from '@/components/ViewPing';
 import type { JournalPost, JournalPostDetail } from '@/lib/types';
+import PostCoverFallback from '@/components/gunluk/PostCoverFallback';
 
 /**
  * Cache Components altında dinamik rota en az bir örnek param döndürmek zorunda;
@@ -124,9 +125,7 @@ export default async function PostPage({
                             priority
                         />
                     ) : (
-                        <span className="absolute inset-0 grid place-items-center text-[11.5px] font-medium text-slate-400">
-                            Kapak görseli
-                        </span>
+                        <PostCoverFallback colors={colors} topic={post.topic?.name} size="lg" />
                     )}
                     <span className={`absolute bottom-0 left-0 h-[3px] w-20 ${colors.dot}`} aria-hidden />
                 </div>
@@ -162,7 +161,7 @@ async function NewsletterSlot({ searchParams, slug }: { searchParams: Promise<Se
     const state = one(params.bulten);
     return (
         <NewsletterBlock
-            state={state === 'ok' ? 'ok' : state === 'hata' ? 'hata' : undefined}
+            state={newsletterState(state)}
             source="gunluk-yazi"
             returnTo={routes.post(slug)}
         />

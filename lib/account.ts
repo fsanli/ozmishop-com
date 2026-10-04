@@ -61,8 +61,9 @@ export const createReturn = (orderNumber: string, payload: Record<string, unknow
 export const updateProfile = (payload: Record<string, unknown>) =>
     accountFetch<Customer>('/users/me', { method: 'PATCH', body: JSON.stringify(payload) });
 
+/** Parola değişince eski oturumlar düşer; API yeni jeton döndürür, çereze yazılmalı. */
 export const changePassword = (currentPassword: string, newPassword: string) =>
-    accountFetch<{ ok: true }>('/users/me/password', {
+    accountFetch<{ ok: true; token?: string; expiresIn?: number }>('/users/me/password', {
         method: 'POST',
         body: JSON.stringify({ currentPassword, newPassword }),
     });

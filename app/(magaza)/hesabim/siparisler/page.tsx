@@ -30,7 +30,7 @@ export default async function OrdersPage() {
                     where="Siparişler"
                     color="amber"
                     title="Henüz sipariş vermedin"
-                    description="İlk siparişinde kullanabileceğin ILKALIS10 kuponu hesabında hazır."
+                    description="Verdiğin siparişler burada listelenir; kargo durumunu buradan takip edebilirsin."
                     action={<Link href={routes.home} className="btn-secondary">Alışverişe başla</Link>}
                 />
             ) : (

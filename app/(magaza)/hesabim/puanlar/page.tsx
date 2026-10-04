@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getMyPoints } from '@/lib/account';
 import { formatDate, formatPrice } from '@/lib/format';
 import { routes } from '@/lib/site';
+import EmptyState from '@/components/EmptyState';
 import AccountShell from '../AccountShell';
 
 export const metadata: Metadata = { title: 'Puanlarım', robots: { index: false, follow: false } };
@@ -19,9 +20,18 @@ export default async function PointsPage() {
     const points = await getMyPoints();
 
     return (
-        <AccountShell active={routes.accountPoints} title={points ? 'Kupon ve puanlarım' : 'Kuponlarım'}>
-            {/* Puan sistemi kapalıyken bölüm HİÇ çizilmez — "0 puanınız var"
-                demek, olmayan bir programın varmış gibi görünmesi olurdu. */}
+        <AccountShell active={routes.accountPoints} title="Puanlarım">
+            {/* Puan sistemi kapalıyken bakiye HİÇ çizilmez — "0 puanınız var"
+                demek, olmayan bir programın varmış gibi görünmesi olurdu. Menü
+                bu sayfaya bağlantı vermiyor; doğrudan gelen nötr bir not görür. */}
+            {!points && (
+                <EmptyState
+                    where="Puanlar"
+                    color="amber"
+                    title="Puan programı şu anda kullanılmıyor"
+                    description="Siparişlerine ve favorilerine hesabından ulaşabilirsin."
+                />
+            )}
             {points && (
             <div className="card card-xl card-edge-top border-t-amber-dot p-[clamp(20px,3vw,28px)]">
                 <span className="text-[12px] font-bold text-slate-600">Kullanılabilir puan</span>

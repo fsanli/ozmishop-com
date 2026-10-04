@@ -2,7 +2,8 @@ import { cacheLife, cacheTag } from 'next/cache';
 import Link from 'next/link';
 import Container from '@/components/Container';
 import Logo from '@/components/Logo';
-import { getPagesGrouped } from '@/lib/api';
+import CookiePreferencesButton from '@/components/consent/CookiePreferencesButton';
+import { getPagesGrouped, getSettings } from '@/lib/api';
 import { routes, site } from '@/lib/site';
 
 /**
@@ -13,7 +14,7 @@ import { routes, site } from '@/lib/site';
  */
 export default async function Footer({ showRatingBadges = false }: { showRatingBadges?: boolean }) {
     'use cache';
-    cacheTag('pages');
+    cacheTag('pages', 'settings');
     cacheLife('days');
 
     /*
@@ -26,7 +27,15 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
        `groups` eklendiğinde eski şekilli bir önbellek kaydı footer'ı çökertti
        (derlemede yakalandı). Alan yoksa yalnız "Alışveriş" kolonu çizilir;
        eksik bir kolon, çöken bir sayfadan iyidir. */
-    const { items: pages, groups = [] } = await getPagesGrouped();
+    const [{ items: pages, groups = [] }, settings] = await Promise.all([getPagesGrouped(), getSettings()]);
+    // Satıcı künyesi: yalnız girilmiş alanlar (Ayarlar › Şirket bilgileri).
+    const company = [
+        settings['sirket.unvan'],
+        settings['sirket.adres'],
+        settings['sirket.mersis'] ? `MERSİS ${settings['sirket.mersis']}` : null,
+        settings['sirket.telefon'],
+        settings['sirket.eposta'],
+    ].filter((part) => String(part ?? '').trim() !== '');
     const columns = groups
         .map((group) => ({
             heading: group.label,
@@ -83,7 +92,11 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
             <div className="border-t border-on-dark/10">
                 <Container className="flex flex-wrap items-center justify-between gap-2 py-4 text-[11.5px] text-on-dark/42">
                     <p>© {new Date().getFullYear()} {site.name}. Tüm hakları saklıdır.</p>
-                    <p>Bu site yalnızca 18 yaşından büyükler içindir.</p>
+                    <p className="flex flex-wrap items-center gap-x-3">
+                        <CookiePreferencesButton className="underline underline-offset-2 hover:text-on-dark" />
+                        <span>Bu site yalnızca 18 yaşından büyükler içindir.</span>
+                    </p>
+                    {company.length > 0 && <p className="basis-full">{company.join(' · ')}</p>}
                 </Container>
             </div>
         </footer>

@@ -8,6 +8,7 @@ import { requireCustomer } from '@/lib/session';
 import { routes } from '@/lib/site';
 import AccountShell from '../AccountShell';
 import { changePasswordAction, updateProfileAction } from '../actions';
+import FieldLabel from '@/components/form/FieldLabel';
 
 export const metadata: Metadata = { title: 'Hesap güvenliği', robots: { index: false, follow: false } };
 
@@ -44,17 +45,17 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label>
-                        <span className="field-label">Ad</span>
+                        <FieldLabel required>Ad</FieldLabel>
                         <input name="firstname" required minLength={2} maxLength={60} autoComplete="given-name"
                             defaultValue={customer.firstname} className="field-input" />
                     </label>
                     <label>
-                        <span className="field-label">Soyad</span>
+                        <FieldLabel required>Soyad</FieldLabel>
                         <input name="lastname" required minLength={2} maxLength={60} autoComplete="family-name"
                             defaultValue={customer.lastname} className="field-input" />
                     </label>
                     <label className="sm:col-span-2">
-                        <span className="field-label">Telefon</span>
+                        <FieldLabel required>Telefon</FieldLabel>
                         <PhoneField defaultValue={customer.phone ?? ''} />
                     </label>
                 </div>
@@ -63,7 +64,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
                     ve misafir siparişlerinin hesaba bağlanması da ona bakıyor.
                     Değiştirmek ayrı bir doğrulama akışı ister. */}
                 <label className="mt-3 block">
-                    <span className="field-label">E-posta</span>
+                    <FieldLabel>E-posta</FieldLabel>
                     <input value={customer.email} readOnly disabled className="field-input" />
                     <span className="mt-1.5 block text-[12px] text-slate-600">
                         E-posta adresi değiştirilemez. Değiştirmen gerekiyorsa destek hattından yazabilirsin.
@@ -83,16 +84,16 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="sm:col-span-2">
-                        <span className="field-label">Mevcut parola</span>
+                        <FieldLabel required>Mevcut parola</FieldLabel>
                         <input type="password" name="currentPassword" required autoComplete="current-password" className="field-input" />
                     </label>
                     <label>
-                        <span className="field-label">Yeni parola</span>
-                        <input type="password" name="newPassword" required minLength={6} maxLength={72} autoComplete="new-password" className="field-input" />
+                        <FieldLabel required>Yeni parola</FieldLabel>
+                        <input type="password" name="newPassword" required minLength={8} maxLength={72} autoComplete="new-password" className="field-input" />
                     </label>
                     <label>
-                        <span className="field-label">Yeni parola (tekrar)</span>
-                        <input type="password" name="newPasswordRepeat" required minLength={6} maxLength={72} autoComplete="new-password" className="field-input" />
+                        <FieldLabel required>Yeni parola (tekrar)</FieldLabel>
+                        <input type="password" name="newPasswordRepeat" required minLength={8} maxLength={72} autoComplete="new-password" className="field-input" />
                     </label>
                 </div>
 

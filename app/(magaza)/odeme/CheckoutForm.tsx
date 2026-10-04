@@ -1,10 +1,18 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
+import CityDistrictFields from '@/components/form/CityDistrictFields';
+import FieldLabel, { RequiredNote } from '@/components/form/FieldLabel';
 import PhoneField from '@/components/form/PhoneField';
 import SubmitButton from '@/components/form/SubmitButton';
+import LegalDocumentsDialog, { type LegalDialogState } from '@/components/legal/LegalDocumentsDialog';
+import SellerCard from '@/components/legal/SellerCard';
 import { formatPrice } from '@/lib/format';
-import type { Cart, InstallmentOption } from '@/lib/types';
+import type { Locations } from '@/lib/locations';
+import { routes } from '@/lib/site';
+import type {
+    Address, Cart, InstallmentOption, LegalDocumentStatus, SiteSettings,
+} from '@/lib/types';
 import { placeOrderAction, type CheckoutState } from './actions';
 
 /**
@@ -28,21 +36,141 @@ const step = (no: string, title: string, children: React.ReactNode) => (
     </section>
 );
 
-const field = (label: string, input: React.ReactNode) => (
+const field = (label: string, input: React.ReactNode, required = false) => (
     <label className="block">
-        <span className="field-label">{label}</span>
+        <FieldLabel required={required}>{label}</FieldLabel>
         {input}
     </label>
 );
 
+/**
+ * Kayıtlı adres seçilmezse (ya da misafirse) yazılan adres. Fatura bloğu aynı
+ * alanları `billing` önekiyle kullanır.
+ */
+function AddressFields({
+    locations, prefix = '', values,
+}: {
+    locations: Locations;
+    prefix?: '' | 'billing';
+    values: (name: string) => string | undefined;
+}) {
+    const name = (base: string) => (prefix ? `${prefix}${base[0].toUpperCase()}${base.slice(1)}` : base);
+    return (
+        <>
+            <div className="grid gap-3 sm:grid-cols-2">
+                {field('Ad', <input name={name('firstname')} required autoComplete="given-name" defaultValue={values(name('firstname'))} className="field-input" />, true)}
+                {field('Soyad', <input name={name('lastname')} required autoComplete="family-name" defaultValue={values(name('lastname'))} className="field-input" />, true)}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+                <CityDistrictFields
+                    locations={locations}
+                    names={{ city: name('city'), district: name('district') }}
+                    defaultCity={values(name('city'))}
+                    defaultDistrict={values(name('district'))}
+                />
+            </div>
+            {field('Açık adres', (
+                <textarea
+                    name={name('addressLine')} required minLength={5} rows={3} autoComplete="street-address"
+                    placeholder="Mahalle, sokak, bina ve daire numarası"
+                    defaultValue={values(name('addressLine'))}
+                    className="field-input min-h-[76px]"
+                />
+            ), true)}
+        </>
+    );
+}
+
+type OrderDocKey = 'on_bilgilendirme' | 'mesafeli_satis';
+
 export default function CheckoutForm({
-    cart, installments,
+    cart, installments, locations, customer, addresses, methods, legalDocuments, settings,
 }: {
     cart: Cart;
     installments: InstallmentOption[];
+    locations: Locations;
+    /** Giriş yapmış müşteri: iletişim alanları onunla dolar. Misafirde `null`. */
+    customer: { email: string; phone: string | null } | null;
+    /** Kayıtlı adresler; misafirde boş. */
+    addresses: Address[];
+    /** Şu an seçilebilen yöntemler (API hesaplıyor). Kapalı yöntem hiç çizilmez. */
+    methods: { card: boolean; transfer: boolean };
+    /** Ön bilgilendirme, mesafeli satış ve KVKK'nın yayın durumu/adresi. */
+    legalDocuments: LegalDocumentStatus[];
+    /** Satıcı künyesi ve iade süresi için ayarlar. */
+    settings: SiteSettings;
 }) {
+    const formRef = useRef<HTMLFormElement>(null);
+    const [legalDialog, setLegalDialog] = useState<LegalDialogState | null>(null);
+    const docOf = (key: string) => legalDocuments.find((doc) => doc.key === key);
+    const statementName = settings['gizlilik.notr_ekstre_adi']?.trim();
+    const anyDraft = ['on_bilgilendirme', 'mesafeli_satis'].some((key) => !docOf(key)?.isPublished);
+
+    /**
+     * Belgeyi SİPARİŞE ÖZEL açar: formdaki o anki alıcı, adres ve yöntemle
+     * doldurulur (yarım olabilir). Olay işleyicisinde: effect içinde istek ve
+     * setState zincirleme render üretiyor.
+     */
+    const openDocument = async (key: OrderDocKey, title: string) => {
+        setLegalDialog({ title, html: null, isDraft: !docOf(key)?.isPublished, error: null });
+        const data = new FormData(formRef.current ?? undefined);
+        const value = (name: string) => String(data.get(name) ?? '').trim();
+        const saved = addresses.find((item) => item.id === Number(value('addressId')));
+        const typed = (prefix: '' | 'billing') => {
+            const key2 = (base: string) => (prefix ? `${prefix}${base[0].toUpperCase()}${base.slice(1)}` : base);
+            return {
+                firstname: value(key2('firstname')), lastname: value(key2('lastname')), phone: value('phone'),
+                city: value(key2('city')), district: value(key2('district')), addressLine: value(key2('addressLine')),
+            };
+        };
+        try {
+            const response = await fetch('/api/odeme/belgeler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: value('email'),
+                    shippingAddress: saved ?? typed(''),
+                    billingAddress: data.get('billingSame') === 'on' ? null : typed('billing'),
+                    shippingRateId: Number(value('shippingRateId')) || null,
+                    paymentMethod: value('paymentMethod') === 'transfer' ? 'transfer' : 'card',
+                }),
+            });
+            const result = await response.json();
+            const document = result?.[key];
+            if (!response.ok || !document) throw new Error(result?.message || 'Belge şu anda açılamadı.');
+            setLegalDialog({ title: document.title, html: document.html, isDraft: document.isDraft, error: null });
+        } catch (error) {
+            setLegalDialog({ title, html: null, isDraft: false, error: (error as Error).message });
+        }
+    };
+
+    const docLink = (key: OrderDocKey, label: string) => {
+        const doc = docOf(key);
+        return (
+            <a
+                href={routes.page(doc?.slug ?? '')}
+                target="_blank"
+                rel="noopener"
+                className="font-semibold text-accent-500 underline underline-offset-2"
+                onClick={(event) => { event.preventDefault(); openDocument(key, doc?.title ?? label); }}
+            >
+                {label}
+            </a>
+        );
+    };
     const [state, action] = useActionState<CheckoutState, FormData>(placeOrderAction, { error: null });
-    const [method, setMethod] = useState<'card' | 'transfer'>('card');
+    // Hata sonrası React formu sıfırlıyor: kontrolsüz alanlar varsayılan değerine
+    // döner. Aksiyon gönderileni geri veriyor, varsayılan o oluyor — kullanıcı
+    // adresini yeniden yazmak zorunda kalmıyor.
+    const values = (name: string) => state.values?.[name];
+    const [addressId, setAddressId] = useState<number | 'new'>(() => {
+        const fromState = Number(state.values?.addressId);
+        if (fromState) return fromState;
+        return (addresses.find((item) => item.isDefaultShipping) ?? addresses[0])?.id ?? 'new';
+    });
+    const [billingSame, setBillingSame] = useState(true);
+    const [method, setMethod] = useState<'card' | 'transfer'>(methods.card ? 'card' : 'transfer');
+    const noMethod = !methods.card && !methods.transfer;
     const [shippingRateId, setShippingRateId] = useState(cart.selectedShippingRateId ?? cart.shippingOptions[0]?.id);
     const [installment, setInstallment] = useState(1);
 
@@ -51,7 +179,7 @@ export default function CheckoutForm({
     const grandTotal = cart.totals.subtotal - cart.totals.discount + shippingPrice;
 
     return (
-        <form action={action} className="flex flex-wrap items-start gap-[clamp(14px,2vw,24px)]">
+        <form ref={formRef} action={action} className="flex flex-wrap items-start gap-[clamp(14px,2vw,24px)]">
             <input type="hidden" name="shippingRateId" value={shippingRateId ?? ''} />
             <input type="hidden" name="paymentMethod" value={method} />
             <input type="hidden" name="installment" value={installment} />
@@ -63,11 +191,19 @@ export default function CheckoutForm({
                     </p>
                 )}
 
+                <RequiredNote />
+
                 {step('1', 'İletişim', (
                     <>
                         <div className="grid gap-3 sm:grid-cols-2">
-                            {field('E-posta', <input name="email" type="email" required autoComplete="email" className="field-input" placeholder="ornek@eposta.com" />)}
-                            {field('Telefon', <PhoneField />)}
+                            {field('E-posta', (
+                                <input
+                                    name="email" type="email" required autoComplete="email" placeholder="ornek@eposta.com"
+                                    defaultValue={values('email') ?? customer?.email ?? ''}
+                                    className="field-input"
+                                />
+                            ), true)}
+                            {field('Telefon', <PhoneField defaultValue={values('phone') ?? customer?.phone ?? ''} />, true)}
                         </div>
                         <p className="text-[12px] leading-relaxed text-slate-600">
                             Sipariş bilgileri bu adrese gönderilir. Konu satırı her zaman nötrdür.
@@ -77,21 +213,79 @@ export default function CheckoutForm({
 
                 {step('2', 'Teslimat adresi', (
                     <>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            {field('Ad', <input name="firstname" required autoComplete="given-name" className="field-input" />)}
-                            {field('Soyad', <input name="lastname" required autoComplete="family-name" className="field-input" />)}
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            {field('İl', <input name="city" required autoComplete="address-level1" className="field-input" />)}
-                            {field('İlçe', <input name="district" required autoComplete="address-level2" className="field-input" />)}
-                        </div>
-                        {field('Açık adres', (
-                            <textarea name="addressLine" required rows={3} autoComplete="street-address" className="field-input min-h-[76px]" />
-                        ))}
+                        {/* Kayıtlı adres: kart olarak seçilir, alanları yeniden yazılmaz.
+                            Sunucu adresi KİMLİKTEN okur — gizli alanlara güvenmez. */}
+                        {addresses.length > 0 && (
+                            <div className="grid gap-2.5 sm:grid-cols-2">
+                                {addresses.map((item) => (
+                                    <label
+                                        key={item.id}
+                                        className={`flex cursor-pointer items-start gap-3 rounded-[14px] border p-3.5 transition-colors ${
+                                            addressId === item.id
+                                                ? 'border-[1.5px] border-accent-500 bg-accent-50'
+                                                : 'border-slate-900/13 hover:border-slate-900/30'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio" name="adresSecimi" checked={addressId === item.id}
+                                            onChange={() => setAddressId(item.id)}
+                                            className="field-radio mt-0.5 accent-accent-500"
+                                        />
+                                        <span className="min-w-0 text-[13px] leading-relaxed">
+                                            <span className="block font-bold">{item.title}</span>
+                                            <span className="block text-slate-600">
+                                                {item.firstname} {item.lastname} · {item.district} / {item.city}
+                                            </span>
+                                            <span className="block truncate text-slate-600">{item.addressLine}</span>
+                                        </span>
+                                    </label>
+                                ))}
+                                <label
+                                    className={`flex cursor-pointer items-center gap-3 rounded-[14px] border p-3.5 text-[13px] font-bold transition-colors ${
+                                        addressId === 'new'
+                                            ? 'border-[1.5px] border-accent-500 bg-accent-50'
+                                            : 'border-dashed border-slate-900/20 hover:border-slate-900/40'
+                                    }`}
+                                >
+                                    <input
+                                        type="radio" name="adresSecimi" checked={addressId === 'new'}
+                                        onChange={() => setAddressId('new')}
+                                        className="field-radio accent-accent-500"
+                                    />
+                                    + Yeni adres gir
+                                </label>
+                            </div>
+                        )}
+
+                        {addressId === 'new' ? (
+                            <>
+                                <AddressFields locations={locations} values={values} />
+                                {customer && (
+                                    <label className="flex items-center gap-2.5 text-[13.5px]">
+                                        <input type="checkbox" name="saveAddress" defaultChecked className="field-checkbox accent-accent-500" />
+                                        Bu adresi adreslerime kaydet
+                                    </label>
+                                )}
+                            </>
+                        ) : (
+                            <input type="hidden" name="addressId" value={addressId} />
+                        )}
+
                         <label className="flex items-center gap-2.5 text-[13.5px]">
-                            <input type="checkbox" defaultChecked className="field-checkbox accent-accent-500" />
+                            <input
+                                type="checkbox" name="billingSame" checked={billingSame}
+                                onChange={(event) => setBillingSame(event.target.checked)}
+                                className="field-checkbox accent-accent-500"
+                            />
                             Fatura adresim aynı olsun
                         </label>
+
+                        {!billingSame && (
+                            <div className="space-y-3.5 rounded-[14px] border border-slate-900/10 p-4">
+                                <p className="text-[13px] font-bold">Fatura adresi</p>
+                                <AddressFields locations={locations} prefix="billing" values={values} />
+                            </div>
+                        )}
                     </>
                 ))}
 
@@ -120,7 +314,7 @@ export default function CheckoutForm({
                                     )}
                                     {option.estimatedDays && (
                                         <span className="mt-0.5 block text-[12.5px] text-slate-600">
-                                            Tahmini {option.estimatedDays.min}
+                                            Tahmini teslim {option.estimatedDays.min}
                                             {option.estimatedDays.max !== option.estimatedDays.min ? `–${option.estimatedDays.max}` : ''} iş günü
                                         </span>
                                     )}
@@ -135,11 +329,16 @@ export default function CheckoutForm({
 
                 {step('4', 'Ödeme', (
                     <>
+                        {noMethod && (
+                            <p role="alert" className="rounded-[var(--radius-md)] bg-accent-200 px-3.5 py-3 text-[13px] font-semibold text-accent-500">
+                                Şu anda çevrim içi ödeme alınamıyor. Siparişin için bize WhatsApp ya da canlı destekten yazabilirsin.
+                            </p>
+                        )}
                         <div className="flex flex-wrap gap-2">
                             {([
                                 ['card', 'Kredi / banka kartı'],
                                 ['transfer', 'Havale / EFT'],
-                            ] as const).map(([value, label]) => (
+                            ] as const).filter(([value]) => methods[value]).map(([value, label]) => (
                                 <button
                                     key={value}
                                     type="button"
@@ -154,10 +353,14 @@ export default function CheckoutForm({
                                     {label}
                                 </button>
                             ))}
-                            <span className="badge badge-teal ml-auto">
-                                <span className="dot-lg dot bg-teal-dot" />
-                                3D Secure
-                            </span>
+                            {/* Rozet yöntemin kendisini anlatır: havale seçiliyken
+                                "3D Secure" yazmak olmayan bir korumayı vaat ediyordu. */}
+                            {method === 'card' && (
+                                <span className="badge badge-teal ml-auto">
+                                    <span className="dot-lg dot bg-teal-dot" />
+                                    3D Secure
+                                </span>
+                            )}
                         </div>
 
                         {method === 'card' ? (
@@ -205,7 +408,7 @@ export default function CheckoutForm({
                             </p>
                         )}
 
-                        {field('Sipariş notu (isteğe bağlı)', (
+                        {field('Sipariş notu', (
                             <textarea name="note" rows={2} className="field-input" placeholder="Kapıcıya bırakılabilir gibi notlar" />
                         ))}
                     </>
@@ -258,25 +461,50 @@ export default function CheckoutForm({
                         <span className="price text-[26px]">{formatPrice(grandTotal)}</span>
                     </div>
 
-                    <label className="mt-4 flex items-start gap-2.5 text-[12.5px] leading-relaxed">
-                        <input type="checkbox" required className="field-checkbox mt-0.5 accent-accent-500" />
-                        <span>Ön bilgilendirme formunu ve mesafeli satış sözleşmesini okudum, onaylıyorum.</span>
-                    </label>
+                    {/* İki AYRI ve İSİMLİ onay: sunucu ikisini de denetler ve siparişe
+                        belgelerin doldurulmuş kopyasıyla birlikte yazar. */}
+                    <div className="mt-4 space-y-2.5 text-[12.5px] leading-relaxed">
+                        <label className="flex items-start gap-2.5">
+                            <input type="checkbox" name="onBilgilendirme" required defaultChecked={values('onBilgilendirme') === 'on'} className="field-checkbox mt-0.5 accent-accent-500" />
+                            <span>{docLink('on_bilgilendirme', 'Ön bilgilendirme formunu')} okudum, onaylıyorum.</span>
+                        </label>
+                        <label className="flex items-start gap-2.5">
+                            <input type="checkbox" name="mesafeliSatis" required defaultChecked={values('mesafeliSatis') === 'on'} className="field-checkbox mt-0.5 accent-accent-500" />
+                            <span>{docLink('mesafeli_satis', 'Mesafeli satış sözleşmesini')} okudum, onaylıyorum.</span>
+                        </label>
+                        <p className="text-[12px] text-slate-600">
+                            Kişisel verilerin{' '}
+                            <a href={routes.page(docOf('kvkk')?.slug ?? 'kvkk-aydinlatma-metni')} target="_blank" rel="noopener" className="underline underline-offset-2">KVKK Aydınlatma Metni</a>
+                            {' '}kapsamında işlenir. Belgelerin kopyası e-postana gönderilir.
+                        </p>
+                        {anyDraft && (
+                            <p className="rounded-[var(--radius-md)] bg-amber-tint px-3 py-2 text-[12px] font-semibold text-amber-ink">
+                                Sözleşme metinleri taslaktır; hukuk onayından sonra güncellenecek.
+                            </p>
+                        )}
+                    </div>
 
                     <SubmitButton
                         className="btn-primary mt-4 min-h-[54px] w-full justify-center rounded-[14px]"
                         pendingLabel="Sipariş oluşturuluyor…"
-                        disabled={!shippingRateId}
+                        disabled={!shippingRateId || noMethod}
                     >
-                        Siparişi tamamla
+                        Siparişi onayla ve öde
                     </SubmitButton>
 
                     <ul className="mt-4 space-y-2">
-                        {[
-                            ['bg-on-dark-berry', 'Kargo etiketinde içerik bilgisi yok'],
-                            ['bg-plum-dot', 'Ekstrede OZM DIŞ TİC. yazar'],
-                            ['bg-teal-dot', '3D Secure ile korunan ödeme'],
-                        ].map(([dot, text]) => (
+                        {(method === 'card'
+                            ? [
+                                ['bg-on-dark-berry', 'Kargo etiketinde içerik bilgisi yok'],
+                                // Unvan ayardan; doğrulanıp girilmemişse söz verilmez.
+                                ...(statementName ? [['bg-plum-dot', `Ekstrede ${statementName} yazar`]] : []),
+                                ['bg-teal-dot', '3D Secure ile korunan ödeme'],
+                            ]
+                            : [
+                                ['bg-on-dark-berry', 'Kargo etiketinde içerik bilgisi yok'],
+                                ['bg-teal-dot', 'Banka bilgileri sipariş sonrası ekranda ve e-postada'],
+                            ]
+                        ).map(([dot, text]) => (
                             <li key={text} className="flex items-start gap-2.5 text-[12px] text-slate-600">
                                 <span className={`dot mt-1.5 ${dot}`} />
                                 {text}
@@ -284,7 +512,11 @@ export default function CheckoutForm({
                         ))}
                     </ul>
                 </div>
+
+                <SellerCard settings={settings} returnDays={Number(settings['icerik.iade_suresi_gun']) || 14} />
             </aside>
+
+            {legalDialog && <LegalDocumentsDialog state={legalDialog} onClose={() => setLegalDialog(null)} />}
         </form>
     );
 }

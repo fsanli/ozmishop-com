@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Manrope, Sora } from 'next/font/google';
-import AgeGate from '@/components/AgeGate';
+import ConsentMounts from '@/components/consent/ConsentMounts';
 import JsonLd from '@/components/JsonLd';
 import { organizationSchema, websiteSchema } from '@/lib/schema';
-import { site } from '@/lib/site';
+import { isIndexable, site } from '@/lib/site';
 import './globals.css';
 
 /**
@@ -35,11 +35,15 @@ export const metadata: Metadata = {
         url: site.url,
     },
     twitter: { card: 'summary_large_image', title: site.title, description: site.description },
-    robots: {
-        index: true,
-        follow: true,
-        googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
-    },
+    // Sayfa düzeyindeki `robots` bunu EZER; indekslenmeyen ortamın asıl kapısı
+    // next.config.ts'teki `X-Robots-Tag` başlığı.
+    robots: isIndexable()
+        ? {
+            index: true,
+            follow: true,
+            googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+        }
+        : { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -53,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     İçeriğe geç
                 </a>
                 {children}
-                <AgeGate />
+                <ConsentMounts />
                 <JsonLd data={[organizationSchema(), websiteSchema()]} />
             </body>
         </html>
