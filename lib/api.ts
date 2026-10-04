@@ -402,8 +402,16 @@ export async function suggest(q: string): Promise<Suggestions> {
     return request<Suggestions>(`/catalog/suggest${query({ q })}`, { cache: 'no-store' });
 }
 
+/**
+ * Taşınmış adres (eski slug) yönlendirmesi. ÖNBELLEKLİ: bulunamayan sayfa
+ * prerender sırasında da buradan geçer; önbelleksiz istek derlemeyi düşürüyordu
+ * (pasif üst kategorinin altındaki bir slug site haritasına sızdığında olduğu
+ * gibi). Ömür kısa ('minutes'): yeni bir slug değişikliği birkaç dakikada görünür.
+ */
 export async function resolveRedirect(path: string): Promise<{ redirect: string | null }> {
-    return request<{ redirect: string | null }>(`/redirects/resolve${query({ path })}`, { cache: 'no-store' });
+    'use cache';
+    cacheLife('minutes');
+    return request<{ redirect: string | null }>(`/redirects/resolve${query({ path })}`);
 }
 
 export async function recordPostView(slug: string): Promise<void> {
