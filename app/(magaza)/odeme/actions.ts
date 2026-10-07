@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { getMyAddresses, saveAddress } from '@/lib/account';
 import { normalisePhone, phoneError } from '@/lib/phone';
+import { orderAttribution } from '@/lib/analytics/server';
 import { placeOrder } from '@/lib/cart';
 import { getCurrentCustomer } from '@/lib/session';
 import { routes } from '@/lib/site';
@@ -110,6 +111,8 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
             installment: Number(formData.get('installment') || 1),
             note: value('note') || null,
             legal: { preliminaryInfo: true, distanceSales: true },
+            // Kampanya kaynağı ve GA kimliği — yalnız analitik izni varsa (D16, D15).
+            attribution: await orderAttribution(),
         });
     } catch (error) {
         return fail((error as Error).message);
@@ -128,6 +131,8 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
     }
 
     // Kart ödemesinde sağlayıcı 3DS sayfasına yönlendirir; havalede doğrudan onaya.
+    // Sipariş sayfası erişim jetonuyla açılır (placeOrder çereze yazdı): e-posta
+    // adresi URL'ye, tarayıcı geçmişine ve analitiğe girmez.
     if (result.redirectUrl) redirect(result.redirectUrl);
-    redirect(`${routes.order(result.orderNumber)}?e=${encodeURIComponent(value('email'))}`);
+    redirect(routes.order(result.orderNumber));
 }

@@ -5,7 +5,7 @@
  * etiketlerini basmak ZORUNDA, çünkü kök yerleşim render edilememiş demektir —
  * dolayısıyla tema sınıfları da yok; stiller satır içi.
  */
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
     return (
         <html lang="tr">
             <body style={{ margin: 0, background: '#faf8f8', color: '#1a1418', fontFamily: 'system-ui, sans-serif' }}>
@@ -16,7 +16,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
                     </p>
                     <button
                         type="button"
-                        onClick={reset}
+                        onClick={() => retry()}
                         style={{
                             marginTop: 20, background: '#9b1f47', color: '#fff', border: 0, cursor: 'pointer',
                             borderRadius: 12, padding: '13px 20px', fontSize: 14, fontWeight: 700,

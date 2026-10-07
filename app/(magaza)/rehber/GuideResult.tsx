@@ -182,7 +182,8 @@ function PickCard({
                         fill
                         sizes="(max-width: 640px) 100vw, 380px"
                         className="object-cover"
-                        priority={priority}
+                        loading={priority ? 'eager' : undefined}
+                        fetchPriority={priority ? 'high' : undefined}
                     />
                 ) : (
                     <span className="absolute inset-0 grid place-items-center text-[11px] font-medium text-slate-400">Ürün görseli</span>

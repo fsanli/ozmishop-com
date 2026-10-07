@@ -3,6 +3,7 @@ import Container from '@/components/Container';
 import { getSettings } from '@/lib/api';
 import { routes } from '@/lib/site';
 import { subscribeAction } from '@/app/(gunluk)/gunluk/actions';
+import { Track } from '@/components/analytics/Track';
 
 type NewsletterState = 'ok' | 'hata' | 'izin';
 
@@ -78,6 +79,8 @@ export default async function NewsletterBlock({
                     {state === 'ok' && (
                         <p role="status" className="w-full text-[13px] font-semibold text-on-dark-teal">
                             Onay e-postası gönderdik. İçindeki bağlantıya basınca kaydın tamamlanır.
+                            {/* Kayıt İSTEĞİ (çift onay bekliyor), onaylanmış abone değil. */}
+                            <Track name="newsletter_signup" eventKey={`bulten:${source}`} params={{ status: 'pending', source }} />
                         </p>
                     )}
                     {state === 'izin' && (

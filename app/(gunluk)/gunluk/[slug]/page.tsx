@@ -10,7 +10,9 @@ import { getPost, getSitemapData } from '@/lib/api';
 import { CATEGORY_COLOR } from '@/lib/colors';
 import { formatDate, formatPrice } from '@/lib/format';
 import { one, type SearchParams } from '@/lib/listing';
+import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, postSchema } from '@/lib/schema';
+import { og } from '@/lib/seo';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import ViewPing from '@/components/ViewPing';
 import type { JournalPost, JournalPostDetail } from '@/lib/types';
@@ -43,16 +45,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title,
         description,
         alternates: { canonical: routes.post(post.slug) },
-        robots: post.isIndexable ? undefined : { index: false, follow: true },
-        openGraph: {
+        // Anahtar ancak noindex'te verilir: `robots: undefined` kökteki robots
+        // ayarını (max-image-preview dahil) SİLİYOR, sığ birleştirme.
+        ...(post.isIndexable ? {} : { robots: { index: false, follow: true } }),
+        // Görsel yazının opengraph-image.tsx dosyasından gelir (dosya metadata'yı ezer).
+        openGraph: og({
             type: 'article',
             title,
             description,
             url: `${site.url}${routes.post(post.slug)}`,
             publishedTime: post.publishedAt ?? undefined,
             authors: post.author.name ? [post.author.name] : undefined,
-            images: post.cover ? [{ url: post.cover.url, alt: post.cover.alt || post.title }] : undefined,
-        },
+        }, { defaultImage: false }),
     };
 }
 
@@ -64,7 +68,11 @@ export default async function PostPage({
 }) {
     const { slug } = await params;
     const post = await getPost(slug);
-    if (!post) notFound();
+    if (!post) {
+        // Başlığı değişen yazının eski adresi yeni slug'a 308 ile gider.
+        await redirectIfMoved(routes.post(slug));
+        notFound();
+    }
 
     const colors = CATEGORY_COLOR[post.topic?.colorKey ?? 'berry'];
 
@@ -122,7 +130,8 @@ export default async function PostPage({
                             fill
                             sizes="(max-width: 1240px) 100vw, 1160px"
                             className="object-cover"
-                            priority
+                            loading="eager"
+                            fetchPriority="high"
                         />
                     ) : (
                         <PostCoverFallback colors={colors} topic={post.topic?.name} size="lg" />

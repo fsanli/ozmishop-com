@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import Image, { getImageProps } from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import Container from '@/components/Container';
@@ -18,12 +18,52 @@ import type { Banner } from '@/lib/types';
  *   · `prefers-reduced-motion: reduce` varsa hiç başlamaz
  *   · dokunmayla kaydırma; dikey hareket sayfa kaydırması sayılır
  *
- * LCP: ilk banner `priority`, diğerleri değil. Hepsi DOM'da ve `opacity` ile
- * geçiyor — `hidden` olsaydı tarayıcı sonrakileri indirmeyi erteler ve geçiş
- * anında boş kare görünürdü.
+ * LCP: ilk banner `loading="eager"` + `fetchPriority="high"`, diğerleri lazy.
+ * Hepsi DOM'da ve `opacity` ile geçiyor — `hidden` olsaydı tarayıcı
+ * sonrakileri indirmeyi erteler ve geçiş anında boş kare görünürdü.
  */
 const AUTOPLAY_MS = 5000;
 const SWIPE_THRESHOLD = 40;
+const DESKTOP_SIZES = '(max-width: 1400px) 100vw, 1400px';
+
+/**
+ * Banner görseli. Mobil görseli olan banner tek bir `<picture>` olur: tarayıcı
+ * ekran genişliğine göre YALNIZ birini indirir.
+ *
+ * Eskiden iki ayrı `<Image priority>` vardı ve biri CSS ile gizleniyordu;
+ * gizli olan da ön yükleniyordu — mobilde 1400px'lik masaüstü görseli LCP
+ * görseliyle bant genişliği yarıştırıyordu. `preload` burada kullanılmaz:
+ * `<link rel=preload>` ekran genişliğine göre kaynak seçemez (Next dokümanı,
+ * image.md "Art direction" ve tema görseli notu).
+ */
+function BannerImage({ banner, alt, first }: { banner: Banner; alt: string; first: boolean }) {
+    const priority = first ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {};
+
+    if (!banner.mobileImage) {
+        return (
+            <Image
+                src={banner.image.url}
+                alt={alt}
+                fill
+                sizes={DESKTOP_SIZES}
+                {...priority}
+                draggable={false}
+                className="select-none object-cover"
+            />
+        );
+    }
+
+    const { props: desktop } = getImageProps({ src: banner.image.url, alt: '', fill: true, sizes: DESKTOP_SIZES });
+    const { props: mobile } = getImageProps({ src: banner.mobileImage.url, alt, fill: true, sizes: '100vw', ...priority });
+
+    return (
+        <picture>
+            {/* 640px = Tailwind `sm`: eski `hidden sm:block` ile aynı kırılım. */}
+            <source media="(min-width: 640px)" srcSet={desktop.srcSet} sizes={desktop.sizes} />
+            <img {...mobile} alt={alt} draggable={false} className="select-none object-cover" />
+        </picture>
+    );
+}
 
 export default function HeroSlider({ banners }: { banners: Banner[] }) {
     const [active, setActive] = useState(0);
@@ -86,26 +126,7 @@ export default function HeroSlider({ banners }: { banners: Banner[] }) {
 
                     const content = (
                         <>
-                            <Image
-                                src={banner.image.url}
-                                alt={shown ? banner.alt : ''}
-                                fill
-                                sizes="(max-width: 1400px) 100vw, 1400px"
-                                priority={i === 0}
-                                draggable={false}
-                                className={`select-none object-cover ${banner.mobileImage ? 'hidden sm:block' : ''}`}
-                            />
-                            {banner.mobileImage && (
-                                <Image
-                                    src={banner.mobileImage.url}
-                                    alt=""
-                                    fill
-                                    sizes="100vw"
-                                    priority={i === 0}
-                                    draggable={false}
-                                    className="select-none object-cover sm:hidden"
-                                />
-                            )}
+                            <BannerImage banner={banner} alt={shown ? banner.alt : ''} first={i === 0} />
                             {(banner.title || banner.buttonText) && (
                                 <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-ink-block/85 via-ink-block/25 to-transparent p-[clamp(18px,3vw,44px)]">
                                     {banner.title && (

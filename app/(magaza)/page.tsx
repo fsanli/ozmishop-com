@@ -4,7 +4,8 @@ import { getHome } from '@/lib/api';
 import { site } from '@/lib/site';
 
 export const metadata: Metadata = {
-    title: site.title,
+    // absolute: şablon ("%s | ozmishop") uygulanmasın; site.title zaten adı taşıyor.
+    title: { absolute: site.title },
     description: site.description,
     alternates: { canonical: '/' },
 };

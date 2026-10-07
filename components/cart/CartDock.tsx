@@ -6,7 +6,8 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Toaster, toast } from 'sonner';
 import { BagIcon, XIcon } from '@/components/icons';
 import { formatPrice } from '@/lib/format';
-import { FLASH_COOKIE } from '@/lib/flash';
+import { track } from '@/lib/analytics/gtag';
+import { ANALYTICS_EVENT_COOKIE, FLASH_COOKIE } from '@/lib/flash';
 import { routes } from '@/lib/site';
 import type { Cart } from '@/lib/types';
 
@@ -33,7 +34,7 @@ const subscribeDesktop = (callback: () => void) => {
     return () => query.removeEventListener('change', callback);
 };
 
-export default function CartDock({ flash }: { flash: string | null }) {
+export default function CartDock({ flash, analyticsEvent }: { flash: string | null; analyticsEvent?: string | null }) {
     const isDesktop = useSyncExternalStore(
         subscribeDesktop,
         () => window.matchMedia('(min-width: 1024px)').matches,
@@ -73,6 +74,19 @@ export default function CartDock({ flash }: { flash: string | null }) {
 
         document.cookie = `${FLASH_COOKIE}=; path=/; max-age=0`;
     }, [flash, kind, detail]);
+
+    /* Sepet işleminin GA4 olayı (sunucu aksiyonu yalnız başarıda ve izin
+       varken yazar). Gönderilir ve silinir; bozuk JSON sessizce atılır. */
+    useEffect(() => {
+        if (!analyticsEvent) return;
+        try {
+            const { name, params } = JSON.parse(analyticsEvent) as { name: string; params: Record<string, unknown> };
+            track(name, params);
+        } catch {
+            // Bozuk çerez: yok say.
+        }
+        document.cookie = `${ANALYTICS_EVENT_COOKIE}=; path=/; max-age=0`;
+    }, [analyticsEvent]);
 
     // İçerik AÇILINCA çekilir: hiç açılmayacak bir panel için her gezinmede
     // sepet isteği atmak israf olurdu.

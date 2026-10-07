@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useAgeAccepted } from '@/components/AgeGate';
 import {
-    PREFERENCES_EVENT, readConsent, serverConsent, subscribeConsent, writeConsent,
+    ANALYTICS_ENABLED, PREFERENCES_EVENT, readConsent, serverConsent, subscribeConsent, writeConsent,
 } from '@/lib/consent';
 
 /**
@@ -11,7 +11,8 @@ import {
  *
  * "Tümünü kabul et" ile "Yalnızca zorunlu" EŞİT ağırlıkta: reddetmeyi
  * zorlaştıran bir tasarım geçerli onay sayılmaz. İşlevsel çerezler (canlı
- * destek) onay verilmeden yüklenmez — `ConsentGate`.
+ * destek) onay verilmeden yüklenmez — `ConsentGate`. Analitik seçeneği yalnız
+ * GA4 tanımlıyken görünür; izin yoksa gtag.js hiç yüklenmez (`AnalyticsLoader`).
  */
 export default function CookieBanner({ policyHref }: { policyHref: string }) {
     const consent = useSyncExternalStore(subscribeConsent, readConsent, serverConsent);
@@ -19,11 +20,13 @@ export default function CookieBanner({ policyHref }: { policyHref: string }) {
     const [managing, setManaging] = useState(false);
     const [reopened, setReopened] = useState(false);
     const [functional, setFunctional] = useState(consent.functional);
+    const [analytics, setAnalytics] = useState(consent.analytics);
 
     // Footer'daki bağlantı bandı ayar görünümüyle yeniden açar.
     useEffect(() => {
         const open = () => {
             setFunctional(readConsent().functional);
+            setAnalytics(readConsent().analytics);
             setManaging(true);
             setReopened(true);
         };
@@ -33,8 +36,8 @@ export default function CookieBanner({ policyHref }: { policyHref: string }) {
 
     if (!ageAccepted || (consent.decided && !reopened)) return null;
 
-    const save = (next: { functional: boolean }) => {
-        writeConsent({ functional: next.functional, analytics: false });
+    const save = (next: { functional: boolean; analytics: boolean }) => {
+        writeConsent({ functional: next.functional, analytics: ANALYTICS_ENABLED && next.analytics });
         setManaging(false);
         setReopened(false);
     };
@@ -47,8 +50,9 @@ export default function CookieBanner({ policyHref }: { policyHref: string }) {
         >
             <h2 className="text-[14.5px] font-bold">Çerezler</h2>
             <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">
-                Siteyi çalıştırmak için zorunlu çerezler kullanıyoruz (oturum, sepet). Canlı destek gibi işlevsel çerezler
-                yalnızca izin verirsen çalışır. Ayrıntılar: <a href={policyHref} className="link">Çerez Politikası</a>.
+                Siteyi çalıştırmak için zorunlu çerezler kullanıyoruz (oturum, sepet). Canlı destek gibi işlevsel
+                {ANALYTICS_ENABLED ? ' ve ziyaret istatistiği için analitik' : ''} çerezler yalnızca izin verirsen çalışır.
+                Ayrıntılar: <a href={policyHref} className="link">Çerez Politikası</a>.
             </p>
 
             {managing && (
@@ -61,14 +65,25 @@ export default function CookieBanner({ policyHref }: { policyHref: string }) {
                         <span><strong className="font-bold">İşlevsel</strong><span className="block text-slate-600">Canlı destek penceresi (tawk.to).</span></span>
                         <input type="checkbox" checked={functional} onChange={(event) => setFunctional(event.target.checked)} className="field-checkbox mt-1 accent-accent-500" />
                     </label>
+                    {ANALYTICS_ENABLED && (
+                        <label className="flex items-start justify-between gap-3">
+                            <span>
+                                <strong className="font-bold">Analitik</strong>
+                                <span className="block text-slate-600">
+                                    Ziyaret ve satış istatistiği (Google Analytics). Adın, e-postan, telefonun ve adresin gönderilmez.
+                                </span>
+                            </span>
+                            <input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} className="field-checkbox mt-1 accent-accent-500" />
+                        </label>
+                    )}
                 </div>
             )}
 
             <div className="mt-3.5 flex flex-wrap gap-2">
-                <button type="button" onClick={() => save({ functional: true })} className="btn-secondary btn-sm flex-[1_1_150px] justify-center">Tümünü kabul et</button>
-                <button type="button" onClick={() => save({ functional: false })} className="btn-secondary btn-sm flex-[1_1_150px] justify-center">Yalnızca zorunlu</button>
+                <button type="button" onClick={() => save({ functional: true, analytics: true })} className="btn-secondary btn-sm flex-[1_1_150px] justify-center">Tümünü kabul et</button>
+                <button type="button" onClick={() => save({ functional: false, analytics: false })} className="btn-secondary btn-sm flex-[1_1_150px] justify-center">Yalnızca zorunlu</button>
                 {managing ? (
-                    <button type="button" onClick={() => save({ functional })} className="btn-accent btn-sm flex-[1_1_150px] justify-center">Seçimi kaydet</button>
+                    <button type="button" onClick={() => save({ functional, analytics })} className="btn-accent btn-sm flex-[1_1_150px] justify-center">Seçimi kaydet</button>
                 ) : (
                     <button type="button" onClick={() => setManaging(true)} className="btn-soft btn-sm flex-[1_1_150px] justify-center">Tercihleri yönet</button>
                 )}

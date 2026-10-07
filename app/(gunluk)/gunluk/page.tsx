@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import Container from '@/components/Container';
 import EmptyState from '@/components/EmptyState';
@@ -12,15 +13,28 @@ import { CATEGORY_COLOR } from '@/lib/colors';
 import { formatDate } from '@/lib/format';
 import { one, type SearchParams } from '@/lib/listing';
 import { journalSchema } from '@/lib/schema';
-import { routes, site } from '@/lib/site';
+import { listingIndexMeta, og } from '@/lib/seo';
+import { pageOf } from '@/lib/seo-url';
+import { routes } from '@/lib/site';
 import type { JournalPost } from '@/lib/types';
 import PostCoverFallback from '@/components/gunluk/PostCoverFallback';
 
-export const metadata: Metadata = {
-    title: 'Günlük — malzeme, hijyen ve güvenlik yazıları',
-    description: 'Malzeme, hijyen, güvenlik ve ilişki üzerine kısa yazılar. Ürün satmak için değil, doğru bilgi vermek için yazılır.',
-    alternates: { canonical: `${site.url}${routes.journal}` },
-};
+/**
+ * Konu (`?konu=`) yalnız bir süzgeç: indekslenmez ve site haritasında yok.
+ * Filtresiz sayfa N kendine canonical verir — hepsini `/gunluk`'a bağlamak
+ * eski yazıları "kopya" ilan ediyordu.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
+    const search = await searchParams;
+    const title = 'Günlük — malzeme, hijyen ve güvenlik yazıları';
+    const description = 'Malzeme, hijyen, güvenlik ve ilişki üzerine kısa yazılar. Ürün satmak için değil, doğru bilgi vermek için yazılır.';
+    return {
+        title,
+        description,
+        ...listingIndexMeta(routes.journal, search),
+        openGraph: og({ title, description, url: routes.journal }),
+    };
+}
 
 export default function JournalPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
     return (
@@ -37,7 +51,7 @@ export default function JournalPage({ searchParams }: { searchParams: Promise<Se
 async function JournalBody({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const params = await searchParams;
     const topicSlug = one(params.konu);
-    const page = Number(one(params.sayfa)) || 1;
+    const page = pageOf(params.sayfa);
     const newsletter = one(params.bulten);
 
     const [journal, topics] = await Promise.all([
@@ -46,6 +60,10 @@ async function JournalBody({ searchParams }: { searchParams: Promise<SearchParam
     ]);
 
     const activeTopic = topicSlug ? topics.find((topic) => topic.slug === topicSlug) : undefined;
+    // Bilinmeyen konu ve var olmayan sayfa boş bir 200 değil, 404 arayüzü.
+    if (topicSlug && !activeTopic) notFound();
+    if (page > Math.max(1, journal.pagination.totalPages)) notFound();
+
     const all = [journal.featured, ...journal.items].filter(Boolean) as JournalPost[];
 
     if (all.length === 0) {
@@ -160,7 +178,8 @@ function FeaturedCard({ post }: { post: JournalPost }) {
                         fill
                         sizes="(max-width: 1024px) 100vw, 780px"
                         className="object-cover"
-                        priority
+                        loading="eager"
+                        fetchPriority="high"
                     />
                 ) : (
                     <PostCoverFallback colors={colors} topic={post.topic?.name} />

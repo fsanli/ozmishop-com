@@ -98,7 +98,8 @@ export default function ProductGallery({ images, name }: { images: ProductImage[
                         alt={i === index ? (image.alt || name) : ''}
                         fill
                         sizes="(max-width: 1024px) 100vw, 50vw"
-                        priority={i === 0}
+                        loading={i === 0 ? 'eager' : undefined}
+                        fetchPriority={i === 0 ? 'high' : undefined}
                         draggable={false}
                         aria-hidden={i !== index}
                         className={`select-none object-cover transition-opacity duration-500 ${

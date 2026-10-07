@@ -99,6 +99,8 @@ export interface VariantOption {
 export interface ProductVariant {
     id: number;
     sku: string;
+    /** Üreticinin barkodu (GTIN/EAN); girilmemişse null. */
+    barcode?: string | null;
     name: string;
     price: number;
     compareAtPrice: number | null;
@@ -642,6 +644,8 @@ export interface JournalPost {
     topic: { id: number; name: string; slug: string; colorKey: ColorKey } | null;
     author: { name: string; title: string | null; bio: string | null; image: ApiImage | null };
     publishedAt: string | null;
+    /** Son anlamlı değişiklik; yazı şemasında `dateModified`. */
+    updatedAt?: string | null;
     readMinutes: number;
     isFeatured: boolean;
     metaTitle: string | null;

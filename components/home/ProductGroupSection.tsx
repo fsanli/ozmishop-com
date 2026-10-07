@@ -2,6 +2,7 @@ import { routes } from '@/lib/site';
 import type { ProductCard as ProductCardData, ProductGroup } from '@/lib/types';
 import ProductCard from '../ProductCard';
 import SectionShell from './SectionShell';
+import { TrackList } from '@/components/analytics/Track';
 
 /**
  * Ürün grubu bloğu. Ürünler `HomeSections`'ta çekilir (grup başına ayrı
@@ -36,17 +37,18 @@ export default function ProductGroupSection({
             subtitle={subtitle}
             actionHref={group ? routes.group(group.slug) : undefined}
         >
+            <TrackList id={`anasayfa:${group?.code ?? title ?? 'grup'}`} name={title || group?.name || 'Anasayfa'} products={products.slice(0, limit)} />
             {layout === 'grid' ? (
                 <div className="grid gap-[clamp(10px,1.4vw,16px)] [grid-template-columns:repeat(auto-fill,minmax(min(50%-6px,210px),1fr))]">
                     {products.slice(0, limit).map((product, index) => (
-                        <ProductCard key={product.id} product={product} priority={priority && index < 4} />
+                        <ProductCard key={product.id} product={product} priority={priority && index < 2} />
                     ))}
                 </div>
             ) : (
                 <div className="no-scrollbar -mx-[clamp(16px,4vw,44px)] flex gap-[clamp(10px,1.4vw,16px)] overflow-x-auto px-[clamp(16px,4vw,44px)] pb-1 sm:mx-0 sm:px-0">
                     {products.slice(0, limit).map((product, index) => (
                         <div key={product.id} className="w-44 shrink-0 sm:w-[210px]">
-                            <ProductCard product={product} priority={priority && index < 4} />
+                            <ProductCard product={product} priority={priority && index < 2} />
                         </div>
                     ))}
                 </div>

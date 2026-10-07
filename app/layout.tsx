@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Manrope, Sora } from 'next/font/google';
 import ConsentMounts from '@/components/consent/ConsentMounts';
-import JsonLd from '@/components/JsonLd';
-import { organizationSchema, websiteSchema } from '@/lib/schema';
 import { isIndexable, site } from '@/lib/site';
+import { og } from '@/lib/seo';
 import './globals.css';
+import SiteJsonLd from '@/components/SiteJsonLd';
 
 /**
  * Kök yerleşim KABUK İÇERMEZ. Header/Footer grup yerleşimlerinde:
@@ -26,15 +26,10 @@ export const metadata: Metadata = {
     applicationName: site.name,
     // Yetişkin içerik işaretleri: aile filtreleri ve arama motorları bunu okur.
     other: { rating: 'adult', RATING: 'RTA-5042-1996-1400-1577-RTA' },
-    openGraph: {
-        type: 'website',
-        locale: site.locale,
-        siteName: site.name,
-        title: site.title,
-        description: site.description,
-        url: site.url,
-    },
-    twitter: { card: 'summary_large_image', title: site.title, description: site.description },
+    openGraph: og({ title: site.title, description: site.description, url: site.url }),
+    // Yalnız kart tipi: başlık ve açıklama verilirse alt sayfalar ana sayfanınkini
+    // miras alır. Verilmeyince X/Twitter og:title ve og:description'a düşer.
+    twitter: { card: 'summary_large_image' },
     // Sayfa düzeyindeki `robots` bunu EZER; indekslenmeyen ortamın asıl kapısı
     // next.config.ts'teki `X-Robots-Tag` başlığı.
     robots: isIndexable()
@@ -58,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </a>
                 {children}
                 <ConsentMounts />
-                <JsonLd data={[organizationSchema(), websiteSchema()]} />
+                <SiteJsonLd />
             </body>
         </html>
     );

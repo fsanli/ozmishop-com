@@ -277,11 +277,19 @@ export async function getJournal(params: { topic?: string; page?: number } = {})
     return request<JournalIndex>(`/gunluk${query(params)}`);
 }
 
+/**
+ * Bulunamayan yazı KISA önbelleklenir: zamanlanmış bir yazının adresi yayın
+ * saatinden önce istenirse null günlerce önbellekte kalıp yazıyı 404'te
+ * tutuyordu. Asıl tazeleme API'nin yayın görevinden (`post:<slug>`) gelir;
+ * kısa ömür, o çağrı kaybolursa diye güvenlik ağı.
+ */
 export async function getPost(slug: string): Promise<JournalPostDetail | null> {
     'use cache';
     cacheTag('posts', `post:${slug}`);
-    cacheLife('days');
-    return tryRequest<JournalPostDetail>(`/gunluk/${slug}`);
+    const post = await tryRequest<JournalPostDetail>(`/gunluk/${slug}`);
+    if (post) cacheLife('days');
+    else cacheLife('minutes');
+    return post;
 }
 
 export async function getJournalTopics(): Promise<JournalTopic[]> {
@@ -305,7 +313,7 @@ export async function getJournalTopic(slug: string): Promise<JournalTopic | null
  * `product:{slug}` düşürüyor (bkz. cache.js → case 'review'), o yüzden burada
  * ürünün kendi etiketi yeterli.
  */
-export async function getReviews(slug: string, page = 1): Promise<ReviewList | null> {
+export async function getReviews(slug: string, page: number): Promise<ReviewList | null> {
     'use cache';
     cacheTag('products', `product:${slug}`);
     cacheLife('hours');
@@ -387,7 +395,9 @@ export async function getGuideResults(path: string): Promise<GuideResult> {
 
 export async function getSitemapData(): Promise<SitemapData> {
     'use cache';
-    cacheTag('products', 'categories', 'brands', 'groups', 'pages');
+    // posts/topics eksikti: yazı yayınlanınca ya da slug'ı değişince site haritası
+    // önbellek ömrü dolana kadar eski kalıyordu.
+    cacheTag('products', 'categories', 'brands', 'groups', 'pages', 'posts', 'topics');
     cacheLife('hours');
     return request<SitemapData>('/catalog/sitemap');
 }
@@ -410,6 +420,7 @@ export async function suggest(q: string): Promise<Suggestions> {
  */
 export async function resolveRedirect(path: string): Promise<{ redirect: string | null }> {
     'use cache';
+    cacheTag('redirects', `redirect:${path}`);
     cacheLife('minutes');
     return request<{ redirect: string | null }>(`/redirects/resolve${query({ path })}`);
 }
@@ -427,6 +438,16 @@ export async function recordPostView(slug: string): Promise<void> {
  * Bülten kaydı. Hata mesajı çağırana AYNEN döner: API zaten "zaten kayıtlısınız"
  * demiyor (bilgi sızdırmamak için), yani buradan sızacak bir şey yok.
  */
+/** Vitrinde görülen 404 (izleme, D23): yalnız yol ve yönlendirenin alan adı. */
+export async function recordNotFound(path: string, referrerHost: string): Promise<void> {
+    await request('/events/not-found', {
+        method: 'POST',
+        body: JSON.stringify({ path, referrerHost }),
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+    });
+}
+
 export async function recordProductView(slug: string): Promise<void> {
     await request('/events/product-view', {
         method: 'POST',

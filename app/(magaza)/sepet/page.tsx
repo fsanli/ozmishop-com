@@ -14,6 +14,7 @@ import { routes } from '@/lib/site';
 import {
     applyCouponAction, removeCouponAction, removeItemAction, setQuantityAction,
 } from './actions';
+import { TrackCart } from '@/components/analytics/Track';
 
 export const metadata: Metadata = {
     title: 'Sepetim',
@@ -71,6 +72,7 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
 
     return (
         <>
+            <TrackCart name="view_cart" cart={cart} />
             {error && (
                 <p role="alert" className="mb-4 rounded-[var(--radius-md)] bg-accent-200 px-4 py-3 text-[13.5px] font-semibold text-accent-500">
                     {error}

@@ -1,3 +1,4 @@
+import { indexPolicy, pageOf } from './seo-url';
 import type { Facets } from './types';
 
 /**
@@ -32,14 +33,16 @@ export interface ListingState {
     minPrice?: number;
     maxPrice?: number;
     inStock: boolean;
+    /** Kategori/koleksiyon içinde tek marka süzgeci (`marka=<slug>`). */
+    brand?: string;
     sort: string;
     page: number;
     q?: string;
 }
 
 export function readListingParams(searchParams: SearchParams): ListingState {
-    const page = Number(one(searchParams.sayfa) ?? 1);
     const sort = one(searchParams.sirala) ?? 'featured';
+    const brand = one(searchParams.marka);
     return {
         values: many(searchParams.secim).map(Number).filter((value) => Number.isFinite(value) && value > 0),
         specs: many(searchParams.ozellik).filter((item) => /^[a-z0-9-]+:[a-z0-9-]+$/.test(item)),
@@ -47,8 +50,10 @@ export function readListingParams(searchParams: SearchParams): ListingState {
         minPrice: Number(one(searchParams.min)) || undefined,
         maxPrice: Number(one(searchParams.max)) || undefined,
         inStock: one(searchParams.stokta) === '1',
+        brand: brand && /^[a-z0-9-]+$/.test(brand) ? brand : undefined,
         sort: SORT_OPTIONS.some((option) => option.value === sort) ? sort : 'featured',
-        page: Number.isFinite(page) && page > 0 ? page : 1,
+        // Geçersiz `sayfa` proxy'de temizlenir; buraya ulaşırsa 1 sayılır, API'ye gitmez.
+        page: pageOf(searchParams.sayfa),
         q: one(searchParams.q),
     };
 }
@@ -143,7 +148,7 @@ export function clearFiltersHref(basePath: string, searchParams: SearchParams): 
 
 export function hasActiveFilters(state: ListingState): boolean {
     return state.values.length > 0 || state.specs.length > 0 || state.specRanges.length > 0
-        || state.inStock || state.minPrice !== undefined || state.maxPrice !== undefined;
+        || state.inStock || state.brand !== undefined || state.minPrice !== undefined || state.maxPrice !== undefined;
 }
 
 export function pageHref(basePath: string, searchParams: SearchParams, page: number): string {
@@ -158,26 +163,22 @@ export function pageHref(basePath: string, searchParams: SearchParams, page: num
 }
 
 /**
- * Hangi listeleme adresleri indekslenir?
- * Tek facet indekslenir; çoklu kombinasyon, fiyat aralığı, arama ve 2+ sayfalar
- * `noindex, follow` alır — aksi halde Google için sonsuz bir tarama alanı doğar.
+ * Hangi listeleme adresleri indekslenir? Kural `lib/seo-url.ts`'te: yalnız
+ * filtresiz liste ve filtresiz sayfa N. Sıralama, stok, facet, fiyat, marka ve
+ * arama `noindex, follow` alır — aksi halde Google için sonsuz bir tarama alanı
+ * doğar ve aynı ürünler onlarca adreste kopya görünür.
  */
-export function shouldIndex(searchParams: SearchParams): boolean {
-    if (one(searchParams.q)) return false;
-    const facetCount = many(searchParams.secim).length + many(searchParams.ozellik).length;
-    if (facetCount > 1) return false;
-    if (many(searchParams.aralik).length > 0) return false;
-    if (one(searchParams.min) || one(searchParams.max)) return false;
-    const page = Number(one(searchParams.sayfa) ?? 1);
-    if (Number.isFinite(page) && page > 1) return false;
-    return true;
+export function shouldIndex(searchParams: SearchParams, basePath = ''): boolean {
+    return indexPolicy(searchParams, basePath).index;
 }
 
-/** Sayfa 2+ kendine canonical verir; yoksa içerik "kopya" sayılıp kaybolur. */
-export function canonicalFor(basePath: string, searchParams: SearchParams): string {
-    const page = Number(one(searchParams.sayfa) ?? 1);
-    if (Number.isFinite(page) && page > 1) return `${basePath}?sayfa=${page}`;
-    return basePath;
+/**
+ * Canonical yalnız indekslenen adreste basılır ve KENDİSİDİR (sayfa 2+ dahil);
+ * indekslenmeyen adreste `undefined` — noindex ile başka adrese canonical
+ * çelişkili sinyaldir.
+ */
+export function canonicalFor(basePath: string, searchParams: SearchParams): string | undefined {
+    return indexPolicy(searchParams, basePath).canonical;
 }
 
 /** Seçili facet değerlerinin okunabilir adları (başlık altında "seçili filtreler" için). */

@@ -7,9 +7,11 @@ import { CheckIcon } from '@/components/icons';
 import { getOrder } from '@/lib/cart';
 import { formatPrice } from '@/lib/format';
 import TrackingLine from '@/components/order/TrackingLine';
+import PaymentPendingPoller from '@/components/order/PaymentPendingPoller';
 import TransferPanel from '@/components/order/TransferPanel';
 import { routes } from '@/lib/site';
 import type { OrderStatus } from '@/lib/types';
+import { findOrderAction } from './actions';
 
 export const metadata: Metadata = {
     title: 'Sipariş onayı',
@@ -24,24 +26,38 @@ const STEPS: { status: OrderStatus; label: string }[] = [
     { status: 'delivered', label: 'Teslim edildi' },
 ];
 
+type OrderSearch = { e?: string; odeme?: string; hata?: string };
+
 async function OrderContent({
     params, searchParams,
 }: {
     params: Promise<{ no: string }>;
-    searchParams: Promise<{ e?: string }>;
+    searchParams: Promise<OrderSearch>;
 }) {
-    const [{ no }, { e }] = await Promise.all([params, searchParams]);
+    // `e`: e-postadaki eski bağlantılar. Yeni akış çerezdeki erişim jetonuyla açar.
+    const [{ no }, { e, hata }] = await Promise.all([params, searchParams]);
     const order = await getOrder(no, e);
 
     if (!order) {
         return (
-            <div className="card card-xl mx-auto max-w-[460px] p-[clamp(24px,4vw,36px)] text-center">
-                <h1 className="heading-3">Sipariş bulunamadı</h1>
+            <div className="card card-xl mx-auto max-w-[460px] p-[clamp(24px,4vw,36px)]">
+                <h1 className="heading-3">Siparişini görüntüle</h1>
                 <p className="mt-3 text-[14px] leading-relaxed text-slate-600">
-                    Bağlantı eksik ya da sipariş sana ait değil. Sipariş numaran ve e-posta adresinle
-                    tekrar deneyebilirsin.
+                    Bu sipariş bu tarayıcıda kayıtlı değil. Sipariş verirken yazdığın e-posta adresiyle açabilirsin.
                 </p>
-                <Link href={routes.home} className="btn-secondary mt-5">Anasayfaya dön</Link>
+                {/* POST: e-posta adrese, tarayıcı geçmişine ve analitiğe girmez. */}
+                <form action={findOrderAction} className="mt-4 space-y-3">
+                    <input type="hidden" name="no" value={no} />
+                    <div>
+                        <label className="field-label" htmlFor="siparis-eposta">E-posta</label>
+                        <input id="siparis-eposta" name="email" type="email" required autoComplete="email" className="field-input w-full" />
+                    </div>
+                    {hata && <p className="text-[13px] text-accent-500" role="alert">Bu e-postayla eşleşen bir sipariş bulunamadı.</p>}
+                    <button type="submit" className="btn-accent w-full justify-center">Siparişi aç</button>
+                </form>
+                <p className="mt-4 text-[13px] text-slate-600">
+                    Üyeysen <Link href={routes.login} className="link">giriş yaparak</Link> tüm siparişlerini görebilirsin.
+                </p>
             </div>
         );
     }
@@ -51,7 +67,10 @@ async function OrderContent({
     // ve hiç ödenmemiş havale eskiden "ödeme bekleniyor" görünüyordu.
     const closed = order.status === 'cancelled' || order.status === 'refunded';
     const failed = order.paymentState === 'failed';
-    const awaitingTransfer = !closed && ['awaiting_payment', 'partially_paid'].includes(order.paymentState);
+    // Kart: banka dönüşü geldi ama sağlayıcının sunucu bildirimi henüz yok.
+    // `?odeme=fail` olsa da kesin sonuç bildirimdir; sayfa nötr bekler.
+    const verifying = order.paymentMethod === 'card' && order.status === 'payment_pending';
+    const awaitingTransfer = order.paymentMethod === 'transfer' && !closed && ['awaiting_payment', 'partially_paid'].includes(order.paymentState);
     const showTransfer = Boolean(order.transfer) && (!order.transfer!.closed || order.transfer!.paid > 0 || order.transfer!.refunded > 0);
 
     return (
@@ -59,6 +78,8 @@ async function OrderContent({
             <div className="min-w-0 flex-[999_1_360px]">
                 {failed ? (
                     <span className="badge badge-accent">Ödeme tamamlanamadı</span>
+                ) : verifying ? (
+                    <span className="badge badge-neutral">Ödeme doğrulanıyor</span>
                 ) : closed ? (
                     <span className="badge badge-neutral">{order.status === 'refunded' ? 'İade edildi' : 'Sipariş iptal edildi'}</span>
                 ) : (
@@ -69,12 +90,15 @@ async function OrderContent({
                 )}
 
                 <h1 className="heading-1 mt-4">
-                    {failed ? 'Ödeme alınamadı' : closed ? 'Sipariş kapandı' : `Teşekkürler,`}
-                    {!failed && !closed && <><br />{order.shippingAddress.firstname}.</>}
+                    {failed ? 'Ödeme alınamadı' : verifying ? 'Ödemen doğrulanıyor' : closed ? 'Sipariş kapandı' : `Teşekkürler,`}
+                    {!failed && !verifying && !closed && <><br />{order.shippingAddress.firstname}.</>}
                 </h1>
 
                 <p className="mt-4 max-w-[58ch] text-[15px] leading-relaxed text-slate-600">
-                    {failed ? (
+                    {verifying ? (
+                        <>Sipariş <strong className="font-bold text-slate-900">{order.orderNumber}</strong> oluştu. Bankanın
+                        onayı birkaç saniye içinde gelir; ödeme kesinleşmeden kartından tutar çekilmiş sayılmaz.</>
+                    ) : failed ? (
                         <>Sipariş <strong className="font-bold text-slate-900">{order.orderNumber}</strong> için ödeme tamamlanamadı
                         ve ürünler stoğa geri verildi. Sepetini yeniden oluşturup tekrar deneyebilirsin.</>
                     ) : closed ? (
@@ -90,11 +114,13 @@ async function OrderContent({
                     )}
                 </p>
 
+                {verifying && <PaymentPendingPoller />}
+
                 {showTransfer && !failed && (
                     <TransferPanel settlement={order.transfer!} orderNumber={order.orderNumber} className="mt-5" />
                 )}
 
-                {!failed && !closed && (
+                {!failed && !closed && !verifying && (
                     <div className="card mt-5 px-[22px] py-1.5">
                         {STEPS.map((item, index) => {
                             const done = index <= reached;
@@ -158,7 +184,7 @@ export default function OrderPage({
     params, searchParams,
 }: {
     params: Promise<{ no: string }>;
-    searchParams: Promise<{ e?: string }>;
+    searchParams: Promise<OrderSearch>;
 }) {
     return (
         <Container className="pt-[clamp(18px,3vw,30px)]">

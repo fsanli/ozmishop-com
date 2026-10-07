@@ -6,11 +6,14 @@ import EmptyState from '@/components/EmptyState';
 import JsonLd from '@/components/JsonLd';
 import ProductGrid from '@/components/ProductGrid';
 import { getProductGroup, getSitemapData } from '@/lib/api';
-import { one, pageHref, type SearchParams } from '@/lib/listing';
+import { pageHref, type SearchParams } from '@/lib/listing';
+import { listingIndexMeta, og } from '@/lib/seo';
+import { pageOf } from '@/lib/seo-url';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, itemListSchema } from '@/lib/schema';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import { Suspense } from 'react';
+import { TrackList } from '@/components/analytics/Track';
 
 export async function generateStaticParams() {
     try {
@@ -22,26 +25,39 @@ export async function generateStaticParams() {
     }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-    const { slug } = await params;
+export async function generateMetadata({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ slug: string }>;
+    searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+    const [{ slug }, search] = await Promise.all([params, searchParams]);
     const group = await getProductGroup(slug, { pageSize: 1 });
     if (!group) return { title: 'Koleksiyon bulunamadı' };
 
     const title = group.metaTitle || group.name;
     const description = group.metaDescription || group.description || `${group.name} — ${site.description}`;
 
-    return { title, description, alternates: { canonical: routes.group(group.slug) } };
+    // Sayfa 2+ eskiden ilk sayfaya canonical veriyordu: farklı ürünleri "kopya" ilan ediyordu.
+    return {
+        title,
+        description,
+        ...listingIndexMeta(routes.group(group.slug), search),
+        openGraph: og({ title, description, url: `${site.url}${routes.group(group.slug)}` }),
+    };
 }
 
 /** Koleksiyon ürünleri sayfa parametresine bağlı olduğu için ayrı bir bileşende akar. */
 async function GroupProducts({ slug, searchParams: searchParamsPromise }: { slug: string; searchParams: Promise<SearchParams> }) {
     const searchParams = await searchParamsPromise;
-    const page = Number(one(searchParams.sayfa) ?? 1) || 1;
+    const page = pageOf(searchParams.sayfa);
     const group = await getProductGroup(slug, { page, pageSize: 24 });
     if (!group) notFound();
 
     const items = group.items ?? [];
     const pagination = group.pagination;
+    if (page > Math.max(1, pagination?.totalPages ?? 1)) notFound();
 
     if (!items.length) {
         return <EmptyState title="Bu koleksiyonda şu an ürün yok" description="Kısa süre içinde yeni ürünler eklenecek." />;
@@ -49,7 +65,8 @@ async function GroupProducts({ slug, searchParams: searchParamsPromise }: { slug
 
     return (
         <>
-            <ProductGrid products={items} priorityCount={4} back={routes.group(slug)} />
+            <ProductGrid products={items} priorityCount={2} back={routes.group(slug)} />
+            <TrackList id={routes.group(slug)} name={group.name} products={items} offset={((pagination?.page ?? 1) - 1) * (pagination?.pageSize ?? 24)} />
             {pagination && pagination.totalPages > 1 && (
                 <nav aria-label="Sayfalama" className="mt-8 flex items-center justify-center gap-3">
                     {pagination.page > 1 ? (

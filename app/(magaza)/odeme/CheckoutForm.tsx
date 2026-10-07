@@ -7,6 +7,8 @@ import PhoneField from '@/components/form/PhoneField';
 import SubmitButton from '@/components/form/SubmitButton';
 import LegalDocumentsDialog, { type LegalDialogState } from '@/components/legal/LegalDocumentsDialog';
 import SellerCard from '@/components/legal/SellerCard';
+import { track } from '@/lib/analytics/gtag';
+import { CURRENCY, fromCartItem, valueOf } from '@/lib/analytics/items';
 import { formatPrice } from '@/lib/format';
 import type { Locations } from '@/lib/locations';
 import { routes } from '@/lib/site';
@@ -178,8 +180,21 @@ export default function CheckoutForm({
     const shippingPrice = selected?.price ?? 0;
     const grandTotal = cart.totals.subtotal - cart.totals.discount + shippingPrice;
 
+    /*
+     * Kargo ve ödeme bilgisi olayları GÖNDERİMDE: iki seçimin de varsayılanı
+     * var, kullanıcı hiç değiştirmeden ödeyebilir. Bunlar NİYET olayıdır;
+     * sipariş başarısız olabilir. Satın alma sunucudan, tahsilat
+     * doğrulanınca gider (API, D15). Form verisi (ad, adres, e-posta) olaya girmez.
+     */
+    const trackCheckoutSteps = () => {
+        const items = cart.items.map((item) => fromCartItem(item));
+        const common = { currency: CURRENCY, value: valueOf(items, cart.totals.discount), items };
+        track('add_shipping_info', { ...common, shipping_tier: selected?.name });
+        track('add_payment_info', { ...common, payment_type: method === 'transfer' ? 'havale' : 'kart' });
+    };
+
     return (
-        <form ref={formRef} action={action} className="flex flex-wrap items-start gap-[clamp(14px,2vw,24px)]">
+        <form ref={formRef} action={action} onSubmit={trackCheckoutSteps} className="flex flex-wrap items-start gap-[clamp(14px,2vw,24px)]">
             <input type="hidden" name="shippingRateId" value={shippingRateId ?? ''} />
             <input type="hidden" name="paymentMethod" value={method} />
             <input type="hidden" name="installment" value={installment} />

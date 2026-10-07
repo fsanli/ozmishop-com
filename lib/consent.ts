@@ -5,33 +5,19 @@
  * tercih yalnız tarayıcıda `useSyncExternalStore` ile izlenir. Sunucu anlık
  * görüntüsü "karar verilmedi + kapalı": üçüncü parti betik sunucuda hiç basılmaz.
  *
- * Kategoriler:
- *   zorunlu    — oturum, sepet, bu tercih, 18+ beyanı. Kapatılamaz.
- *   islevsel   — canlı destek (tawk.to). Onaysız YÜKLENMEZ.
- *   analitik   — şu an yok; eklenirse sürüm artırılır ve onay yeniden istenir.
+ * Kategoriler ve sürüm kuralı: `lib/consent-format.ts`.
  */
-export const CONSENT_COOKIE = 'ozmi_cerez';
-/** Kategori eklenince artırılır: eski onaylı ziyaretçiye bant yeniden çıkar. */
-export const CONSENT_VERSION = 1;
+import {
+    ANALYTICS_ENABLED, CONSENT_COOKIE, CONSENT_VERSION, UNDECIDED, parseConsent, type ConsentState,
+} from './consent-format';
+
+export { ANALYTICS_ENABLED, CONSENT_COOKIE, CONSENT_VERSION, type ConsentState };
+
 const MAX_AGE = 180 * 86400;
 export const PREFERENCES_EVENT = 'ozmi:cerez-tercihleri';
 
-export interface ConsentState {
-    decided: boolean;
-    functional: boolean;
-    analytics: boolean;
-}
-
-const UNDECIDED: ConsentState = { decided: false, functional: false, analytics: false };
-
 let cached: { raw: string; state: ConsentState } | null = null;
 let listeners: (() => void)[] = [];
-
-const parse = (raw: string): ConsentState => {
-    const params = new URLSearchParams(raw);
-    if (Number(params.get('v')) < CONSENT_VERSION) return UNDECIDED;
-    return { decided: true, functional: params.get('islevsel') === '1', analytics: params.get('analitik') === '1' };
-};
 
 /** Aynı çerez metni için AYNI nesne: useSyncExternalStore her okumada yeni nesne görürse döngüye girer. */
 export const readConsent = (): ConsentState => {
@@ -39,7 +25,7 @@ export const readConsent = (): ConsentState => {
     const raw = document.cookie.split('; ').find((part) => part.startsWith(`${CONSENT_COOKIE}=`))?.slice(CONSENT_COOKIE.length + 1) ?? '';
     const decoded = decodeURIComponent(raw);
     if (cached?.raw === decoded) return cached.state;
-    cached = { raw: decoded, state: decoded ? parse(decoded) : UNDECIDED };
+    cached = { raw: decoded, state: parseConsent(decoded) };
     return cached.state;
 };
 
@@ -50,6 +36,17 @@ export const subscribeConsent = (callback: () => void) => {
     return () => { listeners = listeners.filter((item) => item !== callback); };
 };
 
+/** `_ga`, `_ga_<ID>` ve kampanya kaynağı çerezi; hem host'ta hem üst alan adında. */
+function clearAnalyticsCookies() {
+    const names = document.cookie.split('; ').map((part) => part.split('=')[0])
+        .filter((name) => name === '_ga' || name.startsWith('_ga_') || name === 'ozmi_kaynak');
+    const host = window.location.hostname;
+    const domains = ['', host, `.${host.split('.').slice(-2).join('.')}`];
+    names.forEach((name) => domains.forEach((domain) => {
+        document.cookie = `${name}=; Max-Age=0; Path=/${domain ? `; Domain=${domain}` : ''}`;
+    }));
+}
+
 export const writeConsent = ({ functional, analytics }: { functional: boolean; analytics: boolean }) => {
     const previous = readConsent();
     const value = new URLSearchParams({
@@ -58,6 +55,9 @@ export const writeConsent = ({ functional, analytics }: { functional: boolean; a
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = `${CONSENT_COOKIE}=${encodeURIComponent(value)}; Max-Age=${MAX_AGE}; Path=/; SameSite=Lax${secure}`;
     listeners.forEach((listener) => listener());
+    // Analitik izni geri alındı: GA tanımlayıcıları ve kampanya kaynağı silinir.
+    // Yalnız yeni betiği durdurmak yetmez; çerezler 2 yıl kalırdı.
+    if (previous.analytics && !analytics) clearAnalyticsCookies();
     // Verilmiş bir izin GERİ ALINDIYSA yüklenmiş üçüncü parti betiği sökmenin
     // güvenilir yolu sayfayı yenilemek.
     if ((previous.functional && !functional) || (previous.analytics && !analytics)) window.location.reload();

@@ -1,13 +1,29 @@
 import { routes, site } from './site';
 import type {
-    Category, JournalPost, JournalPostDetail, ProductCard, ProductDetail, ReviewList,
+    Category, JournalPost, JournalPostDetail, ProductCard, ProductDetail, ReviewList, SiteSettings,
 } from './types';
 
 /**
  * schema.org üreticileri. @id çapaları (`/#organization`) düğümlerin birbirine
  * referans vermesini sağlar; Google'ın bilgi grafiğinde tek bir varlık olarak görünür.
  */
-export function organizationSchema() {
+/** Ayarlardaki sosyal hesaplar (`sosyal.*`); yalnız https adresleri. */
+const SOCIAL_KEYS = ['sosyal.instagram', 'sosyal.x', 'sosyal.tiktok', 'sosyal.youtube', 'sosyal.facebook'] as const;
+
+/**
+ * Kuruluş. Logo, destek iletişimi ve sosyal hesaplar ayarlardan; ayar
+ * okunamazsa yalın sürüm. Açık adres BİLEREK yok: resmi tebligat adresi
+ * fiziksel mağaza gibi sunulmaz (ziyaret edilebilir bir mağaza yok).
+ */
+export function organizationSchema(settings?: SiteSettings | null) {
+    const text = (key: string) => {
+        const value = (settings as Record<string, unknown> | null | undefined)?.[key];
+        return typeof value === 'string' ? value.trim() : '';
+    };
+    const phone = text('sirket.telefon');
+    const email = text('sirket.eposta');
+    const legalName = text('sirket.unvan');
+    const sameAs = SOCIAL_KEYS.map(text).filter((url) => /^https:\/\/\S+$/.test(url));
     return {
         '@context': 'https://schema.org',
         '@type': 'Organization',
@@ -15,6 +31,20 @@ export function organizationSchema() {
         name: site.name,
         url: site.url,
         description: site.description,
+        // public/logo.png: simge + kelime markası, 512×512 (Google en az 112×112 ister).
+        logo: { '@type': 'ImageObject', url: `${site.url}/logo.png`, width: 512, height: 512 },
+        ...(legalName ? { legalName } : {}),
+        ...(phone || email ? {
+            contactPoint: [{
+                '@type': 'ContactPoint',
+                contactType: 'customer service',
+                areaServed: 'TR',
+                availableLanguage: 'tr',
+                ...(phone ? { telephone: phone } : {}),
+                ...(email ? { email } : {}),
+            }],
+        } : {}),
+        ...(sameAs.length ? { sameAs } : {}),
     };
 }
 
@@ -48,47 +78,79 @@ export function breadcrumbSchema(items: { name: string; url: string }[]) {
     };
 }
 
+/** GTIN-8/12/13/14 sağlama hanesi doğru mu? Panelde serbest metin girildiği için şart. */
+export function isValidGtin(code: string | null | undefined): code is string {
+    if (!code || !/^(\d{8}|\d{12,14})$/.test(code)) return false;
+    const digits = [...code].map(Number);
+    const check = digits.pop()!;
+    const sum = digits.reverse().reduce((total, digit, index) => total + digit * (index % 2 === 0 ? 3 : 1), 0);
+    return (10 - (sum % 10)) % 10 === check;
+}
+
+const ADULT = 'https://schema.org/SexualContentConsideration';
+const IN_STOCK = 'https://schema.org/InStock';
+const OUT_OF_STOCK = 'https://schema.org/OutOfStock';
+
 /**
  * Ürün. `reviews` verilirse `aggregateRating` ve ilk üç yorum eklenir.
+ *
+ * Teklif yalnız AKTİF varyantlardan ve görünür fiyatla aynı kaynaktan üretilir.
+ * Fiyatı olmayan üründe `offers` HİÇ basılmaz: eskiden `?? 0` "ücretsiz ürün"
+ * teklifi üretiyordu. SKU varsayılan varyanttan; GTIN yalnız tek varyantta ve
+ * sağlama hanesi tutuyorsa (ürün düzeyinde birden çok barkod olmaz).
  *
  * DİKKAT: `reviewCount: 0` olan bir `aggregateRating` Google'da doğrulama
  * hatası verir — bu yüzden yalnız gerçekten yorum varken basılır.
  */
 export function productSchema(product: ProductDetail, reviews?: ReviewList | null) {
     const images = product.images.map((image) => image.url).slice(0, 6);
-    const inStock = product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
     const url = `${site.url}${routes.product(product.slug)}`;
 
-    // Tek varyantlı üründe Offer, çok varyantlıda AggregateOffer: fiyat aralığı doğru görünsün.
-    const offers = product.variants.length > 1
-        ? {
+    const active = product.variants.filter((variant) => variant.isActive);
+    const priced = active.filter((variant) => variant.price > 0);
+    const defaultVariant = active.find((variant) => variant.isDefault) ?? active[0];
+    const single = active.length === 1 ? active[0] : null;
+    const availability = (priced.length ? priced.some((variant) => variant.inStock) : product.inStock) ? IN_STOCK : OUT_OF_STOCK;
+
+    const prices = priced.map((variant) => variant.price);
+    const fallbackPrice = product.price && product.price > 0 ? product.price : null;
+    let offers: Record<string, unknown> | null = null;
+    if (prices.length > 1 && Math.min(...prices) !== Math.max(...prices)) {
+        // Çok varyantlı ve fiyatları farklı: aralık, görünür fiyatın kapsadığı küme.
+        offers = {
             '@type': 'AggregateOffer',
             priceCurrency: 'TRY',
-            lowPrice: product.minPrice ?? product.price ?? 0,
-            highPrice: product.maxPrice ?? product.price ?? 0,
-            offerCount: product.variants.length,
-            availability: inStock,
+            lowPrice: Math.min(...prices),
+            highPrice: Math.max(...prices),
+            offerCount: priced.length,
+            availability,
             url,
-        }
-        : {
+            hasAdultConsideration: ADULT,
+        };
+    } else if (prices.length || fallbackPrice) {
+        offers = {
             '@type': 'Offer',
             priceCurrency: 'TRY',
-            price: product.price ?? 0,
-            availability: inStock,
+            price: prices.length ? prices[0] : fallbackPrice,
+            availability,
             url,
             itemCondition: 'https://schema.org/NewCondition',
+            hasAdultConsideration: ADULT,
         };
+    }
 
     return {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
         description: product.shortDescription || product.metaDescription || site.description,
-        sku: product.variants[0]?.sku,
+        ...(defaultVariant?.sku ? { sku: defaultVariant.sku } : {}),
+        ...(single && isValidGtin(single.barcode) ? { gtin: single.barcode } : {}),
         ...(images.length ? { image: images } : {}),
         brand: { '@type': 'Brand', name: product.brand.name },
         category: product.category.name,
-        offers,
+        hasAdultConsideration: ADULT,
+        ...(offers ? { offers } : {}),
         ...(reviews && reviews.summary.count > 0 && reviews.summary.average !== null ? {
             aggregateRating: {
                 '@type': 'AggregateRating',
@@ -149,6 +211,8 @@ export function postSchema(post: JournalPostDetail) {
         description: post.excerpt,
         ...(post.cover ? { image: [post.cover.url] } : {}),
         ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+        // Yayından önce yapılan düzenleme "değişiklik" sayılmaz: tarih yayından eskiyse basılmaz.
+        ...(post.updatedAt && post.publishedAt && post.updatedAt > post.publishedAt ? { dateModified: post.updatedAt } : {}),
         ...(post.author.name ? {
             author: {
                 '@type': 'Person',

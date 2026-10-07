@@ -11,54 +11,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!isIndexable()) return [];
     const data = await getSitemapData();
 
+    /*
+     * Yalnız indekslenmesi istenen, kendine canonical veren adresler.
+     * `priority`/`changeFrequency` yok: Google ikisini de kullanmıyor.
+     * Konu adresleri (`/gunluk?konu=`) YOK: konu bir süzgeç, noindex alıyor.
+     * Ürünsüz kategori ve marka YOK: sayfaları noindex (boş liste ince içerik).
+     * API hatası yutulmaz — boş bir 200 site haritası, hatalı bir 5xx'ten kötü.
+     */
     return [
-        { url: site.url, changeFrequency: 'daily', priority: 1 },
-        { url: `${site.url}${routes.brands}`, changeFrequency: 'weekly', priority: 0.6 },
-        { url: `${site.url}${routes.categories}`, changeFrequency: 'weekly', priority: 0.6 },
-        ...data.categories.map((category) => ({
+        { url: site.url },
+        { url: `${site.url}${routes.brands}` },
+        { url: `${site.url}${routes.categories}` },
+        ...data.categories.filter((category) => category.productCount > 0).map((category) => ({
             url: `${site.url}${routes.category(category.slug)}`,
             lastModified: new Date(category.updatedAt),
-            changeFrequency: 'daily' as const,
-            priority: category.productCount > 0 ? 0.8 : 0.4,
         })),
         ...data.groups.map((group) => ({
             url: `${site.url}${routes.group(group.slug)}`,
             lastModified: new Date(group.updatedAt),
-            changeFrequency: 'daily' as const,
-            priority: 0.7,
         })),
-        ...data.brands.map((brand) => ({
+        ...data.brands.filter((brand) => brand.productCount > 0).map((brand) => ({
             url: `${site.url}${routes.brand(brand.slug)}`,
             lastModified: new Date(brand.updatedAt),
-            changeFrequency: 'weekly' as const,
-            priority: 0.6,
         })),
         ...data.products.map((product) => ({
             url: `${site.url}${routes.product(product.slug)}`,
             lastModified: new Date(product.updatedAt),
-            changeFrequency: 'weekly' as const,
-            priority: 0.9,
         })),
         ...data.pages.map((page) => ({
             url: `${site.url}${routes.page(page.slug)}`,
             lastModified: new Date(page.updatedAt),
-            changeFrequency: 'monthly' as const,
-            priority: 0.3,
         })),
-        { url: `${site.url}${routes.journal}`, changeFrequency: 'weekly', priority: 0.7 },
-        // Konu adresleri indeksin filtreli hâli; kanonik indeks olduğu için
-        // öncelikleri düşük ama taranmaları yazıların keşfini hızlandırır.
-        ...data.topics.map((topic) => ({
-            url: `${site.url}${routes.topic(topic.slug)}`,
-            lastModified: new Date(topic.updatedAt),
-            changeFrequency: 'weekly' as const,
-            priority: 0.4,
-        })),
+        { url: `${site.url}${routes.journal}` },
         ...data.posts.map((post) => ({
             url: `${site.url}${routes.post(post.slug)}`,
             lastModified: new Date(post.updatedAt),
-            changeFrequency: 'monthly' as const,
-            priority: 0.6,
         })),
     ];
 }

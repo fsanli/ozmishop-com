@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Breadcrumb from '@/components/Breadcrumb';
 import { getCategoryTree } from '@/lib/api';
+import { og } from '@/lib/seo';
 import { routes, site } from '@/lib/site';
 import type { Category } from '@/lib/types';
 
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
     title: 'Kategoriler',
     description: `${site.name} mağazasındaki tüm kategoriler.`,
     alternates: { canonical: routes.categories },
+    openGraph: og({ title: 'Kategoriler', url: routes.categories }),
 };
 
 /** Ürünsüz kategori listelenmez: boş bir sayfaya götürürdü (anasayfa ızgarasıyla aynı kural). */

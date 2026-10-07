@@ -16,14 +16,14 @@ export default function robots(): MetadataRoute.Robots {
                 userAgent: '*',
                 allow: '/',
                 /*
-                 * `/giris` ve `/rehber?*` BİLEREK yok: ikisi de `noindex` ama
-                 * `Disallow` Google'ın o etiketi okumasını engeller ve sayfalar
-                 * indekste asılı kalır. İşlemsel adresler ise hiç taranmamalı.
+                 * `/giris`, `/rehber?*`, `/arama` ve filtreli listeler BİLEREK
+                 * yok: hepsi `noindex` ama `Disallow` Google'ın o etiketi
+                 * okumasını engeller ve adresler indekste asılı kalır. Tarama
+                 * bütçesi sorun olursa (Search Console > Tarama istatistikleri)
+                 * önce indeksten düşmeleri beklenir, sonra Disallow eklenir.
+                 * İşlemsel adresler ise hiç taranmamalı.
                  */
-                disallow: [
-                    '/api/', '/arama', '/*?q=', '/*?*secim=*&secim=*',
-                    '/hesabim/', '/sepet', '/odeme', '/siparis/',
-                ],
+                disallow: ['/api/', '/hesabim/', '/sepet', '/odeme', '/siparis/'],
             },
         ],
         sitemap: `${site.url}/sitemap.xml`,

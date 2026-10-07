@@ -4,6 +4,7 @@ import { refresh } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { toggleFavorite } from '@/lib/account';
+import { flashCartEvent, findCartItem } from '@/lib/analytics/server';
 import { addToCart } from '@/lib/cart';
 import { FLASH_COOKIE, FLASH_MAX_AGE } from '@/lib/flash';
 import { getCurrentCustomer } from '@/lib/session';
@@ -57,13 +58,16 @@ export async function quickAddToCartAction(formData: FormData) {
         return;
     }
 
+    let cart;
     try {
-        await addToCart(productId, 1);
+        cart = await addToCart(productId, 1);
     } catch (error) {
         await flash(`hata:${(error as Error).message}`);
         refresh();
         return;
     }
+    const added = findCartItem(cart, (item) => item.productId === productId);
+    if (added) await flashCartEvent('add_to_cart', added, 1);
     await flash('sepet:eklendi');
     refresh();
 }

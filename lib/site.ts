@@ -7,8 +7,12 @@ export const site = {
         'Gizli paketleme ve güvenli ödeme ile yetişkinlere özel ürünler. Orijinal, faturalı ve hızlı kargo.',
     url: (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3201').replace(/\/$/, ''),
     locale: 'tr_TR',
-    // robots.ts yalnızca bu alan adlarında taramaya izin verir; test ortamları indekslenmez.
-    canonicalHosts: ['ozmishop.com', 'www.ozmishop.com'],
+    /**
+     * Tek kanonik host. `www` buraya GİRMEZ: Vercel www'yi apex'e 308 ile
+     * yönlendirir; `NEXT_PUBLIC_SITE_URL` www olsaydı her canonical, kendisi
+     * yönlenen bir adresi gösterirdi.
+     */
+    canonicalHost: 'ozmishop.com',
 } as const;
 
 /**
@@ -82,19 +86,27 @@ export function safeLink(url: string | null | undefined): string | null {
 
 export function isCanonicalHost(host: string | null | undefined): boolean {
     if (!host) return false;
-    return site.canonicalHosts.includes(host.split(':')[0] as (typeof site.canonicalHosts)[number]);
+    return host.split(':')[0].toLowerCase() === site.canonicalHost;
 }
 
 /**
- * Bu dağıtım arama motoruna açık mı: kanonik alan adı VE `SITE_INDEXABLE`
- * kapatılmamış. robots.txt, sitemap, layout robots metası ve `X-Robots-Tag`
- * başlığı HEPSİ buradan okur.
+ * Bu dağıtım arama motoruna açık mı: kanonik alan adı, Vercel'de Production
+ * ortamı VE `SITE_INDEXABLE` kapatılmamış. robots.txt, sitemap, layout robots
+ * metası ve `X-Robots-Tag` başlığı HEPSİ buradan okur.
  *
  * Yalnız robots.txt yetmiyordu: dev.ozmishop.com taramaya kapalıydı ama her
  * sayfa `index, follow` metası basıyordu. Dışarıdan bağlantı alan bir dev
  * sayfası taranmadan da indekse girebilir; `Disallow` Google'ın noindex'i
  * okumasını bile engeller. Asıl kapı HTTP başlığı (next.config.ts).
+ *
+ * Karar DERLEME anında verilir: `next.config.ts` başlıkları ve robots.txt
+ * build'de üretilir, `NEXT_PUBLIC_SITE_URL` istemci paketine gömülür. Ortam
+ * değişkeni değişince yeniden deploy gerekir. Aynı derlemenin başka bir
+ * host'tan (ör. `*.vercel.app` takma adı) açılmasını `proxy.ts` kapatır.
  */
 export function isIndexable(): boolean {
-    return isCanonicalHost(new URL(site.url).host) && process.env.SITE_INDEXABLE !== 'false';
+    // Vercel dışında (Docker) VERCEL_ENV yok; orada karar alan adına kalır.
+    const production = (process.env.VERCEL_ENV ?? 'production') === 'production';
+    return isCanonicalHost(new URL(site.url).host) && production && process.env.SITE_INDEXABLE !== 'false';
 }
+

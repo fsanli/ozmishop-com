@@ -15,6 +15,7 @@ import { getProduct, getReviews, getSettings, getSitemapData } from '@/lib/api';
 import { one, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, productSchema } from '@/lib/schema';
+import { og } from '@/lib/seo';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 import { pickWhatsappSettings } from '@/lib/whatsapp';
 import ProductGallery from './ProductGallery';
@@ -49,13 +50,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title,
         description,
         alternates: { canonical: routes.product(product.slug) },
-        openGraph: {
-            type: 'website',
+        openGraph: og({
             title,
             description,
             url: `${site.url}${routes.product(product.slug)}`,
-            images: product.image ? [{ url: product.image.url, alt: product.image.alt || product.name }] : undefined,
-        },
+            ...(product.image ? { images: [{ url: product.image.url, alt: product.image.alt || product.name }] } : {}),
+        }),
     };
 }
 
@@ -66,7 +66,14 @@ export default async function ProductPage({
     searchParams: Promise<SearchParams>;
 }) {
     const { slug } = await params;
-    const product = await getProduct(slug);
+    // Üç okuma birbirine bağlı değil: paralel. Eskiden sıralıydı ve soğuk
+    // önbellekte ürün kabuğu yorum isteğini de bekliyordu (her biri API'ye
+    // bir gidiş-dönüş). Olmayan slug'da fazladan iki okuma ucuz: yorum 404 →
+    // null, ayarlar zaten önbellekte.
+    // `getReviews(slug, 1)`: sayfa AÇIKÇA verilir — Reviews bloğu da (slug, 1)
+    // ile çağırıyor; önbellek anahtarı argümanlardan oluşur, varsayılan
+    // parametre anahtara girmediği için ikisi ayrı kayıt sayılıyordu.
+    const [product, reviews, settings] = await Promise.all([getProduct(slug), getReviews(slug, 1), getSettings()]);
 
     if (!product) {
         // Adı değişmiş bir ürün olabilir: 404 vermeden önce slug geçmişine bakılır.
@@ -74,13 +81,8 @@ export default async function ProductPage({
         notFound();
     }
 
-    // getReviews önbellekli: Reviews bloğu da aynı veriyi okuyor, ikinci çağrı
-    // ağ isteği değil. aggregateRating yalnız gerçekten yorum varken basılır.
-    const reviews = await getReviews(slug);
-
     // WhatsApp bağlantısı İSTEMCİDE, seçili varyantla kuruluyor (beden/SKU/fiyat
     // mesaja girsin). Panele tüm ayarlar değil, yalnız numara ve kalıp gidiyor.
-    const settings = await getSettings();
     const whatsapp = pickWhatsappSettings(settings);
 
     const crumbs = [

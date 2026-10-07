@@ -68,14 +68,15 @@ export default function FilterSidebar({
                 </Link>
             ))}
 
-            {facets.brands.length > 1 && group('marka', 'Marka', (
+            {(facets.brands.length > 1 || state.brand) && group('marka', 'Marka', (
                 <ul className="space-y-0.5">
                     {facets.brands.map((brand) => (
                         <li key={brand.id}>
                             <Link
-                                href={buildHref(basePath, searchParams, { marka: brand.slug })}
+                                href={buildHref(basePath, searchParams, { marka: state.brand === brand.slug ? undefined : brand.slug })}
                                 className="flex items-center gap-2.5 py-1 text-[13px]"
                             >
+                                {checkbox(state.brand === brand.slug)}
                                 <span className="flex-1">{brand.name}</span>
                                 <span className="text-[12px] text-slate-600">{brand.count}</span>
                             </Link>

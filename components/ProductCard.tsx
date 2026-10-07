@@ -53,7 +53,9 @@ export default async function ProductCard({
                         alt={product.image.alt || product.name}
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                        priority={priority}
+                        // `priority` Next 16'da kalktı; preload yerine öncelikli yükleme (image.md).
+                        loading={priority ? 'eager' : undefined}
+                        fetchPriority={priority ? 'high' : undefined}
                         className="object-cover transition duration-300 group-hover:scale-[1.03]"
                     />
                 ) : (

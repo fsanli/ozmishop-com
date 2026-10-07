@@ -7,7 +7,10 @@ import ListingPagination from '@/components/listing/ListingPagination';
 import ProductGrid from '@/components/ProductGrid';
 import { search } from '@/lib/api';
 import { one, type SearchParams } from '@/lib/listing';
+import { pageOf } from '@/lib/seo-url';
 import { routes } from '@/lib/site';
+import { Track, TrackList } from '@/components/analytics/Track';
+import { cleanSearchTerm } from '@/lib/analytics/sanitize';
 
 // Arama sonuçları indekslenmez: Google'ın "arama içinde arama" kuralı.
 export const metadata: Metadata = {
@@ -50,8 +53,10 @@ async function SearchResults({ searchParams: searchParamsPromise }: { searchPara
         );
     }
 
-    const page = Number(one(searchParams.sayfa) ?? 1) || 1;
+    const page = pageOf(searchParams.sayfa);
     const results = await search({ q: term, page, pageSize: 24, facets: false });
+    // Terim temizlenir (e-posta/telefon yazılmışsa gitmez) ve kısaltılır.
+    const tracked = <Track name="search" eventKey={`${term}:${page}`} params={{ search_term: cleanSearchTerm(term) }} />;
 
     if (!results.items.length) {
         return (
@@ -64,6 +69,7 @@ async function SearchResults({ searchParams: searchParamsPromise }: { searchPara
                     action={<Link href={routes.home} className="btn-secondary">Anasayfaya dön</Link>}
                 />
                 <GuideCta term={term} />
+                {tracked}
             </>
         );
     }
@@ -79,7 +85,9 @@ async function SearchResults({ searchParams: searchParamsPromise }: { searchPara
             </div>
 
             <div className="mt-5">
-                <ProductGrid products={results.items} priorityCount={4} back={routes.search(term)} />
+                <ProductGrid products={results.items} priorityCount={2} back={routes.search(term)} />
+                {tracked}
+                <TrackList id="arama" name="Arama sonuçları" products={results.items} offset={(page - 1) * 24} />
                 <ListingPagination
                     pagination={results.pagination}
                     basePath={routes.searchPage}

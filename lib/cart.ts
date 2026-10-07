@@ -2,7 +2,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { proxyHeaders } from './bff';
 import {
-    CART_COOKIE, CART_COUNT_COOKIE, CART_MAX_AGE, COOKIE_BASE, SESSION_COOKIE,
+    CART_COOKIE, CART_COUNT_COOKIE, CART_MAX_AGE, COOKIE_BASE, ORDER_ACCESS_COOKIE, SESSION_COOKIE,
 } from './session';
 import type {
     Cart, InstallmentOption, Order, OrderDocument,
@@ -112,11 +112,68 @@ export async function getInstallments(): Promise<{ total: number; options: Insta
 }
 
 /** Siparişi tamamlar. → { orderNumber, redirectUrl } */
+/** Bir tarayıcıda saklanan en fazla sipariş jetonu; çerez 4 KB sınırını aşmasın. */
+const ORDER_ACCESS_LIMIT = 5;
+const ORDER_ACCESS_MAX_AGE = 60 * 60 * 24 * 30;
+
+type OrderAccess = Record<string, string>;
+
+function readOrderAccess(raw: string | undefined): OrderAccess {
+    if (!raw) return {};
+    try {
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Sipariş jetonunu çereze yazar; en yeni sipariş başta, en eskisi düşer.
+ * YALNIZCA Server Action'lardan (çerez yazma kuralı, bkz. `persist`).
+ */
+export async function rememberOrderAccess(orderNumber: string, token: string): Promise<void> {
+    const jar = await cookies();
+    const current = readOrderAccess(jar.get(ORDER_ACCESS_COOKIE)?.value);
+    delete current[orderNumber];
+    const next = Object.fromEntries([[orderNumber, token], ...Object.entries(current)].slice(0, ORDER_ACCESS_LIMIT));
+    jar.set(ORDER_ACCESS_COOKIE, JSON.stringify(next), { ...COOKIE_BASE, maxAge: ORDER_ACCESS_MAX_AGE });
+}
+
+/** Bu tarayıcının bu sipariş için jetonu (yoksa undefined). */
+async function orderAccessToken(orderNumber: string): Promise<string | undefined> {
+    const jar = await cookies();
+    return readOrderAccess(jar.get(ORDER_ACCESS_COOKIE)?.value)[orderNumber];
+}
+
+/**
+ * Sipariş okuma: üye oturumu ve/veya bu tarayıcının sipariş jetonuyla.
+ * API oturumu "isteğe bağlı" okur ama GEÇERSİZ oturumu reddeder (401); süresi
+ * dolmuş bir oturum çerezi misafirin kendi siparişini görmesini engellemesin
+ * diye 401'de oturumsuz bir kez daha denenir.
+ */
+async function orderFetch(orderNumber: string, path: string): Promise<Response> {
+    const jar = await cookies();
+    const session = jar.get(SESSION_COOKIE)?.value;
+    const access = await orderAccessToken(orderNumber);
+    const headers: Record<string, string> = {
+        Accept: 'application/json',
+        ...(await proxyHeaders()),
+        ...(access ? { 'x-order-access': access } : {}),
+    };
+    if (session) {
+        const response = await fetch(`${API_BASE}${path}`, { cache: 'no-store', headers: { ...headers, Authorization: `Bearer ${session}` } });
+        if (response.status !== 401) return response;
+    }
+    return fetch(`${API_BASE}${path}`, { cache: 'no-store', headers });
+}
+
 export async function placeOrder(payload: Record<string, unknown>): Promise<{
     orderNumber: string;
     paymentMethod: 'card' | 'transfer';
     redirectUrl: string | null;
     grandTotal: number;
+    accessToken?: string;
 }> {
     const jar = await cookies();
     const token = jar.get(CART_COOKIE)?.value;
@@ -140,36 +197,33 @@ export async function placeOrder(payload: Record<string, unknown>): Promise<{
     jar.delete(CART_COOKIE);
     jar.set(CART_COUNT_COOKIE, '0', { ...COOKIE_BASE, httpOnly: false, maxAge: CART_MAX_AGE });
 
+    // Sipariş erişim jetonu: 3DS dönüşünde ve havale onayında sipariş sayfası
+    // bununla açılır.
+    if (body.accessToken && body.orderNumber) await rememberOrderAccess(body.orderNumber, body.accessToken);
+
     return body;
 }
 
 /**
- * Siparişte kabul edilmiş belge (ön bilgilendirme / mesafeli satış). Misafir
- * e-postayla, üye oturumuyla erişir — sipariş sayfasıyla aynı kural.
+ * Siparişte kabul edilmiş belge (ön bilgilendirme / mesafeli satış). Sipariş
+ * sayfasıyla aynı kural: üye oturumu, bu tarayıcının sipariş jetonu ya da
+ * e-posta (e-postadaki eski bağlantılar).
  */
 export async function getOrderDocument(orderNumber: string, kind: string, email?: string): Promise<OrderDocument | null> {
-    const jar = await cookies();
-    const session = jar.get(SESSION_COOKIE)?.value;
     const query = email ? `?email=${encodeURIComponent(email)}` : '';
-    const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderNumber)}/documents/${encodeURIComponent(kind)}${query}`, {
-        cache: 'no-store',
-        headers: {
-            Accept: 'application/json',
-            ...(await proxyHeaders()),
-            ...(session ? { Authorization: `Bearer ${session}` } : {}),
-        },
-    });
+    const response = await orderFetch(orderNumber, `/orders/${encodeURIComponent(orderNumber)}/documents/${encodeURIComponent(kind)}${query}`);
     if (!response.ok) return null;
     return response.json();
 }
 
-/** Sipariş onayı. Misafir siparişinde e-posta doğrulaması zorunlu. */
-export async function getOrder(orderNumber: string, email?: string): Promise<Order | null> {
+/**
+ * Sipariş onayı. Numara tek başına yetmez: üye oturumu, bu tarayıcının sipariş
+ * jetonu ya da e-posta eşleşmesi gerekir (API `canSee`). Oturum eskiden
+ * gönderilmiyordu; üye kendi siparişini de ancak `?e=` ile görebiliyordu.
+ */
+export async function getOrder(orderNumber: string, email?: string): Promise<(Order & { accessToken?: string }) | null> {
     const query = email ? `?email=${encodeURIComponent(email)}` : '';
-    const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderNumber)}${query}`, {
-        cache: 'no-store',
-        headers: { Accept: 'application/json', ...(await proxyHeaders()) },
-    });
+    const response = await orderFetch(orderNumber, `/orders/${encodeURIComponent(orderNumber)}${query}`);
     if (!response.ok) return null;
     return response.json();
 }

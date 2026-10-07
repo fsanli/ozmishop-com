@@ -5,6 +5,7 @@ import Container from '@/components/Container';
 import PageSidebar from '@/components/page/PageSidebar';
 import { getPage, getPages } from '@/lib/api';
 import { redirectIfMoved } from '@/lib/redirects';
+import { og } from '@/lib/seo';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
 
 export async function generateStaticParams() {
@@ -22,12 +23,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const page = await getPage(slug);
     if (!page) return { title: 'Sayfa bulunamadı' };
 
+    const title = page.metaTitle || page.title;
+    const description = page.metaDescription || site.description;
+
     return {
-        title: page.metaTitle || page.title,
-        description: page.metaDescription || site.description,
+        title,
+        description,
         alternates: { canonical: routes.page(page.slug) },
+        openGraph: og({ title, description, url: `${site.url}${routes.page(page.slug)}` }),
         // Taslak yasal metin (yayın öncesi okunabilir) ASLA indekslenmez.
-        robots: page.isIndexable && !page.isDraft ? undefined : { index: false, follow: true },
+        // Anahtar yalnız noindex'te: `robots: undefined` kökteki ayarı siliyordu.
+        ...(page.isIndexable && !page.isDraft ? {} : { robots: { index: false, follow: true } }),
     };
 }
 

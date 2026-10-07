@@ -24,7 +24,8 @@ export default function PostCard({ post, priority = false }: { post: JournalPost
                         fill
                         sizes="(max-width: 640px) 100vw, 320px"
                         className="object-cover"
-                        priority={priority}
+                        loading={priority ? 'eager' : undefined}
+                        fetchPriority={priority ? 'high' : undefined}
                     />
                 ) : (
                     <PostCoverFallback colors={colors} topic={post.topic?.name} size="sm" />

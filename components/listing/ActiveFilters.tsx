@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CATEGORY_COLOR } from '@/lib/colors';
-import { toggleRangeHref, toggleSpecHref, toggleValueHref } from '@/lib/listing';
+import { buildHref, toggleRangeHref, toggleSpecHref, toggleValueHref } from '@/lib/listing';
 import type { ListingState, SearchParams } from '@/lib/listing';
 import type { Facets } from '@/lib/types';
 import { XIcon } from '@/components/icons';
@@ -17,6 +17,17 @@ export default function ActiveFilters({
     if (!facets) return null;
 
     const chips: { key: string; label: string; href: string; tint: string; ink: string }[] = [];
+
+    const brand = state.brand && facets.brands.find((item) => item.slug === state.brand);
+    if (brand) {
+        chips.push({
+            key: `b-${brand.slug}`,
+            label: brand.name,
+            href: buildHref(basePath, searchParams, { marka: undefined }),
+            tint: 'bg-slate-100',
+            ink: 'text-slate-700',
+        });
+    }
 
     facets.variantKeys.forEach((key) => key.values.forEach((value) => {
         if (!state.values.includes(value.id)) return;

@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { getPost } from '@/lib/api';
+import { ogFonts, ogMark } from '@/lib/og';
 
 /**
  * Yazı paylaşım görseli. `next/og` `next` paketinin içinde geliyor — üç
@@ -23,7 +24,7 @@ const COLORS: Record<string, string> = {
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const post = await getPost(slug);
+    const [post, fonts, mark] = await Promise.all([getPost(slug), ogFonts(), ogMark()]);
 
     const accent = COLORS[post?.topic?.colorKey ?? 'berry'] ?? COLORS.berry;
 
@@ -39,7 +40,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
                     background: '#1a1418',
                     color: '#f6f1f3',
                     padding: '72px 80px',
-                    fontFamily: 'sans-serif',
+                    fontFamily: 'Sora',
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -68,15 +69,18 @@ export default async function Image({ params }: { params: Promise<{ slug: string
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em' }}>
-                        ozmishop<span style={{ color: '#d4557a' }}>.</span>
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <img src={mark} width={48} height={48} alt="" />
+                        <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em' }}>
+                            ozmishop<span style={{ color: '#d4557a' }}>.</span>
+                        </span>
+                    </div>
                     <span style={{ fontSize: 22, color: 'rgba(246,241,243,0.5)' }}>
                         {post?.author.name ?? 'Günlük'}
                     </span>
                 </div>
             </div>
         ),
-        size,
+        { ...size, fonts },
     );
 }

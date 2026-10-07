@@ -1,6 +1,15 @@
 import type { NextConfig } from 'next';
 import { isIndexable } from './lib/site';
 
+/*
+ * Production derlemesi adressiz çıkamaz: `NEXT_PUBLIC_SITE_URL` boşken
+ * canonical, OG ve site haritası `http://localhost:3201`'i gösterir ve bu
+ * paketin içine gömülür. Sessizce yayına çıkmak yerine derleme düşer.
+ */
+if (process.env.VERCEL_ENV === 'production' && !/^https:\/\/[^/]+\/?$/.test(process.env.NEXT_PUBLIC_SITE_URL ?? '')) {
+    throw new Error('NEXT_PUBLIC_SITE_URL production derlemesinde https:// ile başlayan bir alan adı olmalı.');
+}
+
 const r2Host = process.env.R2_PUBLIC_HOSTNAME || '';
 
 /**

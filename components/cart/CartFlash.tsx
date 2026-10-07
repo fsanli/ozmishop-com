@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { FLASH_COOKIE } from '@/lib/flash';
+import { ANALYTICS_EVENT_COOKIE, FLASH_COOKIE } from '@/lib/flash';
 import CartDock from './CartDock';
 
 /**
@@ -14,6 +14,8 @@ import CartDock from './CartDock';
  * parametresi kullanılsaydı gezinme olur ve sayfa başa kayardı.
  */
 export default async function CartFlash() {
-    const flash = (await cookies()).get(FLASH_COOKIE)?.value ?? null;
-    return <CartDock flash={flash} />;
+    const jar = await cookies();
+    const flash = jar.get(FLASH_COOKIE)?.value ?? null;
+    const event = jar.get(ANALYTICS_EVENT_COOKIE)?.value ?? null;
+    return <CartDock flash={flash} analyticsEvent={event} />;
 }

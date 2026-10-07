@@ -10,7 +10,8 @@ import JsonLd from '@/components/JsonLd';
 import ListingSkeleton from '@/components/ListingSkeleton';
 import ProductListing from '@/components/ProductListing';
 import { getCategory, getSitemapData } from '@/lib/api';
-import { canonicalFor, shouldIndex, type SearchParams } from '@/lib/listing';
+import type { SearchParams } from '@/lib/listing';
+import { listingIndexMeta, og } from '@/lib/seo';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, collectionSchema } from '@/lib/schema';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
@@ -38,14 +39,12 @@ export async function generateMetadata({
 
     const title = category.metaTitle || category.name;
     const description = category.metaDescription || category.description || `${category.name} kategorisindeki ürünler. ${site.description}`;
-    const indexable = shouldIndex(search);
 
     return {
         title,
         description,
-        alternates: { canonical: canonicalFor(routes.category(category.slug), search) },
-        robots: indexable ? undefined : { index: false, follow: true },
-        openGraph: { title, description, url: `${site.url}${routes.category(category.slug)}` },
+        ...listingIndexMeta(routes.category(category.slug), search, { empty: category.activeProductCount === 0 }),
+        openGraph: og({ title, description, url: `${site.url}${routes.category(category.slug)}` }),
     };
 }
 
@@ -101,7 +100,7 @@ export default async function CategoryPage({
 
             {category.banner && (
                 <div className="relative mt-4 aspect-[16/5] overflow-hidden rounded-[var(--radius-xl)] bg-slate-100">
-                    <Image src={category.banner.url} alt={category.banner.alt || category.name} fill sizes="100vw" priority className="object-cover" />
+                    <Image src={category.banner.url} alt={category.banner.alt || category.name} fill sizes="100vw" loading="eager" fetchPriority="high" className="object-cover" />
                 </div>
             )}
 

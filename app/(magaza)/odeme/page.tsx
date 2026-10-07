@@ -9,6 +9,7 @@ import { getCart, getInstallments } from '@/lib/cart';
 import { getCurrentCustomer } from '@/lib/session';
 import { routes } from '@/lib/site';
 import CheckoutForm from './CheckoutForm';
+import { TrackCart } from '@/components/analytics/Track';
 
 export const metadata: Metadata = {
     title: 'Ödeme',
@@ -28,19 +29,22 @@ async function CheckoutContent() {
     const addresses = customer ? (await getMyAddresses().catch(() => ({ items: [] }))).items : [];
 
     return (
-        <CheckoutForm
-            cart={cart}
-            installments={options}
-            locations={locations}
-            customer={customer ? { email: customer.email, phone: customer.phone } : null}
-            addresses={addresses}
-            methods={{
-                card: settings['odeme.kart_kullanilabilir'] !== false,
-                transfer: settings['odeme.havale_kullanilabilir'] === true,
-            }}
-            legalDocuments={legal.documents}
-            settings={settings}
-        />
+        <>
+            <TrackCart name="begin_checkout" cart={cart} />
+            <CheckoutForm
+                cart={cart}
+                installments={options}
+                locations={locations}
+                customer={customer ? { email: customer.email, phone: customer.phone } : null}
+                addresses={addresses}
+                methods={{
+                    card: settings['odeme.kart_kullanilabilir'] !== false,
+                    transfer: settings['odeme.havale_kullanilabilir'] === true,
+                }}
+                legalDocuments={legal.documents}
+                settings={settings}
+            />
+        </>
     );
 }
 

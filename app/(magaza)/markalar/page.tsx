@@ -3,12 +3,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Breadcrumb from '@/components/Breadcrumb';
 import { getBrands } from '@/lib/api';
+import { og } from '@/lib/seo';
 import { routes, site } from '@/lib/site';
 
 export const metadata: Metadata = {
     title: 'Markalar',
     description: `${site.name} mağazasındaki tüm markalar.`,
     alternates: { canonical: routes.brands },
+    openGraph: og({ title: 'Markalar', url: routes.brands }),
 };
 
 export default async function BrandsPage() {

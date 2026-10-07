@@ -5,7 +5,9 @@ import { WhatsappIcon } from '@/components/icons';
 import { addToCartAction } from '@/app/(magaza)/sepet/actions';
 
 import Image from 'next/image';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+import { track } from '@/lib/analytics/gtag';
+import { CURRENCY, fromDetail } from '@/lib/analytics/items';
 import { createPortal } from 'react-dom';
 import { formatPrice } from '@/lib/format';
 import { productWhatsappLink, type WhatsappSettings } from '@/lib/whatsapp';
@@ -63,6 +65,16 @@ export default function ProductPurchasePanel({
                     : selection[option.variantKeyId] === undefined || selection[option.variantKeyId] === option.variantValueId,
             ),
         );
+
+    // view_item: ürün açılınca ve varyant değişince (fiyat/etiket değişir).
+    // Bağımlılık KİMLİK, nesne değil: sepete eklemedeki refresh() ürünü yeni bir
+    // nesneyle yeniden gönderiyor ve olay ikinci kez sayılıyordu.
+    const viewedKey = `${product.id}:${selectedVariant?.id ?? ''}`;
+    useEffect(() => {
+        const item = fromDetail(product, selectedVariant);
+        track('view_item', { currency: CURRENCY, value: item.price ?? 0, items: [item] });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewedKey]);
 
     const inStock = selectedVariant ? selectedVariant.inStock : product.inStock;
     const price = selectedVariant?.price ?? product.price;
@@ -211,6 +223,8 @@ export default function ProductPurchasePanel({
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    // Niyet (lead), satış DEĞİL. Telefon ve mesaj metni gönderilmez; yalnız ürün.
+                    onClick={() => track('whatsapp_click', { placement: 'urun', items: [fromDetail(product, selectedVariant)] })}
                     className="flex min-h-[50px] items-center justify-center gap-2 rounded-[14px] border border-teal-ink/25 bg-teal-tint text-[15px] font-bold text-teal-ink transition hover:border-teal-ink/45"
                 >
                     <WhatsappIcon className="size-[18px]" />

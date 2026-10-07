@@ -3,6 +3,7 @@ import Container from '@/components/Container';
 import { colorsOf } from '@/lib/colors';
 import { getCategoryTree } from '@/lib/api';
 import { routes } from '@/lib/site';
+import NotFoundBeacon from './NotFoundBeacon';
 
 /**
  * 404 gövdesi. Kök `not-found.tsx` ile grup içi `not-found.tsx` dosyalarının
@@ -15,6 +16,7 @@ export default async function NotFoundContent() {
 
     return (
         <Container className="flex flex-wrap items-start gap-[clamp(18px,3vw,44px)] pt-[clamp(30px,5vw,72px)]">
+            <NotFoundBeacon />
             <div className="min-w-0 flex-[999_1_340px]">
                 <p className="font-display font-bold leading-[0.85] tracking-[-0.07em] text-accent-500 text-[clamp(78px,15vw,180px)]">
                     404

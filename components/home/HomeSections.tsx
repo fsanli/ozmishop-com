@@ -100,7 +100,9 @@ export default async function HomeSections({ sections }: { sections: HomeSection
                                 subtitle={section.subtitle}
                                 limit={settings.limit ?? 8}
                                 layout={settings.layout ?? 'carousel'}
-                                priority={index <= 2}
+                                // Yalnız sayfanın İLK bloğuysa (hero yoksa) öncelikli: hero'nun
+                                // altındaki gruplar eskiden 3 bölüm × 4 kartla LCP'yle yarışıyordu.
+                                priority={index === 0}
                             />
                         );
                     }

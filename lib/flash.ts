@@ -16,3 +16,9 @@ export const FLASH_COOKIE = 'ozmi_flash';
 
 /** Kısa: yalnız bir sonraki render'a yetişmesi gerekiyor. */
 export const FLASH_MAX_AGE = 15;
+
+/**
+ * Sepet işleminin GA4 olayı (JSON). Aynı kalıp: sunucu aksiyonu yazar,
+ * `CartDock` gönderir ve siler. Yalnız analitik izni varken yazılır.
+ */
+export const ANALYTICS_EVENT_COOKIE = 'ozmi_olay';

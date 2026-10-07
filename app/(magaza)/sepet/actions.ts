@@ -3,8 +3,9 @@
 import { refresh } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { analyticsAllowed, flashCartEvent, findCartItem } from '@/lib/analytics/server';
 import {
-    addToCart, applyCartCoupon, removeCartCoupon, removeCartItem, setCartQuantity,
+    addToCart, applyCartCoupon, getCart, removeCartCoupon, removeCartItem, setCartQuantity,
 } from '@/lib/cart';
 import { FLASH_COOKIE, FLASH_MAX_AGE } from '@/lib/flash';
 import { routes } from '@/lib/site';
@@ -25,11 +26,15 @@ export async function addToCartAction(formData: FormData) {
 
     if (!Number.isFinite(productId)) redirect(withError(back, 'Ürün bulunamadı'));
 
+    const count = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+    let cart;
     try {
-        await addToCart(productId, Number.isFinite(quantity) && quantity > 0 ? quantity : 1);
+        cart = await addToCart(productId, count);
     } catch (error) {
         redirect(withError(back, (error as Error).message));
     }
+    const added = findCartItem(cart, (item) => item.productId === productId);
+    if (added) await flashCartEvent('add_to_cart', added, count);
     // NE SEPET SAYFASINA GİDER NE DE SAYFAYI KAYDIRIR: bayrak çereze yazılıp
     // `refresh()` çağrılıyor, gezinme hiç olmuyor. Kullanıcı baktığı yerde
     // kalıyor, toast görüyor, masaüstünde çekmece açılıyor.
@@ -43,25 +48,42 @@ export async function addToCartAction(formData: FormData) {
     refresh();
 }
 
+/**
+ * Adet değişimi ve silme analitik için ÖNCEKİ adedi bilmek zorunda (artış mı
+ * azalış mı). Sepet yalnız analitik izni varsa önceden okunur: izin vermeyen
+ * kullanıcıya fazladan API çağrısı düşmez.
+ */
+const cartBefore = async () => ((await analyticsAllowed()) ? getCart().catch(() => null) : null);
+
 export async function setQuantityAction(formData: FormData) {
     const itemId = Number(formData.get('itemId'));
     const quantity = Number(formData.get('quantity'));
+    const before = findCartItem(await cartBefore(), (item) => item.id === itemId);
 
+    let cart;
     try {
-        await setCartQuantity(itemId, quantity);
+        cart = await setCartQuantity(itemId, quantity);
     } catch (error) {
         redirect(withError(routes.cart, (error as Error).message));
+    }
+    const after = findCartItem(cart, (item) => item.id === itemId);
+    if (before) {
+        const delta = (after?.quantity ?? 0) - before.quantity;
+        if (delta > 0) await flashCartEvent('add_to_cart', after ?? before, delta);
+        if (delta < 0) await flashCartEvent('remove_from_cart', before, -delta);
     }
     refresh();
 }
 
 export async function removeItemAction(formData: FormData) {
     const itemId = Number(formData.get('itemId'));
+    const before = findCartItem(await cartBefore(), (item) => item.id === itemId);
     try {
         await removeCartItem(itemId);
     } catch (error) {
         redirect(withError(routes.cart, (error as Error).message));
     }
+    if (before) await flashCartEvent('remove_from_cart', before, before.quantity);
     refresh();
 }
 

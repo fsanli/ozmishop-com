@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import AgeGate from '@/components/AgeGate';
+import AnalyticsLoader from '@/components/analytics/AnalyticsLoader';
 import { getLegalStatus, getSettings } from '@/lib/api';
 import { routes } from '@/lib/site';
 import CookieBanner from './CookieBanner';
@@ -24,6 +26,8 @@ export default async function ConsentMounts() {
         <>
             <AgeGate text={text} privacyHref={privacyHref} cookieHref={cookieHref} />
             <CookieBanner policyHref={cookieHref} />
+            {/* Suspense: sayfa görüntüleme adresi (useSearchParams) okur; kabuk statik kalsın. */}
+            <Suspense fallback={null}><AnalyticsLoader /></Suspense>
         </>
     );
 }

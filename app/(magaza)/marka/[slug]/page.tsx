@@ -8,7 +8,8 @@ import JsonLd from '@/components/JsonLd';
 import ListingSkeleton from '@/components/ListingSkeleton';
 import ProductListing from '@/components/ProductListing';
 import { getBrand, getSitemapData } from '@/lib/api';
-import { canonicalFor, shouldIndex, type SearchParams } from '@/lib/listing';
+import type { SearchParams } from '@/lib/listing';
+import { listingIndexMeta, og } from '@/lib/seo';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema } from '@/lib/schema';
 import { PLACEHOLDER_SLUG, routes, site } from '@/lib/site';
@@ -40,8 +41,8 @@ export async function generateMetadata({
     return {
         title,
         description,
-        alternates: { canonical: canonicalFor(routes.brand(brand.slug), search) },
-        robots: shouldIndex(search) ? undefined : { index: false, follow: true },
+        ...listingIndexMeta(routes.brand(brand.slug), search, { empty: brand.activeProductCount === 0 }),
+        openGraph: og({ title, description, url: `${site.url}${routes.brand(brand.slug)}` }),
     };
 }
 

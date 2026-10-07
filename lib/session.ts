@@ -23,6 +23,12 @@ const API_BASE = (process.env.API_BASE_URL || 'http://localhost:4200').replace(/
 export const SESSION_COOKIE =
     process.env.NODE_ENV === 'production' ? '__Host-ozmi_oturum' : 'ozmi_oturum';
 
+/**
+ * Son siparişlerin erişim jetonları — httpOnly. Misafir, siparişini URL'de
+ * e-posta taşımadan görür (`?e=` adresi analitiğe, geçmişe, Referer'a sızıyordu).
+ */
+export const ORDER_ACCESS_COOKIE = 'ozmi_siparis';
+
 /** Misafir sepet jetonu — httpOnly. */
 export const CART_COOKIE = 'ozmi_sepet';
 
