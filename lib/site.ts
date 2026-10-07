@@ -41,6 +41,14 @@ export const routes = {
     // --- v2: alışveriş akışı ---
     cart: '/sepet',
     checkout: '/odeme',
+    /** Başarısız kart denemesinden dönüş: form, denemenin hata mesajıyla açılır. */
+    checkoutRetry: (attemptId: string) => `/odeme?deneme=${attemptId}`,
+    /** PayTR iframe'inin gömüldüğü sayfa. */
+    cardPayment: (attemptId: string) => `/odeme/kart/${attemptId}`,
+    /** "Ödemen kontrol ediliyor": PayTR dönüşünden sonra sonuç beklenir. */
+    paymentPending: (attemptId: string) => `/odeme/sonuc/bekle?a=${attemptId}`,
+    /** Onaylanmış denemenin sipariş çerezini yazıp sipariş sayfasına geçiren uç. */
+    paymentDone: (attemptId: string) => `/odeme/sonuc/tamam?a=${attemptId}`,
     order: (no: string) => `/siparis/${no}`,
 
     // --- v2: hesap ---

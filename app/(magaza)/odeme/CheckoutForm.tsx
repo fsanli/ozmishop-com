@@ -24,7 +24,7 @@ import { placeOrderAction, type CheckoutState } from './actions';
  * aynı" katlaması ve hata sonrası girilen onca alanı koruma. Diğer formlar
  * `?hata=` ile idare ediyor; burada kullanıcıya adresini yeniden yazdırmak olmaz.
  *
- * Kart bilgisi BURADA TOPLANMAZ — sağlayıcının 3DS sayfasında girilir.
+ * Kart bilgisi BURADA TOPLANMAZ — bir sonraki adımda PayTR'nin iframe'ine girilir.
  */
 const step = (no: string, title: string, children: React.ReactNode) => (
     <section className="card card-xl p-[clamp(18px,2.6vw,28px)]">
@@ -86,7 +86,7 @@ function AddressFields({
 type OrderDocKey = 'on_bilgilendirme' | 'mesafeli_satis';
 
 export default function CheckoutForm({
-    cart, installments, locations, customer, addresses, methods, legalDocuments, settings,
+    cart, installments, locations, customer, addresses, methods, legalDocuments, settings, idempotencyKey,
 }: {
     cart: Cart;
     installments: InstallmentOption[];
@@ -101,6 +101,11 @@ export default function CheckoutForm({
     legalDocuments: LegalDocumentStatus[];
     /** Satıcı künyesi ve iade süresi için ayarlar. */
     settings: SiteSettings;
+    /**
+     * Sunucunun bu çizim için ürettiği tekrar anahtarı. İstemcide üretilseydi
+     * sunucu ve istemci farklı değer basar, hidrasyon uyuşmazdı.
+     */
+    idempotencyKey: string;
 }) {
     const formRef = useRef<HTMLFormElement>(null);
     const [legalDialog, setLegalDialog] = useState<LegalDialogState | null>(null);
@@ -198,6 +203,8 @@ export default function CheckoutForm({
             <input type="hidden" name="shippingRateId" value={shippingRateId ?? ''} />
             <input type="hidden" name="paymentMethod" value={method} />
             <input type="hidden" name="installment" value={installment} />
+            {/* Çift tıklama aynı ödeme denemesine bağlanır; başarısızlıktan sonra aksiyon yenisini verir. */}
+            <input type="hidden" name="idempotencyKey" value={state.idempotencyKey ?? idempotencyKey} />
 
             <div className="min-w-0 flex-[999_1_420px] space-y-3">
                 {state.error && (
@@ -381,8 +388,9 @@ export default function CheckoutForm({
                         {method === 'card' ? (
                             <>
                                 <p className="text-[13px] leading-relaxed text-slate-600">
-                                    Kart bilgileri bu sayfada istenmez. &ldquo;Siparişi tamamla&rdquo; dediğinde bankanın
-                                    güvenli 3D Secure sayfasına yönlendirilirsin.
+                                    Kart bilgileri bu sayfada istenmez. Onayladığında PayTR&rsquo;nin güvenli ödeme
+                                    alanı açılır; kart bilgilerin ozmishop&rsquo;a iletilmez. Ödeme tamamlanmadan
+                                    sipariş oluşmaz, sepetin olduğu gibi kalır.
                                 </p>
 
                                 {installments.length > 0 && (
@@ -501,7 +509,7 @@ export default function CheckoutForm({
 
                     <SubmitButton
                         className="btn-primary mt-4 min-h-[54px] w-full justify-center rounded-[14px]"
-                        pendingLabel="Sipariş oluşturuluyor…"
+                        pendingLabel={method === 'card' ? 'Ödeme sayfası hazırlanıyor…' : 'Sipariş oluşturuluyor…'}
                         disabled={!shippingRateId || noMethod}
                     >
                         Siparişi onayla ve öde

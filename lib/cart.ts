@@ -2,10 +2,11 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { proxyHeaders } from './bff';
 import {
-    CART_COOKIE, CART_COUNT_COOKIE, CART_MAX_AGE, COOKIE_BASE, ORDER_ACCESS_COOKIE, SESSION_COOKIE,
+    ATTEMPT_COOKIE, ATTEMPT_MAX_AGE, CART_COOKIE, CART_COUNT_COOKIE, CART_MAX_AGE, COOKIE_BASE, ORDER_ACCESS_COOKIE,
+    SESSION_COOKIE,
 } from './session';
 import type {
-    Cart, InstallmentOption, Order, OrderDocument,
+    Cart, CheckoutAttempt, InstallmentOption, Order, OrderDocument, PlaceOrderResult,
 } from './types';
 
 const API_BASE = (process.env.API_BASE_URL || 'http://localhost:4200').replace(/\/$/, '');
@@ -111,7 +112,6 @@ export async function getInstallments(): Promise<{ total: number; options: Insta
     return response.json();
 }
 
-/** Siparişi tamamlar. → { orderNumber, redirectUrl } */
 /** Bir tarayıcıda saklanan en fazla sipariş jetonu; çerez 4 KB sınırını aşmasın. */
 const ORDER_ACCESS_LIMIT = 5;
 const ORDER_ACCESS_MAX_AGE = 60 * 60 * 24 * 30;
@@ -168,13 +168,25 @@ async function orderFetch(orderNumber: string, path: string): Promise<Response> 
     return fetch(`${API_BASE}${path}`, { cache: 'no-store', headers });
 }
 
-export async function placeOrder(payload: Record<string, unknown>): Promise<{
-    orderNumber: string;
-    paymentMethod: 'card' | 'transfer';
-    redirectUrl: string | null;
-    grandTotal: number;
-    accessToken?: string;
-}> {
+/** Sepet kapandı: jeton düşer, adet rozeti sıfırlanır. */
+async function closeCart(): Promise<void> {
+    const jar = await cookies();
+    jar.delete(CART_COOKIE);
+    jar.set(CART_COUNT_COOKIE, '0', { ...COOKIE_BASE, httpOnly: false, maxAge: CART_MAX_AGE });
+}
+
+/**
+ * Siparişi tamamlar. Havalede sipariş hemen açılır; kartta yalnız bir ÖDEME
+ * DENEMESİ açılır ve sepet olduğu gibi kalır — ödeme başarısız olursa müşteri
+ * aynı sepetle yeniden dener. Sepet ancak sağlayıcı ödemeyi onaylayınca
+ * kapanır (bkz. `finishAttempt`).
+ *
+ * `idempotencyKey` formun her çiziminde bir kez üretilir: çift tıklama ve ağ
+ * tekrarı API'de aynı denemeyi döndürür, iki ayrı tahsilat penceresi açmaz.
+ *
+ * YALNIZCA Server Action'lardan (çerez yazma kuralı, bkz. `persist`).
+ */
+export async function placeOrder(payload: Record<string, unknown>, idempotencyKey?: string): Promise<PlaceOrderResult> {
     const jar = await cookies();
     const token = jar.get(CART_COOKIE)?.value;
 
@@ -186,22 +198,105 @@ export async function placeOrder(payload: Record<string, unknown>): Promise<{
             'Content-Type': 'application/json',
             ...(await proxyHeaders()),
             ...(token ? { 'x-cart-token': token } : {}),
+            ...(idempotencyKey ? { 'idempotency-key': idempotencyKey } : {}),
         },
         body: JSON.stringify(payload),
     });
 
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.message || 'Sipariş tamamlanamadı');
+    const result = body as PlaceOrderResult;
 
-    // Sepet kapandı: adet rozeti sıfırlanmalı, jeton düşmeli.
-    jar.delete(CART_COOKIE);
-    jar.set(CART_COUNT_COOKIE, '0', { ...COOKIE_BASE, httpOnly: false, maxAge: CART_MAX_AGE });
+    if (result.paymentMethod === 'card') {
+        // Deneme jetonu yalnız sunucuda: iframe sayfası, dönüş ucu ve yoklama
+        // bununla okur. Sepet çerezine DOKUNULMAZ.
+        jar.set(ATTEMPT_COOKIE, `${result.attemptId}:${result.attemptAccessToken}`, { ...COOKIE_BASE, maxAge: ATTEMPT_MAX_AGE });
+        // Sahte sağlayıcı (geliştirme) bildirimi anında üretebiliyor.
+        if (result.status === 'succeeded') await finishAttempt(result);
+        return result;
+    }
 
-    // Sipariş erişim jetonu: 3DS dönüşünde ve havale onayında sipariş sayfası
-    // bununla açılır.
-    if (body.accessToken && body.orderNumber) await rememberOrderAccess(body.orderNumber, body.accessToken);
+    await closeCart();
+    // Sipariş erişim jetonu: havale onayında sipariş sayfası bununla açılır.
+    if (result.accessToken && result.orderNumber) await rememberOrderAccess(result.orderNumber, result.accessToken);
+    return result;
+}
 
-    return body;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Deneme kimliği biçimi; adresten gelen değer API'ye gitmeden süzülür. */
+export function isAttemptId(value: string | null | undefined): value is string {
+    return Boolean(value && UUID.test(value));
+}
+
+/** Bu tarayıcının BU deneme için jetonu; çerez başka bir denemeye aitse yok. */
+async function attemptAccessToken(attemptId: string): Promise<string | undefined> {
+    const raw = (await cookies()).get(ATTEMPT_COOKIE)?.value ?? '';
+    const split = raw.indexOf(':');
+    if (split < 1 || raw.slice(0, split) !== attemptId) return undefined;
+    return raw.slice(split + 1) || undefined;
+}
+
+/**
+ * Deneme okuma/işaretleme: bu tarayıcının deneme jetonu ve/veya üye oturumu.
+ * İkisi de yoksa istek hiç atılmaz. Geçersiz oturumda 401 → oturumsuz bir kez
+ * daha (bkz. `orderFetch`).
+ */
+async function attemptFetch(attemptId: string, path: string, init: RequestInit = {}): Promise<Response | null> {
+    const jar = await cookies();
+    const session = jar.get(SESSION_COOKIE)?.value;
+    const access = await attemptAccessToken(attemptId);
+    if (!session && !access) return null;
+
+    const headers: Record<string, string> = {
+        Accept: 'application/json',
+        ...(await proxyHeaders()),
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(access ? { 'x-attempt-access': access } : {}),
+    };
+    if (session) {
+        const response = await fetch(`${API_BASE}${path}`, {
+            ...init, cache: 'no-store', headers: { ...headers, Authorization: `Bearer ${session}` },
+        });
+        if (response.status !== 401 || !access) return response;
+    }
+    return fetch(`${API_BASE}${path}`, { ...init, cache: 'no-store', headers });
+}
+
+/** Kart denemesinin durumu. Erişim yoksa (başka tarayıcı, süresi dolmuş çerez) null. */
+export async function getAttempt(attemptId: string): Promise<CheckoutAttempt | null> {
+    if (!isAttemptId(attemptId)) return null;
+    const response = await attemptFetch(attemptId, `/checkout/attempts/${attemptId}`);
+    if (!response?.ok) return null;
+    return response.json();
+}
+
+/**
+ * Zaman çizelgesi işareti (iframe açıldı, dönüş sayfasına gelindi). Panel
+ * müşterinin NEREDE takıldığını bununla raporlar; ödemeyi etkilemez. Hata
+ * bilerek yutulur: işaret kaybolsa da müşteri akışı sürmeli.
+ */
+export async function sendAttemptEvent(attemptId: string, type: 'iframe_loaded' | 'return_ok' | 'return_fail'): Promise<void> {
+    if (!isAttemptId(attemptId)) return;
+    try {
+        await attemptFetch(attemptId, `/checkout/attempts/${attemptId}/events`, {
+            method: 'POST',
+            body: JSON.stringify({ type }),
+        });
+    } catch {
+        // Bilerek yutulur — bkz. yukarı.
+    }
+}
+
+/**
+ * Ödeme onaylandı: sipariş erişim jetonu çereze, sepet kapanır. Sipariş
+ * sayfası e-postasız açılır. YALNIZCA Server Action'lardan ve Route
+ * Handler'lardan (çerez yazma kuralı).
+ */
+export async function finishAttempt(attempt: CheckoutAttempt): Promise<void> {
+    if (attempt.status !== 'succeeded' || !attempt.orderNumber) return;
+    await closeCart();
+    if (attempt.accessToken) await rememberOrderAccess(attempt.orderNumber, attempt.accessToken);
 }
 
 /**

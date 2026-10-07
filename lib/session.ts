@@ -29,6 +29,15 @@ export const SESSION_COOKIE =
  */
 export const ORDER_ACCESS_COOKIE = 'ozmi_siparis';
 
+/**
+ * Açık kart ödeme denemesinin erişim jetonu — httpOnly, `denemeKimliği:jeton`.
+ * Tek deneme yeter: aynı sepetten yeni deneme açılınca API eskisini zaten
+ * devre dışı bırakıyor. Jeton tarayıcı JavaScript'ine hiç verilmez; iframe
+ * sayfası ve yoklama sunucu aksiyonları çerezden okur.
+ */
+export const ATTEMPT_COOKIE = 'ozmi_odeme';
+export const ATTEMPT_MAX_AGE = 60 * 60 * 6;
+
 /** Misafir sepet jetonu — httpOnly. */
 export const CART_COOKIE = 'ozmi_sepet';
 

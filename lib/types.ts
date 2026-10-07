@@ -446,6 +446,8 @@ export interface Order {
         carrierWebsite: string | null;
         shippedAt: string | null;
         deliveredAt: string | null;
+        /** Kargo hareketinin müşteri dilinde özeti ("Yolda", "Dağıtımda"); yalnız Basit Kargo gönderilerinde. */
+        progress?: string | null;
     };
     discreetPackaging: boolean;
     itemCount: number;
@@ -495,6 +497,43 @@ export interface TransferSettlement {
         dueDays: number | null;
     } | null;
 }
+
+// --- Kart ödeme denemesi ------------------------------------------------------
+
+/**
+ * Kartla ödemede sipariş HEMEN açılmaz: önce bir deneme açılır, müşteri PayTR
+ * iframe'inde öder, sipariş ancak sağlayıcının sunucu bildirimiyle oluşur.
+ * Başarısız denemenin hiçbir izi müşterinin siparişlerinde görünmez.
+ */
+export type CheckoutAttemptStatus =
+    | 'created' | 'token_ready' | 'succeeded' | 'failed' | 'token_error' | 'expired' | 'superseded';
+
+export interface CheckoutAttempt {
+    attemptId: string;
+    paymentMethod: 'card';
+    status: CheckoutAttemptStatus;
+    grandTotal: number;
+    /** Yalnız `token_ready`de dolu. */
+    iframeUrl: string | null;
+    expiresAt: string | null;
+    /** Müşteriye gösterilecek Türkçe mesaj API'den gelir; olduğu gibi basılır. */
+    failure: { stage: string; message: string } | null;
+    /** Yalnız `succeeded`de dolu. */
+    orderNumber: string | null;
+    /** Sipariş erişim jetonu; yalnız `succeeded`de dolu. */
+    accessToken: string | null;
+}
+
+/** `POST /checkout/orders`: havale siparişi hemen açar, kart deneme döndürür. */
+export type PlaceOrderResult =
+    | {
+        paymentMethod: 'transfer';
+        orderNumber: string;
+        status: 'placed';
+        grandTotal: number;
+        accessToken?: string;
+    }
+    | (CheckoutAttempt & { attemptAccessToken: string });
 
 export interface InstallmentOption {
     count: number;

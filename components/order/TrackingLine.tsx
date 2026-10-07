@@ -23,6 +23,7 @@ export default function TrackingLine({ shipping, className = '' }: { shipping: O
                 ? <img src={`/carriers/${logo}`} alt={shipping.carrier ?? ''} className="h-4 w-auto max-w-14 object-contain" />
                 : shipping.carrier && <span>{shipping.carrier}</span>}
             <span className="font-mono">{shipping.trackingNumber}</span>
+            {shipping.progress && <span className="font-medium text-slate-700">· {shipping.progress}</span>}
             {href && (
                 <a href={href} target="_blank" rel="noopener noreferrer" className="link">
                     {shipping.trackingUrl ? 'Kargom nerede?' : 'Kargo firmasının sitesi'}
