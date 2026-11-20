@@ -1,12 +1,13 @@
 'use server';
 
 import { after } from 'next/server';
+import { refresh } from 'next/cache';
 import { redirect, RedirectType } from 'next/navigation';
 import { getMyAddresses, saveAddress } from '@/lib/account';
 import { normalisePhone, phoneError } from '@/lib/phone';
 import { orderAttribution } from '@/lib/analytics/server';
 import {
-    finishAttempt, getAttempt, isAttemptId, placeOrder, sendAttemptEvent,
+    CART_FIX_CODES, CheckoutError, finishAttempt, getAttempt, isAttemptId, placeOrder, sendAttemptEvent, TOTAL_CHANGED_CODE,
 } from '@/lib/cart';
 import { getCurrentCustomer } from '@/lib/session';
 import { routes } from '@/lib/site';
@@ -116,6 +117,9 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
     }
 
     const idempotencyKey = value('idempotencyKey');
+    // Müşterinin ekranda gördüğü toplam. API kendi hesabıyla karşılaştırır;
+    // fark varsa sipariş açmaz (661) — fiyat/stok değişimi sessizce tahsil edilmez.
+    const shownTotal = Number(value('expectedTotal'));
     let result: Awaited<ReturnType<typeof placeOrder>>;
     try {
         result = await placeOrder({
@@ -128,10 +132,19 @@ export async function placeOrderAction(_prev: CheckoutState, formData: FormData)
             installment: Number(formData.get('installment') || 1),
             note: value('note') || null,
             legal: { preliminaryInfo: true, distanceSales: true },
+            expectedTotal: value('expectedTotal') && Number.isFinite(shownTotal) ? shownTotal : null,
             // Kampanya kaynağı ve GA kimliği — yalnız analitik izni varsa (D16, D15).
             attribution: await orderAttribution(),
         }, IDEMPOTENCY_KEY.test(idempotencyKey) ? idempotencyKey : undefined);
     } catch (error) {
+        const code = error instanceof CheckoutError ? error.code : null;
+        // Satılamayan satır: hangi ürün olduğu sepette görünür, düzeltme orada.
+        if (code !== null && CART_FIX_CODES.has(code)) {
+            redirect(`${routes.cart}?hata=${encodeURIComponent((error as Error).message)}`);
+        }
+        // Tutar değişti: sayfa yeni sepetle yeniden çizilir, müşteri yeni
+        // toplamı görüp yeniden onaylar. Girdiği alanlar `values` ile korunur.
+        if (code === TOTAL_CHANGED_CODE) refresh();
         return failAndRotate((error as Error).message);
     }
 

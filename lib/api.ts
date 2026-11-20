@@ -1,6 +1,9 @@
 import { cacheLife, cacheTag } from 'next/cache';
 import type { Locations } from './locations';
 import type {
+    GuideV2Answer,
+    GuideV2Step,
+    PublicShippingRate,
     BrandSummary,
     Category,
     CategoryDetail,
@@ -332,6 +335,14 @@ export async function getSettings(): Promise<SiteSettings> {
     return request<SiteSettings>('/settings');
 }
 
+/** Etkin kargo kuralları — ürün sayfasındaki ücretsiz kargo eşiği satırı için (S11). */
+export async function getShippingRates(): Promise<PublicShippingRate[]> {
+    'use cache';
+    cacheTag('settings');
+    cacheLife('days');
+    return (await request<{ items: PublicShippingRate[] }>('/shipping-rates')).items;
+}
+
 export async function getMenu(code: string): Promise<MenuTree> {
     'use cache';
     cacheTag('settings');
@@ -390,6 +401,35 @@ export async function getGuideResults(path: string): Promise<GuideResult> {
         method: 'POST',
         body: JSON.stringify({ path }),
         headers: { 'Content-Type': 'application/json' },
+    });
+}
+
+/**
+ * Rehber V2'nin ilk sorusu (yalnız açık seçeneklerle). Kişiye özel değil:
+ * anasayfa bloğu ve rehber girişi önbellekten okur. Sonraki adımlar
+ * `guideV2Next` ile, cevaplar istek GÖVDESİNDE ve önbelleksiz.
+ */
+export async function getGuideV2Start(): Promise<GuideV2Step> {
+    'use cache';
+    cacheTag('guide', 'products');
+    cacheLife('hours');
+    return request<GuideV2Step>('/guide/v2/next', {
+        method: 'POST',
+        body: JSON.stringify({ answers: [] }),
+        headers: { 'Content-Type': 'application/json' },
+    });
+}
+
+/**
+ * Rehber V2 adımı. ÖNBELLEKSİZ ve cevaplar gövdede: adreste, önbellek
+ * anahtarında ve API günlüğünde müşterinin cevabı yok (uç `logging: false`).
+ */
+export async function guideV2Next(answers: GuideV2Answer[], extraHeaders: Record<string, string> = {}): Promise<GuideV2Step> {
+    return request<GuideV2Step>('/guide/v2/next', {
+        method: 'POST',
+        cache: 'no-store',
+        body: JSON.stringify({ answers }),
+        headers: { 'Content-Type': 'application/json', ...extraHeaders },
     });
 }
 

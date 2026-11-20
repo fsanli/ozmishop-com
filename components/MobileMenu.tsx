@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { colorsOf } from '@/lib/colors';
 import { routes } from '@/lib/site';
 import type { Category } from '@/lib/types';
+import { announceOverlay } from '@/lib/overlay';
 
 /**
  * Mobil menü — kategori ağacı iki seviye; üçüncü seviye kategori sayfasında görünür.
@@ -15,9 +16,19 @@ import type { Category } from '@/lib/types';
  * Menü başlığın içinde kalırsa `inset-0` viewport'a değil 145px'lik başlığa göre
  * çözülür ve panel o yüksekliğe hapsolur.
  */
-export default function MobileMenu({ categories }: { categories: Category[] }) {
+export default function MobileMenu({ categories, helpLinks = [] }: {
+    categories: Category[];
+    /** Yayımlı yardım sayfaları — kategori ekranından da İletişim/Kargo/İade'ye ulaşılsın. */
+    helpLinks?: { slug: string; title: string }[];
+}) {
     const [open, setOpen] = useState(false);
     const [expanded, setExpanded] = useState<number | null>(null);
+
+    // Menü açıkken tawk.to balonu menünün üstüne binmesin (S12).
+    useEffect(() => {
+        announceOverlay('mobil-menu', open);
+        return () => announceOverlay('mobil-menu', false);
+    }, [open]);
 
     // Menü açıkken arka planın kaymasını engelle.
     useEffect(() => {
@@ -104,6 +115,20 @@ export default function MobileMenu({ categories }: { categories: Category[] }) {
                             Markalar
                         </Link>
                     </li>
+                    {helpLinks.length > 0 && (
+                        <li className="mt-2 border-t border-slate-900/8 pt-2">
+                            <span className="block px-3 pb-1 pt-2 text-[11.5px] font-bold uppercase tracking-[0.06em] text-slate-500">Yardım</span>
+                            <ul>
+                                {helpLinks.map((page) => (
+                                    <li key={page.slug}>
+                                        <Link href={routes.page(page.slug)} onClick={() => setOpen(false)} className="block px-3 py-2.5 text-[13.5px] text-slate-700">
+                                            {page.title}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </li>
+                    )}
                 </ul>
             </nav>
         </div>

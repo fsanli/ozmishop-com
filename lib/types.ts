@@ -357,8 +357,17 @@ export interface CartItem {
     lineTotal: number;
     /** Ürün satıştan kalkmışsa false; satır silinmez, işaretlenir. */
     available: boolean;
+    /**
+     * Ödemeye geçilebilir mi (satışta + fiyatı var + stok yetiyor). API'nin tek
+     * kuralı `CartService.lineStatus`; eski API göndermezse `available` esas alınır.
+     */
+    purchasable?: boolean;
+    blockReason?: CartBlockReason | null;
+    vatPercent?: number;
     maxQuantity: number | null;
 }
+
+export type CartBlockReason = 'inactive' | 'unpublished' | 'no_price' | 'out_of_stock' | 'exceeds_stock';
 
 export interface ShippingOption {
     id: number;
@@ -371,6 +380,18 @@ export interface ShippingOption {
     freeOver: number | null;
     /** "X TL daha ekle, kargo bedava" mesajı için. */
     remainingForFree: number | null;
+    estimatedDays: { min: number; max: number } | null;
+}
+
+/** `GET /shipping-rates` — sepetsiz kargo kuralı (ürün sayfası). */
+export interface PublicShippingRate {
+    id: number;
+    name: string;
+    carrier: string;
+    description: string | null;
+    price: number;
+    /** Eşik DAHİL: bu tutar ve üzeri ücretsiz (`>=`). */
+    freeOver: number | null;
     estimatedDays: { min: number; max: number } | null;
 }
 
@@ -389,10 +410,13 @@ export interface Cart {
     itemCount: number;
     items: CartItem[];
     /** Stoğu yetmeyen ya da satıştan kalkan satırlar. */
-    issues: { itemId: number; kind: 'unavailable' | 'stock'; name: string; available?: number }[];
+    issues: { itemId: number; kind: 'unavailable' | 'stock'; reason?: CartBlockReason; name: string; available?: number }[];
     coupon: CartCoupon | null;
     shippingOptions: ShippingOption[];
     selectedShippingRateId: number | null;
+    /** En az bir satır var ve hepsi satılabilir. Değilse "Ödemeye geç" kapalı. */
+    checkoutReady?: boolean;
+    blockedCount?: number;
     totals: { subtotal: number; discount: number; shipping: number; grandTotal: number };
 }
 
@@ -795,6 +819,12 @@ export interface SiteSettings {
     'kargo.sureler'?: string;
     'gizlilik.notr_ekstre_adi'?: string;
     'gizlilik.gonderici_adi'?: string;
+    /** Paketleme cümlesi; `{{gizlilik.gonderici_adi}}` içerebilir (bkz. lib/privacy-copy.ts). */
+    /** Başlangıç rehberi sürümü: '1' doğrusal (eski), '2' koşullu (V2). */
+    'rehber.surum'?: string;
+    'gizlilik.paketleme_metni'?: string;
+    /** Kart ekstresi cümlesi — doğrulanmamış banka görünümü için genel ifade. */
+    'gizlilik.ekstre_metni'?: string;
     'gizlilik.notr_eposta_konusu'?: string;
     'gizlilik.kvkk_sayfa_slug'?: string;
     'gizlilik.gizlilik_sayfa_slug'?: string;
@@ -822,4 +852,37 @@ export interface MenuTree {
     code: string;
     name: string | null;
     items: MenuItem[];
+}
+
+// --- Rehber V2 (koşullu akış, API api/guide/v2/flow.js) ---------------------------
+
+export interface GuideV2Answer { q: string; o: string }
+
+export interface GuideV2Question {
+    key: string;
+    question: string;
+    hint: string | null;
+    /** Kararsız ziyaretçinin keşif sorusu: kategori ve destek bağlantıları da gösterilir. */
+    explore: boolean;
+    options: { key: string; label: string; hint: string | null }[];
+}
+
+export interface GuideV2Pick extends ProductCard {
+    why: string;
+    familySize: number;
+}
+
+export interface GuideV2Step {
+    version: number;
+    done: boolean;
+    /** İlk soruda hiç açık yol yok (onaylı ürün yok): rehber geçici olarak kapalı. */
+    closed?: boolean;
+    step?: number;
+    /** Bu yolun toplam soru sayısı; dal henüz belli değilse null. */
+    total?: number | null;
+    question?: GuideV2Question;
+    answers: (GuideV2Answer & { question: string; label: string })[];
+    matchLevel?: 'exact' | 'none';
+    familyCount?: number;
+    picks?: GuideV2Pick[];
 }

@@ -1,16 +1,14 @@
-import Image from 'next/image';
-import Link from 'next/link';
 import { Suspense } from 'react';
-import ProductActions, { FavoriteButton } from '@/components/product/ProductActions';
+import { FavoriteButton } from '@/components/product/ProductActions';
 import FavoriteState from '@/components/product/FavoriteState';
+import ProductCardView from '@/components/ProductCardView';
 import { getSettings } from '@/lib/api';
-import { SPEC_BADGE } from '@/lib/colors';
-import { formatPrice } from '@/lib/format';
-import { routes, site } from '@/lib/site';
+import { site } from '@/lib/site';
 import type { ProductCard as ProductCardType } from '@/lib/types';
 
 /**
- * Ürün kartı — sıfır istemci JS.
+ * Ürün kartı — sıfır istemci JS. Gövde `ProductCardView`'da; bu sarmalayıcı
+ * ayarları ve kalbin durumunu sunucuda okur.
  *
  * v2 tasarımı kartın İÇİNE favori kalbi ve "sepete ekle" kutucuğu koyuyor. Kartın
  * tamamını <a> yapmak bu durumda geçersiz HTML üretir (iç içe etkileşimli öğe) ve
@@ -41,97 +39,18 @@ export default async function ProductCard({
     back?: string;
 }) {
     const settings = await getSettings();
-    const hasRange = product.hasVariants
-        && product.minPrice !== null && product.maxPrice !== null && product.minPrice !== product.maxPrice;
-
     return (
-        <article className="card card-hover group relative flex h-full flex-col overflow-hidden">
-            <div className="relative aspect-square overflow-hidden bg-shelf">
-                {product.image ? (
-                    <Image
-                        src={product.image.url}
-                        alt={product.image.alt || product.name}
-                        fill
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                        // `priority` Next 16'da kalktı; preload yerine öncelikli yükleme (image.md).
-                        loading={priority ? 'eager' : undefined}
-                        fetchPriority={priority ? 'high' : undefined}
-                        className="object-cover transition duration-300 group-hover:scale-[1.03]"
-                    />
-                ) : (
-                    <div className="flex h-full items-center justify-center text-[11px] font-medium text-slate-400">
-                        Ürün görseli
-                    </div>
-                )}
-
-                <div className="absolute left-[11px] top-[11px] flex flex-col items-start gap-1">
-                    {product.discountPercent > 0 && <span className="badge badge-accent">%{product.discountPercent} indirim</span>}
-                    {product.isNew && product.discountPercent === 0 && <span className="badge badge-teal">Yeni</span>}
-                </div>
-
-                {/* Favori görselin ÜSTÜNDE: kart altındaki şeridi tamamen
-                    "Sepete ekle"ye bırakıyor. Stretched-link'in üstünde kalması
-                    için z-10 — ProductActions'takiyle aynı sebep. */}
-                <div className="absolute right-[10px] top-[10px] z-10">
-                    <Suspense fallback={<FavoriteButton product={product} back={back} />}>
-                        <FavoriteState product={product} back={back} />
-                    </Suspense>
-                </div>
-
-                {!product.inStock && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-paper/70">
-                        <span className="badge badge-neutral bg-surface">Tükendi</span>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex flex-1 flex-col gap-1.5 px-[15px] pb-4 pt-[13px]">
-                <span className="brand-line">{product.brand.name}</span>
-
-                <h3 className="line-clamp-2 text-[13.5px] font-medium leading-[1.4] text-slate-900">
-                    <Link
-                        href={routes.product(product.slug)}
-                        className="transition-colors after:absolute after:inset-0 group-hover:text-accent-500"
-                    >
-                        {product.name}
-                    </Link>
-                </h3>
-
-                {product.specs && product.specs.length > 0 && (
-                    <div className="mt-0.5 flex flex-wrap gap-1.5">
-                        {product.specs.map((spec) => (
-                            <span key={`${spec.kind}-${spec.label}`} className={`${SPEC_BADGE[spec.kind]} px-[7px] py-0.5 text-[10.5px] font-semibold`}>
-                                {spec.label}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                <div className="mt-auto flex flex-wrap items-baseline gap-2 pt-3">
-                        {hasRange ? (
-                            <span className="price text-base">
-                                {formatPrice(product.minPrice)}
-                                <span className="text-[12px] font-normal text-slate-500">&rsquo;den</span>
-                            </span>
-                        ) : (
-                            <>
-                                <span className="price text-base">{formatPrice(product.price)}</span>
-                                {product.compareAtPrice && product.compareAtPrice > (product.price ?? 0) && (
-                                    <span className="price-old text-[12px]">{formatPrice(product.compareAtPrice)}</span>
-                                )}
-                            </>
-                    )}
-                </div>
-
-                <ProductActions
-                    product={product}
-                    settings={settings}
-                    siteUrl={site.url}
-                    back={back}
-                    variant="bar"
-                    className="mt-2.5"
-                />
-            </div>
-        </article>
+        <ProductCardView
+            product={product}
+            priority={priority}
+            back={back}
+            settings={settings}
+            siteUrl={site.url}
+            favoriteSlot={(
+                <Suspense fallback={<FavoriteButton product={product} back={back} />}>
+                    <FavoriteState product={product} back={back} />
+                </Suspense>
+            )}
+        />
     );
 }

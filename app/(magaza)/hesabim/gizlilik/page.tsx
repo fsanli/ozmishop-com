@@ -11,12 +11,6 @@ export const metadata: Metadata = { title: 'Gizlilik modu', robots: { index: fal
 
 const ROWS = [
     {
-        key: 'neutralStatement',
-        dot: 'bg-accent-500',
-        title: 'Nötr ekstre adı',
-        body: 'Kart ekstrenizde ürün adı değil, şirket unvanı görünür.',
-    },
-    {
         key: 'neutralEmailSubject',
         dot: 'bg-teal-dot',
         title: 'Nötr e-posta konusu',
@@ -44,7 +38,7 @@ export default async function PrivacyPage({ searchParams }: { searchParams: Prom
         <AccountShell
             active={routes.accountPrivacy}
             title="Gizlilik modu"
-            description="Siparişinin hiçbir adımında ne aldığın görünmez. Buradan hangi korumaların açık olduğunu yönetirsin."
+            description="Sipariş geçmişin ve e-postaların için hangi korumaların açık olduğunu buradan yönetirsin."
         >
             {error && (
                 <p role="alert" className="mb-4 rounded-[var(--radius-md)] bg-accent-200 px-4 py-3 text-[13.5px] font-semibold text-accent-500">

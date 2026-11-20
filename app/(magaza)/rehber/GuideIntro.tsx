@@ -9,37 +9,36 @@ import type { GuideQuestion } from '@/lib/types';
  * Rehber girişi.
  *
  * Başlık ve giriş metni `/ayarlar`dan gelir (`icerik.rehber_giris_*`); ayar
- * silinirse varsayılan basılır ve sayfa boş kalmaz. Soru sayısı metne otomatik
- * eklenir — editör "dört soru" yazıp beşinciyi ekleyince sayfa yalan söylemesin.
+ * silinirse Ek A'nın onaylı metni basılır. Soru sayısı metne otomatik eklenir —
+ * editör "dört soru" yazıp beşinciyi ekleyince sayfa yalan söylemesin.
  *
- * "Önce şunları bilmek işini kolaylaştırır" kartları sabit: dört kart, her biri
- * kendi rengiyle tasarımın parçası. Serbest metne açmak düzeni bozardı; içerik
- * değişikliği gerekirse kartlar bir sonraki turda `settings`e taşınır.
+ * Kartlar ürün sayfasında NEREYE bakılacağını anlatır; ürün hakkında genel
+ * vaat vermez. "45 dB altı duyulmaz", "IPX7 tercih edilir", "ilk üründe küçük
+ * olan iyidir" gibi doğrulanmamış genellemeler çıkarıldı (canlıya geçiş S08).
  */
 const BASICS: [string, ColorKey, string, string][] = [
-    ['01', 'plum', 'Malzeme', 'Tıbbi sınıf silikon gözeneksizdir: hijyeniktir, koku yapmaz. Jelly ve TPE ürünlerden uzak dur.'],
-    ['02', 'berry', 'Ses seviyesi', '45 dB altı fısıltı düzeyidir. Ev arkadaşın ya da ince duvar varsa tek belirleyici kriter budur.'],
-    ['03', 'teal', 'Su geçirmezlik', 'IPX4 sıçramaya dayanır, IPX7 tamamen suya batırılabilir. Temizlik kolaylığı için IPX7 tercih edilir.'],
-    ['04', 'amber', 'Boyut', 'İlk üründe küçük olan daha iyidir. Ürün sayfalarında uzunluk ve genişlik santimetre olarak yazar.'],
+    ['01', 'plum', 'Malzeme', 'Gövde malzemesi ürün sayfasındaki teknik künyede yazar. Kayganlaştırıcı seçerken bu bilgiye bak.'],
+    ['02', 'teal', 'Su koruması', 'IPX4 sıçramaya, IPX7 suya batırılmaya dayanıklı demektir. Ürünün değeri künyede ayrı bir satırdır.'],
+    ['03', 'amber', 'Ölçüler', 'Uzunluk ve çap santimetre olarak yazar. Gövde ölçüsü ile kullanılabilir uzunluk farklı olabilir.'],
 ];
 
 /**
- * Soru sayısı ve iade süresi sabit YAZILMAZ: "dört soru" beşinci soru
- * eklenince, "14 gün koşulsuz iade" ise iade politikasıyla çelişiyordu
- * (hijyen ambalajı açılmış ürün iade edilemiyor; süre ayardan gelir).
+ * Soru sayısı ve iade süresi sabit YAZILMAZ. Her söz gerçek davranışa dayanır:
+ * öneriler satışta + stokta + bütçe içi ürünlerden gelir ve koşullar
+ * kendiliğinden esnetilmez (S08). İade, koruyucu ambalajı açılmamış ürün için.
  */
 const promises = (questionCount: number, returnDays: number): [ColorKey, string][] => [
-    ['rose', `${questionCount} soru, tek seçim — atlanabilir.`],
-    ['plum', 'Cevaplar kaydedilmez, e-posta istenmez.'],
-    ['amber', 'Öneriler stoktan ve fiyat sırasına göre değil, uygunluğa göre.'],
-    ['teal', `Ambalajı açılmamış üründe ${returnDays} gün içinde iade hakkı.`],
+    ['rose', `${questionCount} kısa soru, her birinde tek seçim.`],
+    ['plum', 'Üyelik ve e-posta istenmez; cevapların hesabına kaydedilmez.'],
+    ['amber', 'Yalnızca satışta olan ve bütçene giren ürünler gösterilir.'],
+    ['teal', `Koruyucu ambalajı açılmamış üründe ${returnDays} gün içinde cayma hakkı.`],
 ];
 
 export default async function GuideIntro({ questions }: { questions: GuideQuestion[] }) {
     const settings = await getSettings();
-    const headline = settings['icerik.rehber_giris_baslik'] ?? 'İlk kez alıyorsan.';
+    const headline = settings['icerik.rehber_giris_baslik'] ?? 'Sana uygun ürünü birlikte bulalım.';
     const body = settings['icerik.rehber_giris_metni']
-        ?? 'Hiçbiri kişisel değil, hiçbir cevap kaydedilmiyor. Sonunda üç ürünlük kısa bir liste ve her biri için neden önerdiğimizin açıklaması var.';
+        ?? 'Birkaç kısa soruyla aradığın kullanım şekline ve bütçene uygun seçenekleri daraltalım.';
     const returnDays = Number(settings['icerik.iade_suresi_gun']) || 14;
 
     return (
@@ -66,7 +65,7 @@ export default async function GuideIntro({ questions }: { questions: GuideQuesti
                                 href={`${routes.guide}?adim=1`}
                                 className="btn-primary mt-7 rounded-[16px] px-[26px] py-[17px] text-base"
                             >
-                                Başla — 60 saniye
+                                Başlayalım
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
                                     <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
                                 </svg>
@@ -90,7 +89,8 @@ export default async function GuideIntro({ questions }: { questions: GuideQuesti
                     Önce şunları bilmek işini kolaylaştırır
                 </h2>
                 <p className="mb-[22px] mt-2 max-w-[58ch] text-[14.5px] leading-relaxed text-slate-600">
-                    Testi atlamak istersen dört başlık zaten cevabın büyük kısmını veriyor.
+                    Testi atlamak istersen ürün sayfalarında bu başlıklara bakman yeterli.{' '}
+                    <Link href={routes.categories} className="link">Doğrudan kategorilere göz at</Link>
                 </p>
 
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,245px),1fr))] gap-[clamp(10px,1.6vw,16px)]">

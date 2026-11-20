@@ -13,6 +13,7 @@ import { formatPrice } from '@/lib/format';
 import { productWhatsappLink, type WhatsappSettings } from '@/lib/whatsapp';
 import type { ProductDetail, ProductVariant } from '@/lib/types';
 import { useVariantSelection } from './VariantSelection';
+import { PACKAGING_SHORT } from '@/lib/privacy-copy';
 
 /**
  * Varyant seçici ve satın alma paneli.
@@ -38,7 +39,7 @@ const BUY_SIZES = {
 } as const;
 
 export default function ProductPurchasePanel({
-    product, whatsapp, siteUrl, returnDays, shippingLine,
+    product, whatsapp, siteUrl, returnDays, shippingLine, freeShippingLine,
 }: {
     product: ProductDetail;
     /** Numara ve mesaj kalıbı (ayarlardan); bağlantı seçili varyantla burada kurulur. */
@@ -48,6 +49,8 @@ export default function ProductPurchasePanel({
     returnDays: number;
     /** `kargo.sureler` — API'de ayarlardan kurulan kargo cümlesi; boşsa satır yok. */
     shippingLine?: string;
+    /** "2.000 ₺ ve üzeri siparişlerde kargo ücretsiz" — gerçek kargo kuralından. */
+    freeShippingLine?: string;
 }) {
     const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
 
@@ -263,9 +266,10 @@ export default function ProductPurchasePanel({
 
 
             <ul className="space-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500">
-                <li>Gizli paketleme — kargo etiketinde içerik bilgisi yer almaz.</li>
+                <li>Gizli paketleme — {PACKAGING_SHORT.toLocaleLowerCase('tr')}</li>
                 {shippingLine && <li>{shippingLine}</li>}
-                <li>Ambalajı açılmamış ürünlerde {returnDays} gün içinde iade hakkı.</li>
+                {freeShippingLine && <li>{freeShippingLine}</li>}
+                <li>Koruyucu ambalajı açılmamış ürünlerde {returnDays} gün içinde cayma hakkı.</li>
             </ul>
         </div>
     );

@@ -83,7 +83,7 @@ export default function GuideQuiz({
             </div>
 
             <p className="mt-5 text-[12px] leading-relaxed text-slate-500">
-                Cevapların tarayıcından çıkmaz; hesabına kaydedilmez, e-posta istenmez.
+                Cevapların hesabına kaydedilmez, e-posta istenmez.
             </p>
         </div>
     );

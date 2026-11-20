@@ -84,12 +84,31 @@ export const routes = {
  */
 export const PANIC_EXIT_URL = 'https://www.google.com/search?q=hava+durumu';
 
-/** Panelden gelen link adresini güvenli hale getirir: yalnızca site içi yollar. */
+/**
+ * Vitrinin kendi alan adları. Panelde mutlak adres girilmişse (ör.
+ * `https://dev.ozmishop.com/sayfa/sss`) yola çevrilir: aynı menü ayarı dev
+ * ve canlıda doğru vitrine gider, panel alan adına kaçmaz.
+ */
+const SITE_HOSTS = new Set(['ozmishop.com', 'www.ozmishop.com', 'dev.ozmishop.com']);
+
+/**
+ * Panelden gelen link adresini güvenli hale getirir: yalnızca site içi yollar.
+ * Başka alan adı (panel, harici site, `ozmishop.com.ornek.net` gibi önek
+ * benzerleri) `null` döner ve kalem çizilmez — panel bunu kaydederken uyarır.
+ */
 export function safeLink(url: string | null | undefined): string | null {
-    if (!url) return null;
-    if (url.startsWith('/') && !url.startsWith('//')) return url;
-    if (url.startsWith(site.url)) return url.slice(site.url.length) || '/';
-    return null;
+    const value = url?.trim();
+    if (!value) return null;
+    if (value.startsWith('/') && !value.startsWith('//')) return value;
+    let parsed: URL;
+    try {
+        parsed = new URL(value);
+    } catch {
+        return null;
+    }
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+    const own = parsed.origin === new URL(site.url).origin || SITE_HOSTS.has(parsed.hostname);
+    return own ? `${parsed.pathname}${parsed.search}${parsed.hash}` || '/' : null;
 }
 
 export function isCanonicalHost(host: string | null | undefined): boolean {

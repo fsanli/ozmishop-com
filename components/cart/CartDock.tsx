@@ -6,10 +6,12 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Toaster, toast } from 'sonner';
 import { BagIcon, XIcon } from '@/components/icons';
 import { formatPrice } from '@/lib/format';
+import { BLOCKED_CART_MESSAGE, isCheckoutReady, lineMessage } from '@/lib/cart-status';
 import { track } from '@/lib/analytics/gtag';
 import { ANALYTICS_EVENT_COOKIE, FLASH_COOKIE } from '@/lib/flash';
 import { routes } from '@/lib/site';
 import type { Cart } from '@/lib/types';
+import { announceOverlay } from '@/lib/overlay';
 
 /**
  * SEPETE EKLEME GERİ BİLDİRİMİ: toast + masaüstünde sepet çekmecesi.
@@ -57,6 +59,11 @@ export default function CartDock({ flash, analyticsEvent }: { flash: string | nu
     if (dismissed !== null && dismissed !== flash) setDismissed(null);
 
     const open = added && isDesktop && dismissed !== flash;
+    // Çekmece açıkken tawk.to balonu "Ödemeye geç"in üstüne binmesin (S12).
+    useEffect(() => {
+        announceOverlay('sepet', Boolean(open));
+        return () => announceOverlay('sepet', false);
+    }, [open]);
 
     const [cart, setCart] = useState<Cart | null>(null);
 
@@ -159,8 +166,13 @@ export default function CartDock({ flash, analyticsEvent }: { flash: string | nu
                                                 <span className="mt-0.5 block text-[12px] text-slate-600">
                                                     {item.quantity} × {formatPrice(item.price)}
                                                 </span>
+                                                {lineMessage(item) && (
+                                                    <span className="mt-0.5 block text-[11.5px] font-semibold text-accent-500">{lineMessage(item)}</span>
+                                                )}
                                             </span>
-                                            <span className="shrink-0 text-[13px] font-bold tabular-nums">{formatPrice(item.lineTotal)}</span>
+                                            <span className={`shrink-0 text-[13px] font-bold tabular-nums ${item.available ? '' : 'text-slate-400 line-through'}`}>
+                                                {formatPrice(item.lineTotal)}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
@@ -173,9 +185,18 @@ export default function CartDock({ flash, analyticsEvent }: { flash: string | nu
                                     <span className="text-[13px] text-slate-600">Ara toplam</span>
                                     <span className="price text-[17px]">{formatPrice(cart.totals.subtotal)}</span>
                                 </div>
+                                {!isCheckoutReady(cart) && (
+                                    <p role="alert" className="mb-3 rounded-[var(--radius-md)] bg-accent-200 px-3 py-2 text-[12px] font-semibold text-accent-500">
+                                        {BLOCKED_CART_MESSAGE}
+                                    </p>
+                                )}
                                 <div className="flex gap-2">
                                     <Link href={routes.cart} onClick={() => setDismissed(flash)} className="btn-secondary flex-1 justify-center">Sepete git</Link>
-                                    <Link href={routes.checkout} onClick={() => setDismissed(flash)} className="btn-primary flex-1 justify-center">Ödemeye geç</Link>
+                                    {isCheckoutReady(cart) ? (
+                                        <Link href={routes.checkout} onClick={() => setDismissed(flash)} className="btn-primary flex-1 justify-center">Ödemeye geç</Link>
+                                    ) : (
+                                        <button type="button" disabled aria-disabled="true" className="btn-primary flex-1 justify-center opacity-45">Ödemeye geç</button>
+                                    )}
                                 </div>
                             </footer>
                         )}

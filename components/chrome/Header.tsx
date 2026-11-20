@@ -2,7 +2,7 @@ import Container from '@/components/Container';
 import Logo from '@/components/Logo';
 import MobileMenu from '@/components/MobileMenu';
 import SearchBar from '@/components/SearchBar';
-import { getCategoryTree, getSettings } from '@/lib/api';
+import { getCategoryTree, getPagesGrouped, getSettings } from '@/lib/api';
 import { site } from '@/lib/site';
 import CategoryNav from './CategoryNav';
 import HeaderActions from './HeaderActions';
@@ -23,11 +23,18 @@ export default async function Header({ variant = 'full' }: { variant?: 'full' | 
     // Arama açılırındaki aksiyon ikonları WhatsApp numarasını istiyor. Ayarlar
     // önbellekli bir okuma; istek API'si DEĞİL, statik kabuk bozulmuyor.
     const settings = await getSettings();
+    // Mobil menünün "Yardım" bölümü: panelde "yardım" grubuna alınmış yayımlı
+    // sayfalar (İşlem Rehberi, İletişim, Kargo, İade, SSS). Kodda liste yok.
+    const helpLinks = variant === 'full'
+        ? ((await getPagesGrouped().catch(() => ({ items: [] }))).items ?? [])
+            .filter((page) => page.group === 'yardim')
+            .map((page) => ({ slug: page.slug, title: page.title }))
+        : [];
 
     return (
         <header className="sticky top-0 z-30 border-b border-slate-900/8 bg-paper/92 backdrop-blur-[14px]">
             <Container className="flex items-center gap-[clamp(14px,3vw,36px)] py-[15px]">
-                {variant === 'full' && <MobileMenu categories={categories} />}
+                {variant === 'full' && <MobileMenu categories={categories} helpLinks={helpLinks} />}
 
                 <Logo className="shrink-0 text-[clamp(20px,2.4vw,25px)]" />
 

@@ -1,12 +1,19 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import Container from '@/components/Container';
-import { getGuideQuestions, getGuideResults } from '@/lib/api';
+import EmptyState from '@/components/EmptyState';
+import {
+    ApiError, getGuideQuestions, getGuideResults, getGuideV2Start, getSettings,
+} from '@/lib/api';
+import { packagingText } from '@/lib/privacy-copy';
+import type { GuideResult as Result } from '@/lib/types';
 import { one, type SearchParams } from '@/lib/listing';
 import { routes, site } from '@/lib/site';
 import GuideIntro from './GuideIntro';
 import GuideQuiz from './GuideQuiz';
 import GuideResult from './GuideResult';
+import GuideV2 from './v2/GuideV2';
 
 /**
  * Rehberin kanonik adresi girişidir. Quiz ve sonuç adresleri `noindex`:
@@ -18,7 +25,7 @@ import GuideResult from './GuideResult';
  */
 export const metadata: Metadata = {
     title: 'Başlangıç rehberi — ilk kez alıyorsan',
-    description: 'Birkaç soru, üç ürün önerisi ve her biri için neden onu seçtiğimizin açıklaması. Cevaplar kaydedilmez.',
+    description: 'Birkaç kısa soruyla aradığın kullanım şekline ve bütçene uygun seçenekleri daraltalım.',
     alternates: { canonical: `${site.url}${routes.guide}` },
 };
 
@@ -31,7 +38,33 @@ export default function GuidePage({ searchParams }: { searchParams: Promise<Sear
 }
 
 async function GuideBody({ searchParams }: { searchParams: Promise<SearchParams> }) {
-    const [questions, params] = await Promise.all([getGuideQuestions(), searchParams]);
+    const [settings, params] = await Promise.all([getSettings(), searchParams]);
+
+    // V2 (koşullu rehber): panelden `rehber.surum = 2` ile açılır (Rehber › V2).
+    if (String(settings['rehber.surum'] ?? '1') === '2') {
+        // Eski V1 bağlantısı (`?c=AABA`): harfler yeni sorulara sessizce eşlenmez.
+        if (one(params.c)) {
+            return (
+                <>
+                    <NoIndex />
+                    <GuideProblem kind="stale" path="" />
+                </>
+            );
+        }
+        const start = await getGuideV2Start().catch(() => null);
+        return (
+            <>
+                {one(params.adim) && <NoIndex />}
+                <GuideV2
+                    start={start}
+                    packaging={packagingText(settings)}
+                    returnDays={Number(settings['icerik.iade_suresi_gun']) || 14}
+                />
+            </>
+        );
+    }
+
+    const questions = await getGuideQuestions();
 
     if (questions.length === 0) {
         return <GuideIntro questions={questions} />;
@@ -44,10 +77,19 @@ async function GuideBody({ searchParams }: { searchParams: Promise<SearchParams>
 
     // Tüm sorular cevaplanmışsa sonuç; aksi halde adım ya da giriş.
     if (answered.length >= questions.length) {
+        let result: Result | null = null;
+        let failure: 'stale' | 'error' | null = null;
+        try {
+            result = await getGuideResults(answered);
+        } catch (error) {
+            // 400: bağlantıdaki bir cevap artık yok (soru/seçenek değişmiş). Eski
+            // cevap yeni soruya sessizce eşlenmez; müşteri baştan başlar (S08).
+            failure = error instanceof ApiError && error.statusCode === 400 ? 'stale' : 'error';
+        }
         return (
             <>
                 <NoIndex />
-                <GuideResult result={await getGuideResults(answered)} />
+                {result ? <GuideResult result={result} questionCount={questions.length} /> : <GuideProblem kind={failure ?? 'error'} path={answered} />}
             </>
         );
     }
@@ -67,6 +109,39 @@ async function GuideBody({ searchParams }: { searchParams: Promise<SearchParams>
     }
 
     return <GuideIntro questions={questions} />;
+}
+
+/**
+ * Sonuç alınamadı. "Uygun ürün yok" DENMEZ: bu bir yükleme sorunu ya da eski
+ * bir bağlantı, eşleşme sonucu değil (Ek A §10, "Yükleme hatası var").
+ */
+function GuideProblem({ kind, path }: { kind: 'stale' | 'error'; path: string }) {
+    return (
+        <Container narrow className="py-[clamp(24px,4vw,44px)]">
+            {kind === 'stale' ? (
+                <EmptyState
+                    where="Rehber"
+                    color="berry"
+                    title="Rehber yenilendi; yeniden başlayalım."
+                    description="Açtığın bağlantıdaki cevaplar güncel sorularla eşleşmiyor. Birkaç kısa soruyla seçenekleri yeniden daraltalım."
+                    action={<Link href={`${routes.guide}?adim=1`} className="btn-accent">Başlayalım</Link>}
+                />
+            ) : (
+                <EmptyState
+                    where="Rehber"
+                    color="amber"
+                    title="Öneriler şu anda yüklenemedi."
+                    description="Bağlantı kaynaklı geçici bir sorun olabilir. Cevapların korunuyor; birazdan yeniden deneyebilirsin."
+                    action={(
+                        <div className="flex flex-wrap gap-2.5">
+                            <Link href={`${routes.guide}?c=${path}`} className="btn-accent">Tekrar dene</Link>
+                            <Link href={routes.categories} className="btn-secondary">Kategorileri keşfet</Link>
+                        </div>
+                    )}
+                />
+            )}
+        </Container>
+    );
 }
 
 /**

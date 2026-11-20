@@ -1,8 +1,9 @@
-import Script from 'next/script';
 import ConsentGate from '@/components/consent/ConsentGate';
 import { WhatsappIcon } from '@/components/icons';
 import { getSettings } from '@/lib/api';
+import { routes } from '@/lib/site';
 import { supportWhatsappLink } from '@/lib/whatsapp';
+import TawkLoader from './TawkLoader';
 
 /**
  * Köşedeki destek kanalları: WhatsApp balonu ve tawk.to canlı desteği.
@@ -52,7 +53,7 @@ export default async function SupportDock() {
                 // çerez onayı verilmeden betik HİÇ yüklenmez.
                 // afterInteractive: LCP'den sonra; sayfa bu betiği beklememeli.
                 <ConsentGate fallback="support">
-                    <Script id="tawkto" src={tawk} strategy="afterInteractive" />
+                    <TawkLoader src={tawk} contactHref={routes.page('iletisim')} />
                 </ConsentGate>
             )}
         </>

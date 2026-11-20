@@ -1,14 +1,15 @@
 import { LockIcon } from '@/components/icons';
 import { getSettings } from '@/lib/api';
+import { PACKAGING_SHORT, statementText } from '@/lib/privacy-copy';
 
 /**
  * "Bu siparişte gizlilik" koyu bloğu. Ürün detayda, ödeme özetinde ve sipariş
  * onayında aynı sözleri verir — tasarımın ayırt edici bloğu.
  *
- * Değerler `/ayarlar`dan okunur: şirket unvanı ya da gönderici adı değişirse
- * verilen söz beş ayrı dosyada yalan olmasın. Ad girilmemişse SABİT bir ad
- * uydurulmaz: söz genel kalır ("şirket unvanı"). Sabit varsayılan, panelde
- * doğrulanmış addan farklı bir adı müşteriye vaat ediyordu (P1-04).
+ * Değerler `/ayarlar`dan okunur: gönderici adı değişirse verilen söz beş ayrı
+ * dosyada yalan olmasın. Paketleme ve ekstre cümleleri `lib/privacy-copy`
+ * (S10): ekstre açıklaması bankaya göre değiştiği için kesin ad sözü yok;
+ * gönderici adı ile ekstre adı ayrı şeylerdir.
  */
 export default async function PrivacyPanel({ className = '' }: { className?: string }) {
     const settings = await getSettings();
@@ -16,13 +17,15 @@ export default async function PrivacyPanel({ className = '' }: { className?: str
     const rows = [
         {
             dot: 'bg-on-dark-berry',
-            label: 'Kargo etiketi nötr',
-            value: settings['gizlilik.gonderici_adi']?.trim() ? `Gönderici “${settings['gizlilik.gonderici_adi'].trim()}”` : 'Gönderici olarak yalnızca şirket unvanı',
+            label: PACKAGING_SHORT,
+            value: settings['gizlilik.gonderici_adi']?.trim()
+                ? `Etikette gönderici “${settings['gizlilik.gonderici_adi'].trim()}” ve teslimat bilgilerin yer alır.`
+                : 'Etikette gönderici adı ve teslimat bilgilerin yer alır.',
         },
         {
             dot: 'bg-on-dark-plum',
-            label: 'Ekstrede ürün adı geçmez',
-            value: settings['gizlilik.notr_ekstre_adi']?.trim() || 'Yalnızca şirket unvanı',
+            label: 'Kart ekstresi',
+            value: statementText(settings),
         },
         {
             dot: 'bg-on-dark-amber',

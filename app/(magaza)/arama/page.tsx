@@ -25,10 +25,9 @@ function GuideCta({ term }: { term?: string }) {
             <span className="kicker text-on-dark-berry">
                 {term ? 'Aradığını bulamadın mı?' : 'Nereden başlayacağını bilmiyor musun?'}
             </span>
-            <h2 className="heading-2 mt-2.5 text-on-dark">Dört soruda seninkini bulalım</h2>
+            <h2 className="heading-2 mt-2.5 text-on-dark">Sana uygun ürünü birlikte bulalım</h2>
             <p className="mt-3 max-w-[58ch] text-[14.5px] leading-relaxed text-on-dark/62">
-                Kimin için baktığın, deneyim düzeyin, sessizliğin senin için ne kadar önemli olduğu ve bütçen —
-                bu dördü çoğu zaman doğru ürünü tek başına belirler.
+                Birkaç kısa soruyla aradığın kullanım şekline ve bütçene uygun seçenekleri daraltalım.
             </p>
             <Link href={routes.guide} className="btn-primary mt-5">Rehberi başlat</Link>
         </div>

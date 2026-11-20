@@ -186,6 +186,22 @@ async function closeCart(): Promise<void> {
  *
  * YALNIZCA Server Action'lardan (çerez yazma kuralı, bkz. `persist`).
  */
+/**
+ * Sipariş ucunun hatası; `code` API'nin hata kodudur. Ödeme aksiyonu satış
+ * uygunluğu (652/653) ve tutar değişimi (661) için farklı davranır.
+ */
+export class CheckoutError extends Error {
+    constructor(message: string, public readonly code: number | null) {
+        super(message);
+        this.name = 'CheckoutError';
+    }
+}
+
+/** Sepette satılamayan satır (652) ya da stok yetmiyor (653): sepet düzeltilmeli. */
+export const CART_FIX_CODES = new Set([652, 653]);
+/** Ekranda görülen toplam sunucununkiyle uyuşmuyor (661): yeni tutarla yeniden onay. */
+export const TOTAL_CHANGED_CODE = 661;
+
 export async function placeOrder(payload: Record<string, unknown>, idempotencyKey?: string): Promise<PlaceOrderResult> {
     const jar = await cookies();
     const token = jar.get(CART_COOKIE)?.value;
@@ -204,7 +220,7 @@ export async function placeOrder(payload: Record<string, unknown>, idempotencyKe
     });
 
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.message || 'Sipariş tamamlanamadı');
+    if (!response.ok) throw new CheckoutError(body.message || 'Sipariş tamamlanamadı', Number(body.code) || null);
     const result = body as PlaceOrderResult;
 
     if (result.paymentMethod === 'card') {

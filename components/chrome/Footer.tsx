@@ -3,8 +3,27 @@ import Link from 'next/link';
 import Container from '@/components/Container';
 import Logo from '@/components/Logo';
 import CookiePreferencesButton from '@/components/consent/CookiePreferencesButton';
-import { getPagesGrouped, getSettings } from '@/lib/api';
-import { routes, site } from '@/lib/site';
+import { getMenu, getPagesGrouped, getSettings } from '@/lib/api';
+import { routes, safeLink, site } from '@/lib/site';
+import type { MenuTree } from '@/lib/types';
+
+interface FooterLink { href: string; label: string; openInNew?: boolean }
+
+/**
+ * Panel › Ayarlar › Menüler'deki `footer-alisveris` / `footer-yardim` (S07).
+ * Eskiden footer bu menüleri HİÇ okumuyordu: panelde eklenen bağlantılar
+ * vitrine yansımıyordu. Sıra ve görünürlük API'den (gizli öğe gelmez), yeni
+ * sekme ayarı burada uygulanır. Site dışına çıkan ya da yayımlanmamış bir
+ * sayfaya giden öğe çizilmez — gizli sayfa footer'dan herkese açılmasın.
+ */
+const menuLinks = (menu: MenuTree | null, publishedSlugs: Set<string>): FooterLink[] => (menu?.items ?? [])
+    .flatMap((item): FooterLink[] => {
+        const href = safeLink(item.url);
+        if (!href) return [];
+        const page = /^\/sayfa\/([a-z0-9-]+)/.exec(href);
+        if (page && !publishedSlugs.has(page[1])) return [];
+        return [{ href, label: item.label, openInNew: item.openInNew }];
+    });
 
 /**
  * Alt bilgi. Önbelleklenir: içeriğin tamamı panelden yönetilen veriden gelir ve
@@ -27,7 +46,16 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
        `groups` eklendiğinde eski şekilli bir önbellek kaydı footer'ı çökertti
        (derlemede yakalandı). Alan yoksa yalnız "Alışveriş" kolonu çizilir;
        eksik bir kolon, çöken bir sayfadan iyidir. */
-    const [{ items: pages, groups = [] }, settings] = await Promise.all([getPagesGrouped(), getSettings()]);
+    const [{ items: pages, groups = [] }, settings, shopMenu, helpMenu] = await Promise.all([
+        getPagesGrouped(),
+        getSettings(),
+        // Menü okunamazsa varsayılanlar çizilir; footer düşmez.
+        getMenu('footer-alisveris').catch(() => null),
+        getMenu('footer-yardim').catch(() => null),
+    ]);
+    const publishedSlugs = new Set(pages.map((page) => page.slug));
+    const shopLinks = menuLinks(shopMenu, publishedSlugs);
+    const helpLinks = menuLinks(helpMenu, publishedSlugs);
     // Satıcı künyesi: yalnız girilmiş alanlar (Ayarlar › Şirket bilgileri).
     const company = [
         settings['sirket.unvan'],
@@ -39,16 +67,21 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
     const columns = groups
         .map((group) => ({
             heading: group.label,
-            links: pages
-                .filter((page) => page.group === group.key)
-                .map((page) => ({ href: routes.page(page.slug), label: page.title })),
+            // Yardım kolonu panel menüsü doluysa onu, boşsa yardım sayfa grubunu
+            // gösterir. Kök ürün kategorileri buraya HİÇ düşmez.
+            links: group.key === 'yardim' && helpLinks.length > 0
+                ? helpLinks
+                : pages
+                    .filter((page) => page.group === group.key)
+                    .map((page): FooterLink => ({ href: routes.page(page.slug), label: page.title })),
         }))
         .filter((column) => column.links.length > 0);
 
-    const allColumns = [
+    const allColumns: { heading: string; links: FooterLink[] }[] = [
         {
             heading: 'Alışveriş',
-            links: [
+            // Menü boşken anlamlı varsayılan: Alışveriş'in kendi bağlantıları.
+            links: shopLinks.length > 0 ? shopLinks : [
                 { href: routes.brands, label: 'Tüm markalar' },
                 { href: routes.group('firsat-urunleri'), label: 'Fırsat ürünleri' },
                 { href: routes.group('yeni-gelenler'), label: 'Yeni gelenler' },
@@ -78,8 +111,12 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
                         <h2 className="text-[12px] font-bold uppercase tracking-[0.05em] text-on-dark/45">{column.heading}</h2>
                         <ul className="mt-3.5 space-y-2">
                             {column.links.map((link) => (
-                                <li key={link.href}>
-                                    <Link href={link.href} className="text-[13.5px] text-on-dark/72 transition-colors hover:text-on-dark-berry">
+                                <li key={`${link.href}-${link.label}`}>
+                                    <Link
+                                        href={link.href}
+                                        {...(link.openInNew ? { target: '_blank', rel: 'noreferrer' } : {})}
+                                        className="text-[13.5px] text-on-dark/72 transition-colors hover:text-on-dark-berry"
+                                    >
                                         {link.label}
                                     </Link>
                                 </li>

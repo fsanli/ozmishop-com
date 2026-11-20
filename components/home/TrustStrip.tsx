@@ -3,6 +3,7 @@ import { getSettings } from '@/lib/api';
 import { CATEGORY_COLOR } from '@/lib/colors';
 import type { ColorKey } from '@/lib/colors';
 import { fillSettings } from '@/lib/settings-text';
+import { DEFAULT_STATEMENT_TEXT, PACKAGING_SHORT } from '@/lib/privacy-copy';
 
 /**
  * Güven şeridi. Kısa sözler, her biri kendi renk noktasıyla.
@@ -20,8 +21,10 @@ export interface TrustItem {
 }
 
 const DEFAULTS: TrustItem[] = [
-    { colorKey: 'berry', title: 'Gizli paketleme', body: 'Kargo etiketinde içerik bilgisi yer almaz, gönderici nötrdür.' },
-    { colorKey: 'plum', title: 'Nötr ekstre adı', body: 'Kart ekstrenizde ürün adı değil, şirket unvanı görünür.' },
+    // Paketleme ve ekstre maddeleri ortak cümleyle aynı (lib/privacy-copy, S10).
+    // Panelde şerit düzenlenmişse panelin metni kullanılır.
+    { colorKey: 'berry', title: 'Gizli paketleme', body: PACKAGING_SHORT },
+    { colorKey: 'plum', title: 'Kart ekstresi', body: DEFAULT_STATEMENT_TEXT },
     { colorKey: 'amber', title: '{{kargo.vaat}}', body: '{{kargo.sureler}}' },
     { colorKey: 'teal', title: '{{icerik.iade_suresi_gun}} gün içinde iade', body: 'Ambalajı açılmamış ürünlerde cayma hakkı. Hijyen istisnası iade sayfasında.' },
 ];

@@ -7,6 +7,7 @@ import { routes } from '@/lib/site';
 import Link from 'next/link';
 import type { Address } from '@/lib/types';
 import { saveAddressAction } from '../actions';
+import { PACKAGING_SHORT } from '@/lib/privacy-copy';
 
 /**
  * Adres formu. İstemci bileşeni DEĞİL: alanlar `defaultValue` ile dolar,
@@ -73,7 +74,7 @@ export default function AddressForm({ address, locations }: { address?: Address;
             {/* Kuryenin kapıda ne taşıdığını bilmediğini burada söylemek, ödeme
                 sayfasına kadar beklemekten iyi: adres girerken tereddüt burada. */}
             <p className="mt-3 text-[12.5px] leading-relaxed text-slate-600">
-                Paketin üzerinde ürün adı ya da kategori yazmaz; yalnızca gönderici olarak şirket unvanı görünür.
+                {PACKAGING_SHORT} Etikette gönderici adı ve bu adresteki teslimat bilgileri yer alır.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-2.5">

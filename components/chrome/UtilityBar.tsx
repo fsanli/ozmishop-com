@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import Container from '@/components/Container';
-import { getSettings } from '@/lib/api';
+import { getPagesGrouped, getSettings } from '@/lib/api';
+import { routes } from '@/lib/site';
 import PanicExit from './PanicExit';
 
 /**
@@ -8,7 +10,13 @@ import PanicExit from './PanicExit';
  * etmek yok. Ayarlar önbellekten; şerit statik kabukta kalır.
  */
 export default async function UtilityBar() {
-    const settings = await getSettings();
+    const [settings, pages] = await Promise.all([getSettings(), getPagesGrouped().catch(() => ({ items: [] }))]);
+    // Her sayfadan (kategori listesi dahil, footer'a inmeden) yardıma ulaşılsın.
+    // Yalnız yayımlı yardım sayfaları; slug yoksa bağlantı çizilmez.
+    const help = (pages.items ?? []).filter((page) => page.group === 'yardim');
+    const quickLinks = ['sss', 'iletisim']
+        .map((slug) => help.find((page) => page.slug === slug))
+        .filter((page): page is NonNullable<typeof page> => Boolean(page));
     // Kargo sözü API'de ayarlardan kurulur; kesim saati girilmemişse "aynı gün" yazmaz.
     const shippingPromise = settings['kargo.vaat']?.trim();
     const promises = [
@@ -26,7 +34,14 @@ export default async function UtilityBar() {
                         {promise.label}
                     </span>
                 ))}
-                <PanicExit className="ml-auto" />
+                <span className="ml-auto inline-flex items-center gap-4">
+                    {quickLinks.map((page) => (
+                        <Link key={page.slug} href={routes.page(page.slug)} className="hidden text-on-dark/75 underline-offset-4 hover:text-on-dark hover:underline sm:inline">
+                            {page.slug === 'sss' ? 'Yardım' : page.title}
+                        </Link>
+                    ))}
+                    <PanicExit />
+                </span>
             </Container>
         </div>
     );

@@ -73,3 +73,28 @@ JavaScript kapalıyken form yine gönderiliyor.
 Her şey tek bir `toLocal()`'dan türer. Biçimlendirme ve doğrulama ayrı ayrı
 rakam sayarsa tutarsız olurlar; `+90` soyulmazsa maskede numara sessizce
 bozulur.
+
+## Kategori listesi: otomatik yükleme ve geri dönüş
+
+Yalnız kategori sayfası (`ProductListing incremental`). İlk grup sunucuda
+çizilir, sonrakiler `/api/kategori/[slug]/urunler` vekilinden aynı ızgaraya
+eklenir (`components/listing/IncrementalGrid.tsx`). Kart gövdesi TEK:
+`ProductCardView` — sunucu kartı (`ProductCard`) ve istemcide eklenen kartlar
+onu kullanır; ikinci bir kart işaretlemesi yazmayın.
+
+Sayfa adresleri (`?sayfa=N`) ve görünür sayfalama bağlantıları kalır: arama
+motoru ve JS paketi yüklenemeyen ziyaretçi onlarla gezer. Kaydırırken adres
+DEĞİŞMEZ. Geri dönüş: Next `Activity` + `bfcacheId`; rota tahliye edilirse
+`sessionStorage` (`ozmi_liste:`) kaydı. Global kaydırma geri yüklemesine
+dokunmayın.
+
+## Paketleme ve ekstre metni
+
+Tek kaynak `lib/privacy-copy.ts` (panel: Ayarlar › Gizlilik). Bileşende
+"kutu düz kahverengi", "ekstrede yalnızca unvan" gibi ayrı bir cümle
+yazmayın. Gönderici adı ile ekstre adı ayrı ayarlardır.
+
+## Yatay şeritler
+
+Ok düğmeleri `components/ui/ScrollArrows.tsx`: liste SUNUCUDA çizilir,
+bileşen yalnız `id`'li kaydırma kabını yönetir. Taşma yoksa ok çizilmez.

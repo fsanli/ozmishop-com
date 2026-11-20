@@ -8,6 +8,9 @@ import { MinusIcon, PlusIcon } from '@/components/icons';
 import SubmitButton from '@/components/form/SubmitButton';
 import { getSettings } from '@/lib/api';
 import { getCart } from '@/lib/cart';
+import {
+    BLOCKED_CART_MESSAGE, isCheckoutReady, isPurchasable, lineMessage,
+} from '@/lib/cart-status';
 import { formatPrice } from '@/lib/format';
 import { one, type SearchParams } from '@/lib/listing';
 import { routes } from '@/lib/site';
@@ -15,6 +18,7 @@ import {
     applyCouponAction, removeCouponAction, removeItemAction, setQuantityAction,
 } from './actions';
 import { TrackCart } from '@/components/analytics/Track';
+import { PACKAGING_SHORT, statementText } from '@/lib/privacy-copy';
 
 export const metadata: Metadata = {
     title: 'Sepetim',
@@ -50,9 +54,9 @@ function QuantityStepper({ itemId, quantity, max }: { itemId: number; quantity: 
 
 async function CartContent({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const [cart, params, settings] = await Promise.all([getCart(), searchParams, getSettings()]);
-    // Ekstre adı `/ayarlar`dan: unvan değişirse verilen söz tek yerde güncellenir.
-    // Doğrulanıp girilmemişse (boş) ekstre sözü hiç verilmez.
-    const statementName = settings['gizlilik.notr_ekstre_adi']?.trim();
+    // Ekstre ve paketleme cümlesi tek kaynaktan (S10): bankaya göre değişen
+    // ekstre açıklaması için kesin ad sözü verilmez.
+    const statement = statementText(settings);
     // Kupon sistemi kapalıyken (`kupon.aktif`, varsayılan) alan HİÇ çizilmez.
     const couponsOn = settings['kupon.aktif'] === true;
     const error = one(params.hata);
@@ -69,6 +73,10 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
     }
 
     const shipping = cart.shippingOptions.find((option) => option.id === cart.selectedShippingRateId);
+    // Satılamayan satır varken ödeme kapalı (S01). Satır silinmez; müşteri düzeltir.
+    const ready = isCheckoutReady(cart);
+    // Hiç satılabilir satır yoksa kargo ve toplam gösterilmez: "0 TL + kargo" görünümü olmasın.
+    const billable = cart.items.some((item) => item.available);
 
     return (
         <>
@@ -81,7 +89,10 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
 
             <div className="flex flex-wrap items-start gap-[clamp(14px,2vw,24px)]">
                 <div className="min-w-0 flex-[999_1_420px] space-y-2.5">
-                    {cart.items.map((item) => (
+                    {cart.items.map((item) => {
+                        const warning = lineMessage(item);
+                        const blocked = !isPurchasable(item);
+                        return (
                         <div key={item.id} className={`card flex gap-4 p-[16px_18px] ${item.available ? '' : 'opacity-60'}`}>
                             <Link href={routes.product(item.slug)} className="relative size-[88px] shrink-0 overflow-hidden rounded-[14px] bg-shelf">
                                 {item.image && (
@@ -96,19 +107,23 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
                                 </h2>
                                 {item.variantLabel && <p className="text-[12.5px] text-slate-600">{item.variantLabel}</p>}
 
-                                {!item.available && (
-                                    <p className="text-[12.5px] font-semibold text-accent-500">Bu ürün şu anda satışta değil.</p>
-                                )}
-                                {item.available && item.maxQuantity !== null && item.maxQuantity < item.quantity && (
-                                    <p className="text-[12.5px] font-semibold text-accent-500">
-                                        Stokta yalnızca {item.maxQuantity} adet kaldı.
-                                    </p>
+                                {warning && (
+                                    <p role="status" className="text-[12.5px] font-semibold text-accent-500">{warning}</p>
                                 )}
 
                                 <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
-                                    {item.available && (
+                                    {item.available && item.blockReason !== 'out_of_stock' && (
                                         <QuantityStepper itemId={item.id} quantity={item.quantity} max={item.maxQuantity} />
                                     )}
+                                    {/* Stoktan fazla adet: tek tıkla kalan stoğa indir. Adım adım azaltmak
+                                        her tıklamada yine "stok yetmiyor" hatası verirdi. */}
+                                    {item.blockReason === 'exceeds_stock' && item.maxQuantity ? (
+                                        <form action={setQuantityAction}>
+                                            <input type="hidden" name="itemId" value={item.id} />
+                                            <input type="hidden" name="quantity" value={item.maxQuantity} />
+                                            <button type="submit" className="btn-soft btn-sm">Adedi {item.maxQuantity} yap</button>
+                                        </form>
+                                    ) : null}
                                     <form action={removeItemAction}>
                                         <input type="hidden" name="itemId" value={item.id} />
                                         <button type="submit" className="text-[12.5px] text-slate-600 underline underline-offset-4 transition-colors hover:text-accent-500">
@@ -119,17 +134,25 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
                             </div>
 
                             <div className="shrink-0 text-right">
-                                <div className="price text-[17px]">{formatPrice(item.lineTotal)}</div>
-                                {item.compareAtPrice && (
-                                    <div className="price-old text-[12px]">{formatPrice(item.compareAtPrice * item.quantity)}</div>
+                                {/* Satışta olmayan satır toplama girmiyor; tutarı da gösterilmez. */}
+                                {item.available ? (
+                                    <>
+                                        <div className={`price text-[17px] ${blocked ? 'text-slate-500' : ''}`}>{formatPrice(item.lineTotal)}</div>
+                                        {item.compareAtPrice && (
+                                            <div className="price-old text-[12px]">{formatPrice(item.compareAtPrice * item.quantity)}</div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-[12.5px] font-semibold text-slate-500">Satın alınamıyor</div>
                                 )}
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
 
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                         <Link href={routes.home} className="btn-secondary btn-sm">← Alışverişe devam et</Link>
-                        <p className="text-[12.5px] text-slate-600">Kargo etiketinde içerik bilgisi yer almaz.</p>
+                        <p className="text-[12.5px] text-slate-600">{PACKAGING_SHORT}</p>
                     </div>
                 </div>
 
@@ -149,15 +172,17 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
                                     <dd className="font-semibold text-accent-500">−{formatPrice(cart.totals.discount)}</dd>
                                 </div>
                             )}
-                            <div className="flex justify-between gap-3">
-                                <dt className="text-slate-600">Kargo{shipping ? ` — ${shipping.carrier}` : ''}</dt>
-                                <dd className={`font-semibold ${cart.totals.shipping === 0 ? 'text-teal-ink' : ''}`}>
-                                    {cart.totals.shipping === 0 ? 'Ücretsiz' : formatPrice(cart.totals.shipping)}
-                                </dd>
-                            </div>
+                            {billable && (
+                                <div className="flex justify-between gap-3">
+                                    <dt className="text-slate-600">Kargo{shipping ? ` — ${shipping.carrier}` : ''}</dt>
+                                    <dd className={`font-semibold ${cart.totals.shipping === 0 ? 'text-teal-ink' : ''}`}>
+                                        {cart.totals.shipping === 0 ? 'Ücretsiz' : formatPrice(cart.totals.shipping)}
+                                    </dd>
+                                </div>
+                            )}
                         </dl>
 
-                        {shipping?.remainingForFree !== null && shipping?.remainingForFree !== undefined && shipping.remainingForFree > 0 && (
+                        {billable && shipping?.remainingForFree !== null && shipping?.remainingForFree !== undefined && shipping.remainingForFree > 0 && (
                             <p className="mt-3 rounded-[var(--radius-md)] bg-teal-tint px-3 py-2 text-[12.5px] font-semibold text-teal-ink">
                                 {formatPrice(shipping.remainingForFree)} daha ekle, kargo ücretsiz olsun.
                             </p>
@@ -165,18 +190,35 @@ async function CartContent({ searchParams }: { searchParams: Promise<SearchParam
 
                         <div className="hr" />
 
-                        <div className="flex items-baseline justify-between gap-3">
-                            <span className="text-[13.5px] font-semibold">Toplam</span>
-                            <span className="price text-[26px]">{formatPrice(cart.totals.grandTotal)}</span>
-                        </div>
+                        {billable && (
+                            <div className="flex items-baseline justify-between gap-3">
+                                <span className="text-[13.5px] font-semibold">Toplam</span>
+                                <span className="price text-[26px]">{formatPrice(cart.totals.grandTotal)}</span>
+                            </div>
+                        )}
 
-                        <Link href={routes.checkout} className="btn-primary mt-4 min-h-[54px] w-full justify-center rounded-[14px]">
-                            Ödemeye geç
-                        </Link>
+                        {ready ? (
+                            <Link href={routes.checkout} className="btn-primary mt-4 min-h-[54px] w-full justify-center rounded-[14px]">
+                                Ödemeye geç
+                            </Link>
+                        ) : (
+                            <>
+                                <p role="alert" className="mt-4 rounded-[var(--radius-md)] bg-accent-200 px-3 py-2 text-[12.5px] font-semibold text-accent-500">
+                                    {BLOCKED_CART_MESSAGE}
+                                </p>
+                                <button
+                                    type="button"
+                                    disabled
+                                    aria-disabled="true"
+                                    className="btn-primary mt-3 min-h-[54px] w-full justify-center rounded-[14px] opacity-45"
+                                >
+                                    Ödemeye geç
+                                </button>
+                            </>
+                        )}
 
                         <p className="mt-3 text-[12px] leading-relaxed text-slate-600">
-                            Üye olmadan da tamamlayabilirsin.
-                            {statementName && <> Ekstrende <strong className="font-bold text-slate-900">{statementName}</strong> yazar.</>}
+                            Üye olmadan da tamamlayabilirsin. {statement}
                         </p>
 
                         {couponsOn && <div className="hr" />}

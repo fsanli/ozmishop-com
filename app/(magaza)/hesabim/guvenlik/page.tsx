@@ -117,7 +117,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
                     </div>
                 </dl>
                 <p className="mt-4 text-[12.5px] leading-relaxed text-slate-600">
-                    Sipariş geçmişini PIN ile kapatmak, nötr ekstre adını ya da hızlı çıkış tuşunu yönetmek için{' '}
+                    Sipariş geçmişini PIN ile kapatmak ya da hızlı çıkış tuşunu yönetmek için{' '}
                     <Link href={routes.accountPrivacy} className="link">Gizlilik modu</Link> sayfasına bak.
                 </p>
             </div>

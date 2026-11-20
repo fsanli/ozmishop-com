@@ -46,7 +46,7 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
                         where="Adresler"
                         color="plum"
                         title="Kayıtlı adresin yok"
-                        description="Bir adres eklersen ödeme adımında tek tıkla seçebilirsin. Paket üzerinde ürün bilgisi yer almaz."
+                        description="Bir adres eklersen ödeme adımında tek tıkla seçebilirsin. Dış ambalajda ürün bilgisi bulunmaz."
                     />
                     <div className="mt-4">
                         <AddressForm locations={locations} />

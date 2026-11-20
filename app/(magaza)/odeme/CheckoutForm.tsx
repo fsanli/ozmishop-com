@@ -6,10 +6,10 @@ import FieldLabel, { RequiredNote } from '@/components/form/FieldLabel';
 import PhoneField from '@/components/form/PhoneField';
 import SubmitButton from '@/components/form/SubmitButton';
 import LegalDocumentsDialog, { type LegalDialogState } from '@/components/legal/LegalDocumentsDialog';
-import SellerCard from '@/components/legal/SellerCard';
 import { track } from '@/lib/analytics/gtag';
 import { CURRENCY, fromCartItem, valueOf } from '@/lib/analytics/items';
 import { formatPrice } from '@/lib/format';
+import { PACKAGING_SHORT, statementText } from '@/lib/privacy-copy';
 import type { Locations } from '@/lib/locations';
 import { routes } from '@/lib/site';
 import type {
@@ -110,7 +110,9 @@ export default function CheckoutForm({
     const formRef = useRef<HTMLFormElement>(null);
     const [legalDialog, setLegalDialog] = useState<LegalDialogState | null>(null);
     const docOf = (key: string) => legalDocuments.find((doc) => doc.key === key);
-    const statementName = settings['gizlilik.notr_ekstre_adi']?.trim();
+    // Paketleme ve ekstre cümlesi tek kaynaktan (S10): ekstrede ne yazacağı
+    // bankaya göre değişir, kesin ad sözü verilmez.
+    const statement = statementText(settings);
     const anyDraft = ['on_bilgilendirme', 'mesafeli_satis'].some((key) => !docOf(key)?.isPublished);
 
     /**
@@ -205,6 +207,8 @@ export default function CheckoutForm({
             <input type="hidden" name="installment" value={installment} />
             {/* Çift tıklama aynı ödeme denemesine bağlanır; başarısızlıktan sonra aksiyon yenisini verir. */}
             <input type="hidden" name="idempotencyKey" value={state.idempotencyKey ?? idempotencyKey} />
+            {/* Ekranda görülen toplam: API kendi hesabıyla karşılaştırır, fark varsa sipariş açmaz. */}
+            <input type="hidden" name="expectedTotal" value={(Math.round(grandTotal * 100) / 100).toFixed(2)} />
 
             <div className="min-w-0 flex-[999_1_420px] space-y-3">
                 {state.error && (
@@ -476,6 +480,14 @@ export default function CheckoutForm({
                             </dd>
                         </div>
                     </dl>
+                    {/* Sepetteki ile aynı hesap (API: indirim sonrası, satılabilir satırlar,
+                        seçili kural, eşik dahil). Ödeme adımında sürpriz ücret olmasın (S11). */}
+                    {selected?.remainingForFree !== null && selected?.remainingForFree !== undefined && selected.remainingForFree > 0 && (
+                        <p className="mt-3 rounded-[var(--radius-md)] bg-teal-tint px-3 py-2 text-[12.5px] font-semibold text-teal-ink">
+                            {formatPrice(selected.remainingForFree)} daha ekle, kargo ücretsiz olsun
+                            {selected.freeOver !== null ? ` (${formatPrice(selected.freeOver)} ve üzeri).` : '.'}
+                        </p>
+                    )}
 
                     <div className="hr" />
 
@@ -518,13 +530,12 @@ export default function CheckoutForm({
                     <ul className="mt-4 space-y-2">
                         {(method === 'card'
                             ? [
-                                ['bg-on-dark-berry', 'Kargo etiketinde içerik bilgisi yok'],
-                                // Unvan ayardan; doğrulanıp girilmemişse söz verilmez.
-                                ...(statementName ? [['bg-plum-dot', `Ekstrede ${statementName} yazar`]] : []),
+                                ['bg-on-dark-berry', PACKAGING_SHORT],
+                                ['bg-plum-dot', statement],
                                 ['bg-teal-dot', '3D Secure ile korunan ödeme'],
                             ]
                             : [
-                                ['bg-on-dark-berry', 'Kargo etiketinde içerik bilgisi yok'],
+                                ['bg-on-dark-berry', PACKAGING_SHORT],
                                 ['bg-teal-dot', 'Banka bilgileri sipariş sonrası ekranda ve e-postada'],
                             ]
                         ).map(([dot, text]) => (
@@ -536,7 +547,8 @@ export default function CheckoutForm({
                     </ul>
                 </div>
 
-                <SellerCard settings={settings} returnDays={Number(settings['icerik.iade_suresi_gun']) || 14} />
+                {/* Ayrı "Satıcı" kartı kaldırıldı (S09): unvan, adres, iletişim ve cayma/hijyen
+                    bilgisi onay kutularının açtığı Ön Bilgilendirme ve Mesafeli Satış metinlerinde. */}
             </aside>
 
             {legalDialog && <LegalDocumentsDialog state={legalDialog} onClose={() => setLegalDialog(null)} />}

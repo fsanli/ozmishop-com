@@ -94,6 +94,7 @@ export default async function HomeSections({ sections }: { sections: HomeSection
                         return (
                             <ProductGroupSection
                                 key={section.id}
+                                sectionId={section.id}
                                 group={resolved.group}
                                 products={resolved.products}
                                 title={section.title}

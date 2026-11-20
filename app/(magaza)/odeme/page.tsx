@@ -6,6 +6,7 @@ import Container from '@/components/Container';
 import { getMyAddresses } from '@/lib/account';
 import { getLegalStatus, getLocations, getSettings } from '@/lib/api';
 import { getAttempt, getCart, getInstallments, isAttemptId } from '@/lib/cart';
+import { BLOCKED_CART_MESSAGE, isCheckoutReady } from '@/lib/cart-status';
 import { getCurrentCustomer } from '@/lib/session';
 import { routes } from '@/lib/site';
 import CheckoutForm from './CheckoutForm';
@@ -44,6 +45,9 @@ async function CheckoutContent() {
     const cart = await getCart();
     // Boş sepetle ödeme sayfasında durmanın anlamı yok.
     if (cart.items.length === 0) redirect(routes.cart);
+    // Satılamayan satır varken ödeme formu açılmaz; sepet hangi satır olduğunu
+    // gösterir (S01). Asıl kapı API'de — bu yalnız yönlendirme.
+    if (!isCheckoutReady(cart)) redirect(`${routes.cart}?hata=${encodeURIComponent(BLOCKED_CART_MESSAGE)}`);
 
     const [{ options }, locations, customer, settings, legal] = await Promise.all([
         getInstallments(), getLocations(), getCurrentCustomer(), getSettings(), getLegalStatus(),

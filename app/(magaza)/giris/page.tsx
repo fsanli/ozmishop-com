@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 // yazıyordu ama böyle bir özellik yok; puan maddesi de puan sistemi kapalıyken
 // olmayan bir programı vaat ediyordu.
 const PERKS = [
-    { dot: 'bg-on-dark-berry', title: 'Gizlilik modu', body: 'PIN, nötr ekstre adı ve nötr e-posta konusu hesabından yönetilir.' },
+    { dot: 'bg-on-dark-berry', title: 'Gizlilik modu', body: 'Sipariş geçmişi PIN’i ve nötr e-posta konusu hesabından yönetilir.' },
     { dot: 'bg-on-dark-amber', title: 'Puan biriktir', body: 'Her siparişte ve değerlendirmede puan kazanırsın.', needsPoints: true },
     { dot: 'bg-on-dark-teal', title: 'Kayıtlı adresler', body: 'Ödeme adımında adresini yeniden yazmazsın.' },
     { dot: 'bg-on-dark-plum', title: 'Sipariş takibi', body: 'Siparişlerin, kargo durumu ve iade taleplerin tek yerde.' },

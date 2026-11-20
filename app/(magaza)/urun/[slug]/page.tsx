@@ -11,7 +11,10 @@ import Reviews from './Reviews';
 import TechSpecs from './TechSpecs';
 import JsonLd from '@/components/JsonLd';
 import ProductGrid from '@/components/ProductGrid';
-import { getProduct, getReviews, getSettings, getSitemapData } from '@/lib/api';
+import {
+    getProduct, getReviews, getSettings, getShippingRates, getSitemapData,
+} from '@/lib/api';
+import { formatPrice } from '@/lib/format';
 import { one, type SearchParams } from '@/lib/listing';
 import { redirectIfMoved } from '@/lib/redirects';
 import { breadcrumbSchema, productSchema } from '@/lib/schema';
@@ -73,7 +76,15 @@ export default async function ProductPage({
     // `getReviews(slug, 1)`: sayfa AÇIKÇA verilir — Reviews bloğu da (slug, 1)
     // ile çağırıyor; önbellek anahtarı argümanlardan oluşur, varsayılan
     // parametre anahtara girmediği için ikisi ayrı kayıt sayılıyordu.
-    const [product, reviews, settings] = await Promise.all([getProduct(slug), getReviews(slug, 1), getSettings()]);
+    const [product, reviews, settings, rates] = await Promise.all([
+        getProduct(slug), getReviews(slug, 1), getSettings(), getShippingRates().catch(() => []),
+    ]);
+    // Ücretsiz kargo eşiği GERÇEK kuraldan (sepet/ödemenin uyguladığı; eşik dahil).
+    // Genel ayardaki sabit tutar değil (S11). Varsayılan = ilk etkin kural.
+    const defaultRate = rates[0];
+    const freeShippingLine = defaultRate?.freeOver
+        ? `${formatPrice(defaultRate.freeOver)} ve üzeri siparişlerde kargo ücretsiz; altında ${formatPrice(defaultRate.price)}.`
+        : undefined;
 
     if (!product) {
         // Adı değişmiş bir ürün olabilir: 404 vermeden önce slug geçmişine bakılır.
@@ -132,6 +143,7 @@ export default async function ProductPage({
                                 siteUrl={site.url}
                                 returnDays={Number(settings['icerik.iade_suresi_gun']) || 14}
                                 shippingLine={settings['kargo.sureler']}
+                                freeShippingLine={freeShippingLine}
                             />
                         </div>
 

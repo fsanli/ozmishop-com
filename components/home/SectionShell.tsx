@@ -15,6 +15,7 @@ export default function SectionShell({
     color = 'berry',
     actionHref,
     actionLabel,
+    actions,
     children,
     className = '',
 }: {
@@ -24,6 +25,8 @@ export default function SectionShell({
     color?: ColorKey;
     actionHref?: string;
     actionLabel?: string;
+    /** "Tümünü gör"ün yanına ek kontroller (ör. şerit okları). */
+    actions?: React.ReactNode;
     children: React.ReactNode;
     className?: string;
 }) {
@@ -31,20 +34,25 @@ export default function SectionShell({
 
     return (
         <Container as="section" className={`pt-[clamp(30px,4vw,54px)] ${className}`}>
-            {(title || actionHref) && (
+            {(title || actionHref || actions) && (
                 <div className="mb-[18px] flex flex-wrap items-end justify-between gap-4">
                     <div className="min-w-0">
                         {kicker && <span className={`kicker ${colors.ink}`}>{kicker}</span>}
                         {title && <h2 className={`heading-2 ${kicker ? 'mt-2.5' : ''}`}>{title}</h2>}
                         {subtitle && <p className="mt-2 max-w-[58ch] text-[14.5px] leading-relaxed text-slate-600">{subtitle}</p>}
                     </div>
-                    {actionHref && (
-                        <Link
-                            href={actionHref}
-                            className="btn-secondary shrink-0 px-[18px] py-[11px] text-[13.5px] font-bold"
-                        >
-                            {actionLabel || 'Tümünü gör'}
-                        </Link>
+                    {(actionHref || actions) && (
+                        <div className="flex shrink-0 items-center gap-3">
+                            {actions}
+                            {actionHref && (
+                                <Link
+                                    href={actionHref}
+                                    className="btn-secondary shrink-0 px-[18px] py-[11px] text-[13.5px] font-bold"
+                                >
+                                    {actionLabel || 'Tümünü gör'}
+                                </Link>
+                            )}
+                        </div>
                     )}
                 </div>
             )}
