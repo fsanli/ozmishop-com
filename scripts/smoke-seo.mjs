@@ -75,7 +75,8 @@ for (const [path, status, index, canonical, note] of rows) {
     if (result.status !== status) problems.push(`durum ${result.status}`);
     if (wantIndex !== null && result.noindex === wantIndex) problems.push(wantIndex ? 'noindex var' : 'noindex yok');
     if (indexable && canonical !== null && result.status === 200) {
-        const got = result.canonical.replace(/^https?:\/\/[^/]+/, '');
+        // Anasayfa canonical'ı "https://ozmishop.com" (sonda / yok) — "/" ile aynı adres.
+        const got = result.canonical.replace(/^https?:\/\/[^/]+/, '') || (result.canonical ? '/' : '');
         if (got !== canonical) problems.push(`canonical "${got || 'yok'}"`);
     }
     results.push({ path, note, result, problems });
@@ -89,7 +90,7 @@ if (checkSitemap && indexable) {
         const problems = [];
         if (result.status !== 200) problems.push(`durum ${result.status}`);
         if (result.noindex) problems.push('noindex');
-        if (result.canonical.replace(/^https?:\/\/[^/]+/, '') !== path) problems.push(`canonical "${result.canonical}"`);
+        if ((result.canonical.replace(/^https?:\/\/[^/]+/, '') || '/') !== path) problems.push(`canonical "${result.canonical}"`);
         if (/konu=/.test(path)) problems.push('konu adresi site haritasında');
         if (problems.length) results.push({ path, note: 'site haritası', result, problems });
     }

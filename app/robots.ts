@@ -23,7 +23,8 @@ export default function robots(): MetadataRoute.Robots {
                  * önce indeksten düşmeleri beklenir, sonra Disallow eklenir.
                  * İşlemsel adresler ise hiç taranmamalı.
                  */
-                disallow: ['/api/', '/hesabim/', '/sepet', '/odeme', '/siparis/'],
+                // `/hesabim` (sonda / yok): kök adres de kapsansın.
+                disallow: ['/api/', '/hesabim', '/sepet', '/odeme', '/siparis/'],
             },
         ],
         sitemap: `${site.url}/sitemap.xml`,
