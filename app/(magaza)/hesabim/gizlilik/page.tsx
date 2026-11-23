@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getMyPrivacy } from '@/lib/account';
+import { getSettings } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { one, type SearchParams } from '@/lib/listing';
 import { routes } from '@/lib/site';
@@ -31,8 +32,9 @@ const ROWS = [
 ] as const;
 
 export default async function PrivacyPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-    const [privacy, params] = await Promise.all([getMyPrivacy(), searchParams]);
+    const [privacy, params, settings] = await Promise.all([getMyPrivacy(), searchParams, getSettings()]);
     const error = one(params.hata);
+    const deletionContact = settings['sirket.kvkk_basvuru'] || settings['sirket.eposta'];
 
     return (
         <AccountShell
@@ -103,6 +105,21 @@ export default async function PrivacyPage({ searchParams }: { searchParams: Prom
                 <form action={hideHistoryAction} className="mt-4">
                     <button type="submit" className="btn-danger btn-sm">Geçmişi gizle</button>
                 </form>
+            </div>
+
+            {/* Silme talebi işletme tarafından panelden uygulanır (KVKK m.11
+                başvurusu; en geç 30 gün). Kendi kendine silme düğmesi yok. */}
+            <div className="card mt-4 p-[20px_22px]">
+                <h3 className="text-[15px] font-bold">Hesabımı sil</h3>
+                <p className="mt-1.5 max-w-[64ch] text-[13px] leading-relaxed text-slate-600">
+                    Hesabının silinmesini istiyorsan
+                    {deletionContact ? (
+                        <> <a className="font-semibold underline underline-offset-4" href={`mailto:${deletionContact}?subject=${encodeURIComponent('Hesap silme talebi')}`}>{deletionContact}</a> adresine</>
+                    ) : ' bize'}{' '}
+                    hesabına kayıtlı e-posta adresinden yaz. Adreslerin, favorilerin, tercihlerin ve puanların silinir;
+                    ad, e-posta ve telefon bilgilerin hesaptan kaldırılır. Sipariş ve fatura kayıtları yalnız yasal
+                    saklama süresince tutulur. Talebin en geç 30 gün içinde sonuçlandırılır.
+                </p>
             </div>
         </AccountShell>
     );

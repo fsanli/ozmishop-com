@@ -56,11 +56,17 @@ export default async function Footer({ showRatingBadges = false }: { showRatingB
     const publishedSlugs = new Set(pages.map((page) => page.slug));
     const shopLinks = menuLinks(shopMenu, publishedSlugs);
     const helpLinks = menuLinks(helpMenu, publishedSlugs);
-    // Satıcı künyesi: yalnız girilmiş alanlar (Ayarlar › Şirket bilgileri).
+    // Satıcı künyesi (6563 s. Kanun bilgi verme yükümlülüğü): her sayfada,
+    // yalnız girilmiş alanlar (Panel › Ayarlar › Şirket bilgileri).
+    const labelled = (label: string, value?: string) => (String(value ?? '').trim() ? `${label} ${value}` : null);
+    const taxOffice = String(settings['sirket.vergi_dairesi'] ?? '').trim();
     const company = [
         settings['sirket.unvan'],
         settings['sirket.adres'],
-        settings['sirket.mersis'] ? `MERSİS ${settings['sirket.mersis']}` : null,
+        labelled('MERSİS', settings['sirket.mersis']),
+        labelled(taxOffice ? `${taxOffice} V.D.` : 'VKN', settings['sirket.vkn']),
+        labelled('Ticaret sicil', settings['sirket.ticaret_sicil_no']),
+        labelled('KEP', settings['sirket.kep']),
         settings['sirket.telefon'],
         settings['sirket.eposta'],
     ].filter((part) => String(part ?? '').trim() !== '');

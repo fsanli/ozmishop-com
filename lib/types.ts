@@ -808,6 +808,8 @@ export interface SiteSettings {
     'sirket.mersis'?: string;
     'sirket.vkn'?: string;
     'sirket.vergi_dairesi'?: string;
+    'sirket.ticaret_sicil_no'?: string;
+    'sirket.kvkk_basvuru'?: string;
     'kargo.ucretsiz_esigi'?: number;
     'kargo.hazirlik_suresi'?: string;
     /** SS:DD; boşsa "aynı gün kargo" sözü verilmez. */

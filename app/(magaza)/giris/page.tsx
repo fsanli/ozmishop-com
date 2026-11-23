@@ -259,6 +259,7 @@ function ForgotPasswordPanel({ error, sent }: { error?: string; sent: boolean })
 async function MembershipPerks() {
     const settings = await getSettings();
     const pointsOn = settings['puan.aktif'] === true;
+    const deletionContact = settings['sirket.kvkk_basvuru'] || settings['sirket.eposta'];
     const perks = PERKS.filter((perk) => !('needsPoints' in perk) || pointsOn);
 
     return (
@@ -276,8 +277,10 @@ async function MembershipPerks() {
                 ))}
             </ul>
             <p className="mt-6 border-t border-on-dark/10 pt-4 text-[12.5px] leading-relaxed text-on-dark/55">
-                Hesabını istediğin zaman silebilirsin. Sipariş geçmişin fatura yükümlülüğü gereği
-                saklanır ama hesabından gizlenir.
+                {/* Silme talebi panelden uygulanıyor (Müşteri › Hesabı sil); kendi
+                    kendine silme düğmesi yok — "istediğin zaman silebilirsin" sözü verilmez. */}
+                Hesabının silinmesini istediğinde {deletionContact ? <>{deletionContact} adresine</> : 'bize'} yazman
+                yeterli. Kişisel bilgilerin silinir; sipariş kayıtları yalnız yasal saklama süresince tutulur.
             </p>
         </div>
     );
