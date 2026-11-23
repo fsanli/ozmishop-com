@@ -31,8 +31,10 @@ export default function UmamiLoader() {
 
     return (
         <>
+            {/* id "umami" OLAMAZ: tarayıcı id'li öğeyi `window.umami` olarak açar,
+                Umami de dolu sanıp kendi `track`'ini kurmaz (canlıda yaşandı). */}
             <Script
-                id="umami"
+                id="umami-tracker"
                 src="https://cloud.umami.is/script.js"
                 strategy="afterInteractive"
                 data-website-id={UMAMI_ID}
