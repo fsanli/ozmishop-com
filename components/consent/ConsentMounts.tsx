@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import AgeGate from '@/components/AgeGate';
 import AnalyticsLoader from '@/components/analytics/AnalyticsLoader';
+import UmamiLoader from '@/components/analytics/UmamiLoader';
 import { getLegalStatus, getSettings } from '@/lib/api';
 import { routes } from '@/lib/site';
 import CookieBanner from './CookieBanner';
@@ -28,6 +29,7 @@ export default async function ConsentMounts() {
             <CookieBanner policyHref={cookieHref} />
             {/* Suspense: sayfa görüntüleme adresi (useSearchParams) okur; kabuk statik kalsın. */}
             <Suspense fallback={null}><AnalyticsLoader /></Suspense>
+            <Suspense fallback={null}><UmamiLoader /></Suspense>
         </>
     );
 }

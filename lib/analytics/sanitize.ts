@@ -52,3 +52,24 @@ export function cleanUtm(value: string | null | undefined, { lower = false } = {
     // Türkçe kural DEĞİL: "Instagram" → "ınstagram" olur, GA4'te ayrı kaynak sayılırdı.
     return lower ? cleaned.toLowerCase() : cleaned;
 }
+
+/**
+ * Erişim anahtarı taşıyan yol parçaları maskelenir: sipariş numarası sipariş
+ * sayfasının iki anahtarından biri, ödeme denemesi kimliği de öyle. Analitiğe
+ * sayfa TÜRÜ yeter, hangi sipariş olduğu değil.
+ */
+const KEYED_SEGMENTS: [RegExp, string][] = [
+    [/^\/siparis\/[^/]+/, '/siparis/[no]'],
+    [/^\/belge\/[^/]+/, '/belge/[no]'],
+    [/^\/odeme\/kart\/[^/]+/, '/odeme/kart/[id]'],
+    [/^\/hesabim\/siparisler\/[^/]+/, '/hesabim/siparisler/[no]'],
+];
+
+/** Analitik için GÖRELİ adres: `cleanUrl` + anahtarlı yolların maskesi. */
+export function analyticsPath(href: string): string {
+    const cleaned = cleanUrl(href);
+    if (!cleaned) return '';
+    const url = new URL(cleaned);
+    const path = KEYED_SEGMENTS.reduce((current, [pattern, mask]) => current.replace(pattern, mask), url.pathname);
+    return `${path}${url.search}`;
+}

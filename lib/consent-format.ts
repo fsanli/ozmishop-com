@@ -6,14 +6,19 @@
  * Kategoriler:
  *   zorunlu   — oturum, sepet, bu tercih, 18+ beyanı. Kapatılamaz.
  *   islevsel  — canlı destek (tawk.to). Onaysız YÜKLENMEZ.
- *   analitik  — Google Analytics 4. YALNIZ `NEXT_PUBLIC_GA_ID` tanımlıysa
- *               sorulur; tanımlı değilken var olmayan bir şeye izin istenmez.
+ *   analitik  — Umami (çerezsiz ziyaret istatistiği) ve/veya Google Analytics 4.
+ *               YALNIZ `NEXT_PUBLIC_UMAMI_WEBSITE_ID` ya da `NEXT_PUBLIC_GA_ID`
+ *               tanımlıysa sorulur; tanımlı değilken var olmayan bir şeye izin
+ *               istenmez. Umami çerez yazmasa da adres ve IP'den konum yurt
+ *               dışındaki sunucuya gider: izinsiz YÜKLENMEZ (karar 24 Kasım 2026).
  */
 export const CONSENT_COOKIE = 'ozmi_cerez';
 
 /** GA4 ölçüm kimliği derlemeye gömülür; boşsa hiçbir analitik kod yüklenmez. */
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID || '';
-export const ANALYTICS_ENABLED = Boolean(GA_ID);
+/** Umami Cloud web sitesi kimliği (gizli değil; betik etiketinde görünür). */
+export const UMAMI_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID || '';
+export const ANALYTICS_ENABLED = Boolean(GA_ID || UMAMI_ID);
 
 /**
  * Analitik açılınca sürüm 2: v1 onayı analitiği KAPSAMAZ, bant yeniden çıkar.

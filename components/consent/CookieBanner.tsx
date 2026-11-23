@@ -5,6 +5,10 @@ import { useAgeAccepted } from '@/components/AgeGate';
 import {
     ANALYTICS_ENABLED, PREFERENCES_EVENT, readConsent, serverConsent, subscribeConsent, writeConsent,
 } from '@/lib/consent';
+import { GA_ID, UMAMI_ID } from '@/lib/consent-format';
+
+/** Bantta adı geçen analitik sağlayıcılar: yalnız tanımlı olanlar. */
+const ANALYTICS_PROVIDERS = [UMAMI_ID && 'Umami', GA_ID && 'Google Analytics'].filter(Boolean).join(', ');
 
 /**
  * Çerez onay bandı — 18 yaş kapısından AYRI ve ondan SONRA çıkar.
@@ -51,7 +55,7 @@ export default function CookieBanner({ policyHref }: { policyHref: string }) {
             <h2 className="text-[14.5px] font-bold">Çerezler</h2>
             <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">
                 Siteyi çalıştırmak için zorunlu çerezler kullanıyoruz (oturum, sepet). Canlı destek gibi işlevsel
-                {ANALYTICS_ENABLED ? ' ve ziyaret istatistiği için analitik' : ''} çerezler yalnızca izin verirsen çalışır.
+                {ANALYTICS_ENABLED ? ' araçlar ve ziyaret istatistiği' : ' çerezler'} yalnızca izin verirsen çalışır.
                 Ayrıntılar: <a href={policyHref} className="link">Çerez Politikası</a>.
             </p>
 
@@ -70,7 +74,7 @@ export default function CookieBanner({ policyHref }: { policyHref: string }) {
                             <span>
                                 <strong className="font-bold">Analitik</strong>
                                 <span className="block text-slate-600">
-                                    Ziyaret ve satış istatistiği (Google Analytics). Adın, e-postan, telefonun ve adresin gönderilmez.
+                                    Ziyaret istatistiği ({ANALYTICS_PROVIDERS}).{GA_ID ? '' : ' Çerez kullanılmaz.'} Adın, e-postan, telefonun, adresin ve sipariş numaran gönderilmez.
                                 </span>
                             </span>
                             <input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} className="field-checkbox mt-1 accent-accent-500" />

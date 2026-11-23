@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CONSENT_VERSION, parseConsent } from '../lib/consent-format.ts';
-import { cleanSearchTerm, cleanUrl, cleanUtm } from '../lib/analytics/sanitize.ts';
+import { analyticsPath, cleanSearchTerm, cleanUrl, cleanUtm } from '../lib/analytics/sanitize.ts';
 
 test('izin sürümü: GA tanımlıyken 2', () => {
     assert.equal(CONSENT_VERSION, 2);
@@ -62,4 +62,14 @@ test('kaynak: UTM, dış yönlendirme, iç gezinme, ödeme dönüşü', async ()
     assert.deepEqual(gaIdsFrom({ _ga: 'GA1.1.123456.789', _ga_ABC123: 'GS1.1.1700000000.1.1.1700000100.0.0.0' }, 'G-ABC123'), { clientId: '123456.789', sessionId: '1700000000' });
     assert.deepEqual(gaIdsFrom({ _ga: 'GA1.1.1.2', _ga_ABC123: 'GS2.1.s1700000000$o1$g1' }, 'G-ABC123'), { clientId: '1.2', sessionId: '1700000000' });
     assert.deepEqual(gaIdsFrom({}, 'G-ABC123'), {});
+});
+
+test('Umami adresi: göreli, temiz, erişim anahtarlı yollar maskeli', () => {
+    assert.equal(analyticsPath('https://ozmishop.com/siparis/OZ123456?e=ali%40ornek.com'), '/siparis/[no]');
+    assert.equal(analyticsPath('https://ozmishop.com/belge/OZ123456/mesafeli-satis?e=a%40b.com'), '/belge/[no]/mesafeli-satis');
+    assert.equal(analyticsPath('https://ozmishop.com/odeme/kart/8f2c?durum=ok'), '/odeme/kart/[id]');
+    assert.equal(analyticsPath('https://ozmishop.com/hesabim/siparisler/OZ1'), '/hesabim/siparisler/[no]');
+    assert.equal(analyticsPath('https://ozmishop.com/kategori/vibratorler?sayfa=2&q=x'), '/kategori/vibratorler?sayfa=2');
+    assert.equal(analyticsPath('https://ozmishop.com/sifre-yenile?t=abc'), '/sifre-yenile');
+    assert.equal(analyticsPath(''), '');
 });
