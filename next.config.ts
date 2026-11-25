@@ -54,6 +54,17 @@ const nextConfig: NextConfig = {
     trailingSlash: false,
 
     images: {
+        /*
+         * Vercel görsel optimizasyonu KAPALI: görseller doğrudan cdn.ozmishop.com'dan
+         * (R2 + Cloudflare önbelleği) gelir. API yüklemede zaten EXIF döndürüp
+         * 2000px'e sığdırıyor ve webp'e çeviriyor (ürünlerde ortalama ~33 KB);
+         * Vercel'in yeniden boyutlaması az kazanç için aylık dönüşüm kotası
+         * harcıyordu. Hobby kotası (hesaptaki tüm projelerle ortak) Kasım 2026'da
+         * doldu ve YENİ görseller 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED
+         * döndü — panelde ve vitrinde görünmediler. Geri açmadan önce kota/ücret
+         * hesabı yapın; küçük boyut gerekiyorsa varyantı yüklemede üretin.
+         */
+        unoptimized: true,
         remotePatterns: [
             ...(r2Host ? [{ protocol: 'https' as const, hostname: r2Host }] : []),
             ...apiPattern,

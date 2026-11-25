@@ -59,7 +59,12 @@ function BannerImage({ banner, alt, first }: { banner: Banner; alt: string; firs
     return (
         <picture>
             {/* 640px = Tailwind `sm`: eski `hidden sm:block` ile aynı kırılım. */}
-            <source media="(min-width: 640px)" srcSet={desktop.srcSet} sizes={desktop.sizes} />
+            {/*
+              * `images.unoptimized` açıkken getImageProps srcSet ÜRETMEZ (yalnız src).
+              * srcset'siz <source> tarayıcıca yok sayılır ve masaüstünde mobil
+              * görsel çıkardı; tek adres o yüzden src'den düşülüyor.
+              */}
+            <source media="(min-width: 640px)" srcSet={desktop.srcSet ?? desktop.src} sizes={desktop.sizes} />
             <img {...mobile} alt={alt} draggable={false} className="select-none object-cover" />
         </picture>
     );
